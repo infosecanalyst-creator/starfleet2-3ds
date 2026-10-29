@@ -1,0 +1,50 @@
+# Playing on the 3DS
+Star Fleet II runs unchanged inside DOSBox. This port reads the game's screen and redraws it across both 3DS screens, so you never need a keyboard.
+
+The top screen shows everything you watch: alert lights, communications, energy, long-range scan, damage, data, velocity, mission time and status.
+
+The touch screen shows everything you touch: the tactical display, navigation, action buttons, the game's own command menu and the view tabs.
+
+Graphics screens (the title art) appear on the top screen as the game drew them. Tap CONTINUE or press A to go on.
+
+# Touch screen
+TACTICAL DISPLAY: tap anywhere to set a course toward that point. The port works out the bearing and turns the ship for you.
+
+STEER / TARGET: the button under NAV switches what a tap on the tactical display does. In TARGET mode a tap moves the target box to the spot you touched. Tap the same spot again to lock on (Enter). The target box appears when Weapons targeting is set to Manual.
+
+ACTION BUTTONS: PHASERS, TORPS, SHLD + / SHLD - (5% steps), SPEED + / SPEED - (sublight 0.1c steps) and FREEZE (pause or resume the simulation).
+
+PROMPT LINE: shows what the game is asking. Yes/no questions get YES and NO buttons; "press any key" gets CONTINUE.
+
+COMMAND MENU: the row of buttons under the prompt is the game's own menu, read live from the screen. The red letter is the item's hotkey; the highlighted button is the current item.
+
+VIEW TABS: STARS, SYSTEM, WAR, COMBAT, FLEET, ORDERS and LOG jump straight to those displays. MANUAL opens this manual.
+
+OTHER DISPLAYS: maps and other full-screen displays show complete on the top screen, with a sharp magnified view on the touch screen. Drag it to look around; it follows the target box by itself. Tap a spot to move the target box there, and tap it again to select.
+
+KEYBOARD: opens by itself when the game wants typed text (your name, password, notepad). SELECT or the KEYBOARD button opens it any time.
+
+Every touch button clicks and visibly presses in when you tap it.
+
+# Buttons
+A            Enter (execute / confirm)
+B            Esc (back / cancel)
+X            Fire phasers
+Y            Fire torpedoes
+L            Freeze / resume the simulation
+R            Switch tap mode: steer or target
+D-Pad        Arrow keys (menus, target box)
+Circle Pad   Left/right: course -1 / +1 degree (hold to keep turning)
+             Up/down: sublight speed +0.1 / -0.1
+ZL / ZR      Hyperspace speed -1 / +1
+C-Stick      Bridge: review earlier messages (left/right)
+             Other displays: move the magnified view
+START        Open this manual
+SELECT       Show or hide the keyboard
+
+# Using this manual
+Circle Pad or C-Stick: scroll the text (hold to keep scrolling).
+D-Pad: move between the section buttons on the touch screen.
+L / R: previous / next section.
+Tap a section on the touch screen to open it.
+B or START: close the manual.

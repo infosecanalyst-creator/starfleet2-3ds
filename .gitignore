@@ -1,0 +1,9 @@
+# build output
+out/
+dosbox/build/
+dosbox/*.3dsx
+dosbox/*.smdh
+dosbox/*.elf
+dosbox/*.map
+# generated from YOUR GOG manuals (the game author's text): never commit
+assets/manual.txt
