@@ -1,6 +1,7 @@
 // sf2ui: Star Fleet II split-cockpit frontend. See sf2ui.h.
 #include "sf2ui.h"
 #include "draw.h"
+#include <ctype.h>
 #include <math.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -26,7 +27,7 @@ static std::vector<Ev> queue;          // pending key events
 static uint32_t next_key_ms = 0;
 static const uint32_t KEY_GAP_MS = 35; // spacing between injected key events
 
-enum ActKind { A_NONE, A_KEY, A_MODE, A_MANUAL, A_KB, A_SECTION, A_CLOSE, A_TYPE };
+enum ActKind { A_NONE, A_KEY, A_MODE, A_MANUAL, A_KB, A_SECTION, A_CLOSE, A_TYPE, A_SIGNON, A_SAVE };
 struct Act { ActKind kind; Key key; uint8_t mods; int arg; };
 enum { M_SHIFT = 1, M_CTRL = 2, M_ALT = 4 };
 
@@ -43,7 +44,9 @@ static uint32_t flash_until = 0;
 static BtnId id_of(const Btn& b) { BtnId i = {b.x0, b.y0, b.x1, b.y1, b.label, true}; return i; }
 static bool same(const BtnId& i, const Btn& b) { return i.valid && i.x0 == b.x0 && i.y0 == b.y0 && i.x1 == b.x1 && i.y1 == b.y1 && i.label == b.label; }
 
-static bool target_mode = false;       // tactical tap: steer (false) or move target box (true)
+enum TapMode { TM_AUTO, TM_STEER, TM_TARGET };
+static TapMode tap_mode = TM_AUTO;     // tactical taps: AUTO = target when the game shows its target box, else steer
+static const char* TAP_LABEL[3] = {"AUTO", "STEER", "TARGET"};
 static bool manual_open = false, kb_open = false, kb_forced = false, kb_user_hidden = false;
 static std::string toast; static uint32_t toast_until = 0;
 static bool marquee = false;      // prompt strip is scrolling (needs regular redraws)
@@ -114,6 +117,32 @@ static void pump_keys() {
 
 static void say(const char* msg, uint32_t ms = 2200) { toast = msg; toast_until = now() + ms; dirty(); }
 
+// ---- remembered officer (one-tap sign-on). Saved after a successful sign-on.
+static std::string typed;                       // characters typed on the on-screen keyboard
+static std::string off_name, off_pass;          // remembered officer
+static std::string pend_name, pend_pass;        // typed at this sign-on, saved once it succeeds
+static int autologin = 0;                       // 1 = name sent, waiting for the password prompt
+static void load_officer() {
+  off_name.clear(); off_pass.clear();
+  FILE* f = H && H->profile_path ? fopen(H->profile_path, "rb") : 0;
+  if (!f) return;
+  char a[64] = "", b[64] = "";
+  if (fgets(a, sizeof a, f) && !fgets(b, sizeof b, f)) b[0] = 0;
+  fclose(f);
+  for (char* p : {a, b}) { size_t n = strlen(p); while (n && (p[n - 1] == '\n' || p[n - 1] == '\r')) p[--n] = 0; }
+  off_name = a; off_pass = b;
+}
+static void save_officer(const std::string& n, const std::string& p) {
+  FILE* f = H && H->profile_path ? fopen(H->profile_path, "wb") : 0;
+  if (!f) return;
+  fprintf(f, "%s\n%s\n", n.c_str(), p.c_str());
+  fclose(f);
+  off_name = n; off_pass = p;
+}
+static void type_text(const std::string& t) {
+  for (char c : t) { Key k = key_for_char(c); if (k != K_NONE) press(k); }
+}
+
 // ------------------------------------------------------------------ screen reading helpers
 static std::string row_str(const TextScreen& ts, int r, int c0, int c1) {  // [c0, c1)
   std::string s;
@@ -134,9 +163,13 @@ static int parse_int_after(const std::string& s, size_t pos) {
   return pos < s.size() ? atoi(s.c_str() + pos) : 0;
 }
 static bool is_bridge(const TextScreen& ts) {
-  std::string r0 = row_str(ts, 0, 0, 80), r1 = row_str(ts, 1, 0, 80);
-  return r0.find("LOW PWR") != std::string::npos && r1.find("NAV") != std::string::npos &&
-         r1.find("TACTICAL") != std::string::npos && r1.find("DAMAGE") != std::string::npos;
+  // the custom layout lifts panels from fixed places, so every one of them must be present;
+  // variants (Damage Control swaps ENERGY/VEL, overlay windows) use the full-screen view instead
+  std::string r0 = row_str(ts, 0, 0, 80), r1 = row_str(ts, 1, 0, 80), r2 = row_str(ts, 2, 0, 20);
+  std::string r9 = row_str(ts, 9, 59, 79), r14 = row_str(ts, 14, 40, 52), r17 = row_str(ts, 17, 40, 60);
+  auto has = [](const std::string& h, const char* n) { return h.find(n) != std::string::npos; };
+  return has(r0, "LOW PWR") && has(r1, "NAV") && has(r1, "TACTICAL") && has(r1, "VEL") &&
+         has(r1, "DAMAGE") && has(r2, "LRS") && has(r9, "DATA") && has(r14, "ss") && has(r17, "ENERGY");
 }
 static bool is_box(uint8_t c) { return c >= 0xB3 && c <= 0xDA; }
 // The target designator box: a 3x3 frame of magenta box-drawing cells. Returns its centre.
@@ -157,6 +190,12 @@ static bool find_tdb(const TextScreen& ts, int& cc, int& cr, int c0 = 1, int r0 
   return false;
 }
 
+// ------------------------------------------------------------------ sign-on
+static bool at_name_prompt(const TextScreen& ts) {
+  return screen_has(ts, "SIGN-ON SCREEN") && screen_has(ts, "Enter your name") && !screen_has(ts, "password");
+}
+static bool at_pass_prompt(const TextScreen& ts) { return screen_has(ts, "password:"); }
+
 // ------------------------------------------------------------------ widgets
 static void cells(Surf& s, const TextScreen& ts, int c0, int r0, int c1, int r1, const Font& f,
                   int x, int y, int cw, int lh) {
@@ -175,6 +214,13 @@ static void cells_in(Surf& s, const TextScreen& ts, int c0, int r0, int c1, int 
   int lh = lead ? lead : (iy1 - iy0) / rows;
   if (!lead) { if (lh > f.h + 3) lh = f.h + 3; if (lh < f.h) lh = f.h; }
   int w = cols * f.w, hgt = rows * lh;
+  char where[48];
+  snprintf(where, sizeof where, "panel cols %d-%d rows %d-%d", c0, c1, r0, r1);
+  if (w > ix1 - ix0 || hgt > iy1 - iy0) fit_problem(std::string(where) + " is bigger than its tile");
+  for (int r = r0; r <= r1; r++) {      // a letter/digit on both sides of an edge = a sliced word
+    if (c0 > 0 && isalnum(ts.ch[r][c0]) && isalnum(ts.ch[r][c0 - 1])) fit_problem(std::string(where) + " cuts a word at its left edge");
+    if (c1 < 79 && isalnum(ts.ch[r][c1]) && isalnum(ts.ch[r][c1 + 1])) fit_problem(std::string(where) + " cuts a word at its right edge");
+  }
   cells(s, ts, c0, r0, c1, r1, f, ix0 + (ix1 - ix0 - w) / 2, iy0 + (iy1 - iy0 - hgt) / 2, f.w, lh);
 }
 static void title_text(Surf& s, int x, int y, const char* t, uint16_t c) {
@@ -188,6 +234,7 @@ static Box tile(Surf& s, int x0, int y0, int x1, int y1, const char* title) {
   s.rect(x0, top, x1, y1, FRAME);
   if (title && *title) {
     int tw = text_width(title, F6x12), tx = x0 + (x1 - x0 - tw) / 2;
+    if (tw > x1 - x0 - 6) fit_problem(std::string("tile title \"") + title + "\"");
     s.fill(tx - 2, y0, tx + tw + 2, y0 + 10, BG);
     title_text(s, tx, y0, title, TITLE);
     return Box{x0 + 2, y0 + 10, x1 - 2, y1 - 2};
@@ -232,7 +279,13 @@ static void split(int total, int n, int i, int& a, int& b) {
 }
 
 // ------------------------------------------------------------------ shared bottom rows
-struct MenuItem { std::string label; int hot; bool sel; char key; };
+struct MenuItem { std::string label; int hot; bool sel; char key; uint8_t mods; };
+// cells that separate menu items: box-drawing, blocks and shades, or the dark-grey filler
+static bool menu_sep(const TextScreen& ts, int c) {
+  uint8_t ch = ts.ch[24][c];
+  return (ch >= 0xB0 && ch <= 0xDF) || ts.at[24][c] == 0x08;
+}
+static bool has_letter(const std::string& w) { for (char c : w) if (isalpha((unsigned char)c)) return true; return false; }
 static std::vector<MenuItem> parse_menu(const TextScreen& ts, std::string& prompt) {
   std::vector<MenuItem> items;
   int c = 0;
@@ -241,12 +294,13 @@ static std::vector<MenuItem> parse_menu(const TextScreen& ts, std::string& promp
   c = 24;
   while (c < 80) {
     uint8_t a = ts.at[24][c], ch = ts.ch[24][c];
-    if (ch != ' ' && ch != 0 && ch != 0xB3 && ch != 0xBA && ch != 0xDB && a != 0x08) {
+    (void)a;
+    if (ch != ' ' && ch != 0 && !menu_sep(ts, c)) {
       int s = c;
-      while (c < 80 && ts.ch[24][c] != 0xB3 && ts.ch[24][c] != 0xBA && ts.ch[24][c] != 0xDB && ts.at[24][c] != 0x08) c++;
+      while (c < 80 && !menu_sep(ts, c)) c++;
       std::string w = trim(row_str(ts, 24, s, c));
-      if (!w.empty()) {
-        MenuItem m; m.label = w; m.hot = 0; m.sel = false; m.key = 0;
+      if (w.size() >= 2 && has_letter(w) && w.find('[') == std::string::npos) {
+        MenuItem m; m.label = w; m.hot = 0; m.sel = false; m.key = 0; m.mods = 0;
         int lead = 0; while (s + lead < c && ts.ch[24][s + lead] == ' ') lead++;
         for (int k = s; k < c; k++) if (ts.at[24][k] == 0x70 || ts.at[24][k] == 0x74) m.sel = true;
         for (size_t k = 0; k < w.size(); k++)
@@ -260,21 +314,33 @@ static std::vector<MenuItem> parse_menu(const TextScreen& ts, std::string& promp
   }
   int dividers = 0;
   for (int k = 24; k < 80; k++) if (ts.at[24][k] == 0x08 || ts.ch[24][k] == 0xB3 || ts.ch[24][k] == 0xBA) dividers++;
+  for (auto& m : items) if (m.label.size() > 12) dividers = 0;   // long words are prose, not a menu
+  if (row_str(ts, 24, 0, 80).find("]:") != std::string::npos) dividers = 0;   // an open window's key hints win
   if (items.size() < 2 || dividers < 2) {
     items.clear();
     std::string row = row_str(ts, 24, 0, 80);
     prompt = trim(row);
-    // key hints in brackets: "[M]: menu  [Esc]: exit"
+    // key hints in brackets: "[M]: menu  [Esc]: exit  [Ctrl][M]: menu"
+    { int e = 0; while (e < 80 && !menu_sep(ts, e)) e++;      // the prompt is the text before the first separator
+      prompt = trim(row_str(ts, 24, 0, e)); }
+    for (auto& ch2 : row) if ((uint8_t)ch2 >= 0xB0 && (uint8_t)ch2 <= 0xDF) ch2 = ' ';   // drop border/filler cells
     size_t p = 0;
+    uint8_t mods = 0;
     while ((p = row.find('[', p)) != std::string::npos) {
       size_t q = row.find(']', p);
       if (q == std::string::npos || q - p > 6) break;
       std::string key = row.substr(p + 1, q - p - 1), lab;
+      std::string ku = key; for (auto& ch2 : ku) ch2 = (char)toupper((unsigned char)ch2);
+      if (ku == "CTRL" || ku == "ALT" || ku == "SHFT" || ku == "SHIFT") {     // modifier for the next key
+        mods |= ku == "CTRL" ? M_CTRL : ku == "ALT" ? M_ALT : M_SHIFT;
+        p = q + 1;
+        continue;
+      }
       size_t t = q + 1;
       while (t < row.size() && (row[t] == ':' || row[t] == ' ')) t++;
       while (t < row.size() && row[t] != '[' && (uint8_t)row[t] >= ' ' && (uint8_t)row[t] < 0x7F &&
              !(row[t] == ' ' && t + 1 < row.size() && row[t + 1] == ' ')) lab += row[t++];
-      MenuItem m; m.hot = -1; m.sel = false; m.key = 0;
+      MenuItem m; m.hot = -1; m.sel = false; m.key = 0; m.mods = mods; mods = 0;
       if (key == "Esc" || key == "ESC") m.key = 27;
       else if (key == "Enter" || key == "CR") m.key = 13;
       else if (key.size() == 1) m.key = key[0];
@@ -282,7 +348,7 @@ static std::vector<MenuItem> parse_menu(const TextScreen& ts, std::string& promp
         m.label = trim(lab).empty() ? key : trim(lab);
         for (auto& ch2 : m.label) if (ch2 >= 'a' && ch2 <= 'z') ch2 -= 32;
         items.push_back(m);
-        if (p == 0 || prompt.find('[') != std::string::npos) prompt = trim(row.substr(0, row.find('[')));
+        if (prompt.find('[') != std::string::npos) prompt = trim(prompt.substr(0, prompt.find('[')));
       }
       p = q + 1;
     }
@@ -319,6 +385,15 @@ static void bottom_rows(Surf& s, const TextScreen& ts) {
   }
 
   bool yesno = prompt.find('?') != std::string::npos && items.empty();
+  for (int r = 1; r < 24 && !yesno; r++) {        // a dialog asking a question ("Do you still want to exit?")
+    std::string row = row_str(ts, r, 0, 80);
+    size_t q = row.find('?');
+    int bg = q == std::string::npos ? 0 : (ts.at[r][q] >> 4) & 7;
+    if (q != std::string::npos && (bg == 4 || bg == 7) &&      // inside a red or grey dialog box
+        (row.find("Do you") != std::string::npos || row.find("Are you") != std::string::npos || row.find("want to") != std::string::npos)) {
+      yesno = true; items.clear();
+    }
+  }
   if (!yesno && items.empty())
     for (int r = 1; r < 24 && !yesno; r++) {     // "Do you want to save these settings?" dialog
       std::string row = trim(row_str(ts, r, 0, 80));
@@ -333,11 +408,18 @@ static void bottom_rows(Surf& s, const TextScreen& ts) {
     for (int i = 0; i < n; i++) {
       int a, b; split(BOT_W, n, i, a, b);
       Key k = items[i].key == 27 ? K_ESC : items[i].key == 13 ? K_ENTER : key_for_char(items[i].key);
-      add_btn(a, 194, b, 217, items[i].label, &F8x16, key_act(k), items[i].hot, items[i].sel);
+      add_btn(a, 194, b, 217, items[i].label, &F8x16, key_act(k, items[i].mods), items[i].hot, items[i].sel);
     }
   } else if (yesno) {
     add_btn(0, 194, 160, 217, "YES", &F8x16, key_act(K_Y), 0);
     add_btn(160, 194, 320, 217, "NO", &F8x16, key_act(K_N), 0);
+  } else if (kb_open && at_name_prompt(ts) && !off_name.empty() && autologin == 0) {
+    std::string up = off_name;
+    for (auto& ch2 : up) if (ch2 >= 'a' && ch2 <= 'z') ch2 -= 32;
+    std::string lab = "SIGN ON AS " + up;
+    if (text_width(lab.c_str(), F8x16) > 213 - 4) lab = "SIGN ON";
+    add_btn(0, 194, 213, 217, lab, &F8x16, kind_act(A_SIGNON), -1, true);
+    add_btn(213, 194, 320, 217, "HIDE KEYS", &F8x16, kind_act(A_KB));
   } else {
     add_btn(0, 194, 107, 217, anykey ? "CONTINUE" : "ENTER", &F8x16, key_act(K_ENTER));
     add_btn(107, 194, 213, 217, "BACK", &F8x16, key_act(K_ESC));
@@ -364,12 +446,16 @@ static void keyboard(Surf& s) {
     for (int k = 0; k < 10; k++) {
       int a, b; split(BOT_W, 10, k, a, b);
       std::string lab(1, rows[r][k]);
-      add_btn(a, r * 36, b, r * 36 + 36, lab, &F8x16, key_act(key_for_char(rows[r][k])));
+      Act ka = key_act(key_for_char(rows[r][k])); ka.kind = A_TYPE; ka.arg = rows[r][k];
+      add_btn(a, r * 36, b, r * 36 + 36, lab, &F8x16, ka);
     }
   add_btn(0, 144, 64, 180, "ESC", &F8x16, key_act(K_ESC));
-  add_btn(64, 144, 192, 180, "SPACE", &F8x16, key_act(K_SPACE));
-  add_btn(192, 144, 256, 180, "DEL", &F8x16, key_act(K_BACKSPACE));
-  add_btn(256, 144, 320, 180, "ENTER", &F8x16, key_act(K_ENTER));
+  Act sp = key_act(K_SPACE); sp.kind = A_TYPE; sp.arg = ' ';
+  Act del = key_act(K_BACKSPACE); del.kind = A_TYPE; del.arg = 8;
+  Act ent = key_act(K_ENTER); ent.kind = A_TYPE; ent.arg = 13;
+  add_btn(64, 144, 192, 180, "SPACE", &F8x16, sp);
+  add_btn(192, 144, 256, 180, "DEL", &F8x16, del);
+  add_btn(256, 144, 320, 180, "ENTER", &F8x16, ent);
 }
 
 // ------------------------------------------------------------------ bridge layout
@@ -382,7 +468,7 @@ static void bridge_top(Surf& s, const TextScreen& ts) {
     s.fill(a, 0, b, 12, BG);
     s.fill(a, 0, b - 1, 12, VGA[(at >> 4) & 15]);
     uint16_t fg = (at >> 4) & 15 ? VGA[at & 15] : READ_FG[at & 15];
-    draw_text(s, a + (b - a - 1 - text_width(lab.c_str(), F6x12)) / 2, 0, lab.c_str(), F6x12, fg);
+    fit_text(s, a + (b - a - 1 - text_width(lab.c_str(), F6x12)) / 2, 0, b - 1, lab.c_str(), F6x12, fg, "alert light");
   }
   Box in = tile(s, 0, 12, 238, 138, "COMMS");
   cells_in(s, ts, 1, 15, 39, 22, F6x12, in.x0, in.y0, in.x1, in.y1);
@@ -395,14 +481,14 @@ static void bridge_top(Surf& s, const TextScreen& ts) {
     int y = in.y0 + i * 12;
     s.fill(in.x0, y, in.x0 + 20, y + 12, VGA[(at >> 4) & 15]);
     std::string t = row_str(ts, trow[i], 41, 44);
-    draw_text(s, in.x0 + 1, y, t.c_str(), F6x12, (at >> 4) & 15 ? VGA[at & 15] : READ_FG[at & 15]);
+    fit_text(s, in.x0 + 1, y, in.x0 + 20, t.c_str(), F6x12, (at >> 4) & 15 ? VGA[at & 15] : READ_FG[at & 15], "energy toggle");
   }
   for (int i = 0; i < 4; i++) {
     int r = erow[i], y = in.y0 + i * 15;
     std::string lab = trim(row_str(ts, r, 45, 53)), val = trim(row_str(ts, r, 54, 58));
     while (val.size() < 4) val = " " + val;
-    draw_text(s, in.x0 + 23, y, lab.c_str(), F6x12, READ_FG[ts.at[r][45] & 15]);
-    draw_text(s, in.x0 + 73, y, val.c_str(), F6x12, READ_FG[ts.at[r][54] & 15]);
+    fit_text(s, in.x0 + 23, y, in.x0 + 72, lab.c_str(), F6x12, READ_FG[ts.at[r][45] & 15], "energy label");
+    fit_text(s, in.x0 + 73, y, in.x0 + 99, val.c_str(), F6x12, READ_FG[ts.at[r][54] & 15], "energy value");
     int filled = 0;
     for (int c = 58; c < 78; c++) if (ts.ch[r][c] == 0xDB) filled++;
     int bx0 = in.x0 + 100, bx1 = in.x1 - 1;
@@ -411,7 +497,7 @@ static void bridge_top(Surf& s, const TextScreen& ts) {
   }
   int sep = in.y1 - 27;
   s.hline(in.x0, in.x1, sep, FRAME);
-  cells(s, ts, 1, 11, 16, 12, F6x12, in.x0 + (in.x1 - in.x0 - 96) / 2, sep + 2, 6, 12);
+  cells_in(s, ts, 1, 11, 16, 12, F6x12, in.x0, sep + 1, in.x1, in.y1, 12);
 
   in = tile(s, 138, 138, 238, 240, "LRS");
   cells_in(s, ts, 2, 3, 16, 9, F6x12, in.x0, in.y0, in.x1, in.y1);
@@ -442,12 +528,13 @@ static void bridge_bottom(Surf& s, const TextScreen& ts) {
   Box in = tile(s, 0, 0, 180, 180, full.c_str());
   TextScreen t2 = ts;
   t2.ch[7][28] = ' '; t2.at[7][28] = 0;     // last digit of the port heading, not an axis label
+  if (22 * TAC_CW > in.x1 - in.x0 || 12 * TAC_LH > in.y1 - in.y0) fit_problem("tactical display is bigger than its tile");
   cells(s, t2, 28, 2, 49, 13, F8x14, in.x0, in.y0, TAC_CW, TAC_LH);
   int tc, tr;
-  if (target_mode && find_tdb(ts, tc, tr, 29, 2, 49, 13)) { /* box already drawn by the game */ }
+  (void)tc; (void)tr;
   in = tile(s, 180, 0, 236, 156, "NAV");
   cells_in(s, ts, 18, 2, 25, 13, F6x12, in.x0, in.y0, in.x1, in.y1);
-  add_btn(180, 156, 236, 180, target_mode ? "TARGET" : "STEER", &F8x16, kind_act(A_MODE), 0, true);
+  add_btn(180, 156, 236, 180, TAP_LABEL[tap_mode], &F8x16, kind_act(A_MODE), 0, true);
   static const char* acts[7] = {"PHASERS", "TORPS", "SHLD +", "SHLD -", "SPEED +", "SPEED -", "FREEZE"};
   static const Key akeys[7] = {K_INSERT, K_DELETE, (Key)(K_F1 + 7), (Key)(K_F1 + 6), (Key)(K_F1 + 3), (Key)(K_F1 + 2), K_F};
   static const uint8_t amods[7] = {0, 0, 0, 0, 0, 0, M_CTRL};
@@ -499,12 +586,12 @@ static void generic_top(Surf& s, const TextScreen& ts) {
   // where the magnifier is looking
   s.rect(lx * 5 - 1, ly * 9 - 1, (lx + LP_COLS) * 5 + 1, (ly + LP_ROWS) * 9 + 1, LOUPE);
   s.fill(0, 225, TOP_W, TOP_H, BG);
-  draw_text(s, 4, 226, "Touch screen: magnified view. Drag to look around, tap to aim.", F6x12, HINT);
+  fit_text(s, 4, 226, TOP_W - 2, "Touch screen: magnified view. Drag to look around, tap to aim.", F6x12, HINT, "magnifier hint");
 }
 static uint32_t user_pan_ms = 0;
 static uint32_t screen_sig(const TextScreen& ts) {   // changes when a different screen appears
   uint32_t h = 2166136261u;
-  for (int r = 0; r < 25; r += 6) for (int c = 0; c < 80; c++) { h ^= ts.ch[r][c]; h *= 16777619u; }
+  for (int r = 0; r < 24; r++) for (int c = 0; c < 80; c++) { h ^= ts.ch[r][c]; h *= 16777619u; }
   return h;
 }
 static void frame_content(const TextScreen& ts) {
@@ -521,11 +608,37 @@ static void frame_content(const TextScreen& ts) {
   ly = (r1 - r0 + 1 <= LP_ROWS) ? r0 - (LP_ROWS - (r1 - r0 + 1)) / 2 : r0;
   lx = (c1 - c0 + 1 <= LP_COLS) ? c0 - (LP_COLS - (c1 - c0 + 1)) / 2 : c0;
 }
+// Aim at the cells that changed since the previous screen (a dialog that popped up, a panel
+// that was replaced); fall back to framing the whole content when most of the screen changed.
+static bool frame_changes(const TextScreen& ts, const TextScreen& before) {
+  int r0 = 25, r1 = -1, c0 = 80, c1 = -1, n = 0;
+  for (int r = 0; r < 24; r++)                 // row 24 is the prompt line, shown separately
+    for (int c = 0; c < 80; c++)
+      if (ts.ch[r][c] != before.ch[r][c] || ts.at[r][c] != before.at[r][c]) {
+        n++;
+        if (r < r0) r0 = r;
+        if (r > r1) r1 = r;
+        if (c < c0) c0 = c;
+        if (c > c1) c1 = c;
+      }
+  if (n == 0 || n > 80 * 24 * 6 / 10) return false;   // nothing, or a whole new screen
+  int h = r1 - r0 + 1, w = c1 - c0 + 1;
+  ly = h <= LP_ROWS ? r0 - (LP_ROWS - h) / 2 : r0;
+  lx = w <= LP_COLS ? c0 - (LP_COLS - w) / 2 : c0;
+  return true;
+}
 static void generic_bottom(Surf& s, const TextScreen& ts) {
   int tc, tr;
   static uint32_t sig = 0;
   uint32_t sg = screen_sig(ts);
-  if (sg != sig) { sig = sg; if (now() - user_pan_ms > 4000) { follow = true; frame_content(ts); } }
+  if (sg != sig) {
+    sig = sg;
+    if (now() - user_pan_ms > 4000) {
+      follow = true;
+      // `last` still holds the previous screen (any layout) at this point
+      if (!(last.text_mode && frame_changes(ts, last))) frame_content(ts);
+    }
+  }
   if (follow && find_tdb(ts, tc, tr)) { lx = tc - LP_COLS / 2; ly = tr - LP_ROWS / 2; }
   clamp_loupe();
   s.fill(0, 0, BOT_W, 180, BG);
@@ -598,8 +711,8 @@ static void manual_bottom(Surf& s) {
 // ------------------------------------------------------------------ graphics (title art) screens
 static void graphics_bottom(Surf& s) {
   s.fill(0, 0, BOT_W, BOT_H, BG);
-  draw_text(s, (BOT_W - text_width("STAR FLEET II", F8x16)) / 2, 40, "STAR FLEET II", F8x16, TITLE);
-  draw_text(s, (BOT_W - text_width("Krellan Commander", F6x12)) / 2, 62, "Krellan Commander", F6x12, BTN_TXT);
+  fit_text(s, (BOT_W - text_width("STAR FLEET II", F8x16)) / 2, 40, BOT_W, "STAR FLEET II", F8x16, TITLE, "title");
+  fit_text(s, (BOT_W - text_width("Krellan Commander", F6x12)) / 2, 62, BOT_W, "Krellan Commander", F6x12, BTN_TXT, "title");
   add_btn(40, 100, 280, 150, "CONTINUE", &F8x16, key_act(K_ENTER));
   add_btn(0, 194, 160, 217, "BACK", &F8x16, key_act(K_ESC));
   add_btn(160, 194, 320, 217, "MANUAL", &F8x16, kind_act(A_MANUAL));
@@ -610,17 +723,41 @@ void init(const Host* host) {
   H = host;
   memset(&last, 0, sizeof last);
   load_manual();
+  load_officer();
   dirty();
 }
 
 bool modal() { return manual_open; }
 
 std::vector<std::string> fit_problems() { return fit_log; }
+void fit_clear() { fit_log.clear(); }
+void force_redraw() { dirty(); }
+
+// Enter on the keyboard: remember what was typed at the sign-on prompts.
+static void typed_enter() {
+  if (at_name_prompt(last)) pend_name = typed;
+  else if (at_pass_prompt(last)) pend_pass = typed;
+  typed.clear();
+}
 
 static void fire(const Act& a) {
   switch (a.kind) {
-    case A_KEY: if (a.key != K_NONE) press(a.key, a.mods); break;
-    case A_MODE: target_mode = !target_mode; say(target_mode ? "Tap the tactical display to move the target box" : "Tap the tactical display to steer"); break;
+    case A_KEY: if (a.key != K_NONE) press(a.key, a.mods); if (a.key == K_ENTER) typed_enter(); break;
+    case A_TYPE:
+      press(a.key, a.mods);
+      if (a.arg == 8) { if (!typed.empty()) typed.erase(typed.size() - 1); }
+      else if (a.arg == 13) typed_enter();
+      else typed += (char)(a.arg >= 'A' && a.arg <= 'Z' ? a.arg + 32 : a.arg);
+      break;
+    case A_SIGNON:
+      typed.clear(); type_text(off_name); press(K_ENTER); autologin = 1; say("Signing on...", 1500);
+      break;
+    case A_SAVE: press(K_Q, M_CTRL); say("Quick save", 1500); break;
+    case A_MODE:
+      tap_mode = (TapMode)((tap_mode + 1) % 3);
+      say(tap_mode == TM_AUTO ? "Taps target when the target box is up, else steer" :
+          tap_mode == TM_STEER ? "Taps always steer" : "Taps always move the target box");
+      break;
     case A_MANUAL: manual_open = true; man_scroll = 0; break;
     case A_KB:
       if (kb_open) { kb_open = false; kb_user_hidden = true; kb_forced = false; }
@@ -643,6 +780,17 @@ Redraw frame(const TextScreen& ts, uint16_t* top, uint16_t* bottom) {
     bool want = wants_text(ts);
     if (want && !kb_open && !kb_user_hidden) { kb_open = true; dirty(); }
     if (!want) { kb_user_hidden = false; if (kb_open && !kb_forced) { kb_open = false; dirty(); } }
+  }
+
+  // auto sign-on: send the password when its prompt appears
+  if (autologin == 1 && queue.empty() && ts.text_mode && at_pass_prompt(ts)) {
+    type_text(off_pass); press(K_ENTER); autologin = 0; typed.clear();
+  }
+  if (autologin == 1 && ts.text_mode && screen_has(ts, "SIGN-ON OPTIONS")) autologin = 0;
+  // a successful sign-on with a newly typed officer: remember it
+  if (ts.text_mode && screen_has(ts, "SIGN-ON OPTIONS") && !pend_name.empty() && !pend_pass.empty()) {
+    if (pend_name != off_name || pend_pass != off_pass) { save_officer(pend_name, pend_pass); say("Officer remembered for one-tap sign-on"); }
+    pend_name.clear(); pend_pass.clear();
   }
 
   // drive the target box toward a tapped cell, one arrow at a time
@@ -730,11 +878,13 @@ static void start_drive(int col, int row, int c, int r) {
 }
 
 static void tactical_tap(int x, int y) {
-  if (!target_mode) { steer_to(last, x, y); return; }
   int col = 28 + (x - TAC_X) / TAC_CW, row = 2 + (y - TAC_Y) / TAC_LH;
   int c, r;
-  if (!find_tdb(last, c, r, 29, 2, 49, 13)) {
-    say("No target box: choose WEAPONS > Manual targeting first");
+  bool box = find_tdb(last, c, r, 29, 2, 49, 13);
+  bool target = tap_mode == TM_TARGET || (tap_mode == TM_AUTO && box);
+  if (!target) { steer_to(last, x, y); return; }
+  if (!box) {
+    say("No target box: set Weapons to Manual targeting");
     return;
   }
   snap_to_object(last, col, row, 29, 2, 49, 12);
@@ -846,13 +996,13 @@ void buttons(uint32_t held, uint32_t pr, uint32_t rel) {
     return;
   }
   if (pr & B_START) { manual_open = true; man_scroll = 0; dirty(); return; }
-  if (pr & B_SELECT) fire(kind_act(A_KB));
-  if (pr & B_A) press(K_ENTER);
+  if (pr & B_SELECT) fire(kind_act(is_bridge(last) ? A_SAVE : A_KB));   // quick save on the bridge
+  if (pr & B_A) { press(K_ENTER); typed_enter(); }
   if (pr & B_B) press(K_ESC);
   if (pr & B_X) press(K_INSERT);           // fire phasers
   if (pr & B_Y) press(K_DELETE);           // fire torpedoes
   if (pr & B_L) press(K_F, M_CTRL);        // freeze / unfreeze
-  if (pr & B_R) fire(kind_act(A_MODE));    // steer <-> target
+  if (pr & B_R) fire(kind_act(A_MODE));    // tap mode: auto / steer / target
   if (repeat_due(B_DUP, held, pr)) press(K_UP);
   if (repeat_due(B_DDOWN, held, pr)) press(K_DOWN);
   if (repeat_due(B_DLEFT, held, pr)) press(K_LEFT);

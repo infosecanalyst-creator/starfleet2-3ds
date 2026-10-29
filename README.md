@@ -16,8 +16,9 @@ complete on the top screen with a sharp, draggable magnifier on the touch screen
 The PC game is keyboard-only. On the 3DS:
 - **Tap to steer:** tap the tactical display and the port turns the ship toward that point
   (it presses the course keys for you, 15 degrees and 1 degree at a time).
-- **Tap to target:** tap a star, planet or ship and the game's target box is driven onto it
-  (closed loop, snapping to the nearest object); tap it again to select.
+- **Tap to target:** when the game's target box is up, a tap drives it onto the star, planet or ship
+  you touched (closed loop, snapping to the nearest object); tap it again to select.
+- **One-tap sign-on:** the officer you sign on with is remembered (`/3ds/starfleet2/officer.txt`).
 - **Tap menus:** every command menu, `[M]: menu`-style key hint, `C  Change settings`-style menu
   line and yes/no question becomes a button.
 - **Keyboard only when needed:** it opens by itself for your name, password and notepad.
@@ -29,13 +30,13 @@ The PC game is keyboard-only. On the 3DS:
 | A / B | Enter / Esc |
 | X / Y | Fire phasers / torpedoes |
 | L | Freeze / resume the simulation |
-| R | Tap mode: steer or target |
+| R | Tap mode: auto (default), steer, target |
 | D-Pad | Arrow keys |
 | Circle Pad | Course -1 / +1 degree (left/right), sublight speed (up/down) |
 | ZL / ZR | Hyperspace speed -1 / +1 |
 | C-Stick | Review earlier messages (bridge), move the magnifier (other displays) |
 | START | Manual |
-| SELECT | Keyboard |
+| SELECT | Quick save on the bridge; keyboard elsewhere |
 
 The built-in manual (START) holds the port guide plus the game's Quick Reference, Operations
 Manual and Training Manual, built from **your** GOG PDFs by `tools/mkmanual.py`. Manual controls:
@@ -56,9 +57,13 @@ Needs devkitPro with `3ds-dev` and `3ds-sdl` (SDL 1.2), plus Python 3 with `pdfp
 ./build-3ds.sh
 ./install-3ds.sh 3DS-IP "/path/to/STAR FLEET II - Krellan Commander Version 2.0"
 ```
-The installer uploads over Wi-Fi to ftpd (port 5000) on the 3DS:
-`/3ds/starfleet2/` gets the app, settings and manual; `/3ds/starfleet2/game/` gets the contents
-of the GOG install's `base` folder (the game itself is not part of this repository).
+`sd/3ds/starfleet2/` is the one place the app lives: the build moves `starfleet2.3dsx` there, next
+to `starfleet2.conf`; the installer adds `manual.txt` and `game/` (the contents of the GOG install's
+`base` folder; the game itself is not part of this repository) and uploads the folder over Wi-Fi
+to ftpd (port 5000), checking every file's size on the 3DS.
+
+Logs on the 3DS: `/3ds/starfleet2/debug.log` (speed, audio underruns, text-fit problems every
+10 s) and `/3ds/starfleet2/error.log` (fatal errors).
 
 ## Licences
 - DOSBox and DOSBox-3DS: GPL-2.0 (see `dosbox/COPYING`); this port is GPL-2.0 as a result.

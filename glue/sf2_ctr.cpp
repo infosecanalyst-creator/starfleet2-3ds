@@ -8,6 +8,8 @@
 #include <3ds.h>
 #include <string.h>
 #include <math.h>
+#include <stdio.h>
+#include <stdarg.h>
 #include "sf2ui.h"
 #include "sf2_dosbox.h"
 #include "sf2_ctr.h"
@@ -84,7 +86,7 @@ static void present(gfxScreen_t scr, const uint16_t* img, int w, int h) {
 
 // ------------------------------------------------------------------ main hook
 static uint32_t ms() { return (uint32_t)osGetTime(); }
-static sf2ui::Host host = {sf2_key, click, ms, "sdmc:/3ds/starfleet2/manual.txt"};
+static sf2ui::Host host = {sf2_key, click, ms, "sdmc:/3ds/starfleet2/manual.txt", "sdmc:/3ds/starfleet2/officer.txt"};
 
 static void init() {
   gfxSet3D(false);
@@ -95,16 +97,46 @@ static void init() {
 
 bool sf2ctr_owns_top() { return owns_top; }
 
+// ------------------------------------------------------------------ logs (sdmc:/3ds/starfleet2/)
+static const char* LOG_PATH = "sdmc:/3ds/starfleet2/debug.log";
+static int log_lines = 0;
+void sf2ctr_log(const char* fmt, ...) {
+  if (log_lines > 2000) return;                 // keep the file small
+  char buf[256];
+  va_list ap; va_start(ap, fmt); vsnprintf(buf, sizeof buf, fmt, ap); va_end(ap);
+  svcOutputDebugString(buf, strlen(buf));       // also visible in emulator logs
+  FILE* f = fopen(LOG_PATH, log_lines ? "a" : "w");
+  if (f) { fprintf(f, "%8llu %s\n", (unsigned long long)osGetTime() % 100000000ull, buf); fclose(f); }
+  log_lines++;
+}
+
+unsigned int sf2_emu_ticks = 0;                 // emulated milliseconds (GFX_Events runs once per emulated ms)
+extern unsigned int sf2_mixer_underruns;        // counted in mixer.cpp
+
 // Called from GFX_Events() in place of DOSBox-3DS's own input handling.
 void sf2ctr_events() {
-  if (!inited) init();
+  if (!inited) { init(); sf2ctr_log("Star Fleet II 3DS started"); }
+  sf2_emu_ticks++;
+
+  // Polling HID/APT every emulated millisecond is expensive on the 3DS; 8 ms (125 Hz) is plenty.
+  static u64 last_poll = 0;
+  u64 tick = svcGetSystemTick();
+  if (tick - last_poll < (u64)(SYSCLOCK_ARM11 / 125)) return;
+  last_poll = tick;
+
   SDL_Event e;
   while (SDL_PollEvent(&e)) if (e.type == SDL_QUIT) throw(0);
   if (!aptMainLoop()) throw(0);
   hidScanInput();
 
-  u32 down = hidKeysDown(), held = hidKeysHeld(), up = hidKeysUp();
+  // SDL's event pump also calls hidScanInput(), so hidKeysDown()/hidKeysUp() miss presses:
+  // derive presses and releases from the held state ourselves (same fix as the Ultima III port).
+  static u32 prev_held = 0;
+  u32 held = hidKeysHeld();
+  u32 down = held & ~prev_held, up = prev_held & ~held;
+  prev_held = held;
   sf2ui::buttons(held, down, up);
+
   static bool touching = false;
   static touchPosition last_t;
   if (held & KEY_TOUCH) {
@@ -116,15 +148,30 @@ void sf2ctr_events() {
     touching = false;
   }
 
-  // redraw at most ~30 times a second
   u64 now = osGetTime();
+
+  // performance log every 10 s: emulation speed vs real time, audio underruns, frontend cost
+  static u64 perf_t = 0; static unsigned int perf_ticks = 0, perf_under = 0;
+  static u64 draw_us = 0; static unsigned int draws = 0;
+  if (!perf_t) { perf_t = now; perf_ticks = sf2_emu_ticks; perf_under = sf2_mixer_underruns; }
+  else if (now - perf_t >= 10000) {
+    unsigned int speed = (unsigned int)((sf2_emu_ticks - perf_ticks) * 100 / (now - perf_t));
+    sf2ctr_log("speed %u%% of real time, audio underruns %u, %u redraws, avg %u us",
+               speed, sf2_mixer_underruns - perf_under, draws, draws ? (unsigned int)(draw_us / draws) : 0);
+    for (auto& p : sf2ui::fit_problems()) sf2ctr_log("FIT: %s", p.c_str());
+    perf_t = now; perf_ticks = sf2_emu_ticks; perf_under = sf2_mixer_underruns; draw_us = 0; draws = 0;
+  }
+
+  // redraw at most ~30 times a second
   if (now - last_frame < 33) return;
   last_frame = now;
+  u64 t0 = svcGetSystemTick();
   sf2ui::TextScreen ts;
   sf2_read_screen(ts);
   owns_top = ts.text_mode || sf2ui::modal();
   sf2ui::Redraw rd = sf2ui::frame(ts, top_img, bot_img);
   if (rd.top && owns_top) present(GFX_TOP, top_img, sf2ui::TOP_W, sf2ui::TOP_H);
   if (rd.bottom) present(GFX_BOTTOM, bot_img, sf2ui::BOT_W, sf2ui::BOT_H);
+  if (rd.top || rd.bottom) { draws++; draw_us += (svcGetSystemTick() - t0) / (SYSCLOCK_ARM11 / 1000000); }
 }
 #endif  // SF2_3DS

@@ -1,9 +1,20 @@
 # build output
-out/
 dosbox/build/
 dosbox/*.3dsx
 dosbox/*.smdh
 dosbox/*.elf
 dosbox/*.map
-# generated from YOUR GOG manuals (the game author's text): never commit
+dosbox/ctr/gfx/**/*.bgr.s
+dosbox/ctr/gfx/**/*_bgr.h
+dosbox/src/platform/ctr/include/*.bgr.s
+dosbox/src/platform/ctr/include/*_bgr.h
+build.log
+build.status
+# the SD-card folder holds the app (built) plus files generated from YOUR GOG copy: never commit those
+sd/3ds/starfleet2/*.3dsx
+sd/3ds/starfleet2/manual.txt
+sd/3ds/starfleet2/game/
+sd/3ds/starfleet2/*.log
+sd/3ds/starfleet2/officer.txt
 assets/manual.txt
+out/

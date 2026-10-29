@@ -40,6 +40,7 @@ struct Host {
   void (*click)();                    // play the touch-button click sound
   uint32_t (*ms)();                   // monotonic milliseconds
   const char* manual_path;            // text file for the built-in manual
+  const char* profile_path;           // remembered officer for one-tap sign-on
 };
 
 // The game's text screen, as read from video memory.
@@ -75,5 +76,7 @@ bool modal();
 namespace sf2ui {
 // Text that did not fit its space since start-up (should always be empty).
 std::vector<std::string> fit_problems();
+void fit_clear();     // test harness: start a fresh fit report
+void force_redraw();  // test harness: redraw both screens on the next frame
 
 }  // namespace sf2ui

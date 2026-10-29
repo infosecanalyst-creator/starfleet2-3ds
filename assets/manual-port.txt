@@ -8,9 +8,9 @@ The touch screen shows everything you touch: the tactical display, navigation, a
 Graphics screens (the title art) appear on the top screen as the game drew them. Tap CONTINUE or press A to go on.
 
 # Touch screen
-TACTICAL DISPLAY: tap anywhere to set a course toward that point. The port works out the bearing and turns the ship for you.
+TACTICAL DISPLAY: tap anywhere to set a course toward that point. The port works out the bearing and turns the ship for you. When the game shows its target box (Weapons targeting set to Manual), a tap moves the box to the ship or object you touched instead; tap it again to lock on (Enter).
 
-STEER / TARGET: the button under NAV switches what a tap on the tactical display does. In TARGET mode a tap moves the target box to the spot you touched. Tap the same spot again to lock on (Enter). The target box appears when Weapons targeting is set to Manual.
+AUTO / STEER / TARGET: the button under NAV (or R) chooses what a tactical tap does. AUTO, the default, targets when the target box is up and steers otherwise. STEER always steers; TARGET always moves the box.
 
 ACTION BUTTONS: PHASERS, TORPS, SHLD + / SHLD - (5% steps), SPEED + / SPEED - (sublight 0.1c steps) and FREEZE (pause or resume the simulation).
 
@@ -22,7 +22,9 @@ VIEW TABS: STARS, SYSTEM, WAR, COMBAT, FLEET, ORDERS and LOG jump straight to th
 
 OTHER DISPLAYS: maps and other full-screen displays show complete on the top screen, with a sharp magnified view on the touch screen. Drag it to look around; it follows the target box by itself. Tap a spot to move the target box there, and tap it again to select.
 
-KEYBOARD: opens by itself when the game wants typed text (your name, password, notepad). SELECT or the KEYBOARD button opens it any time.
+KEYBOARD: opens by itself when the game wants typed text (your name, password, notepad). The KEYBOARD button opens it any time (SELECT does too, away from the bridge).
+
+SIGN-ON: after you sign on once, the port remembers your officer. Next time, tap SIGN ON AS <NAME> under the keyboard and it enters your name and password for you. The officer is kept in /3ds/starfleet2/officer.txt; delete that file to forget it.
 
 Every touch button clicks and visibly presses in when you tap it.
 
@@ -32,7 +34,7 @@ B            Esc (back / cancel)
 X            Fire phasers
 Y            Fire torpedoes
 L            Freeze / resume the simulation
-R            Switch tap mode: steer or target
+R            Tap mode: auto, steer or target
 D-Pad        Arrow keys (menus, target box)
 Circle Pad   Left/right: course -1 / +1 degree (hold to keep turning)
              Up/down: sublight speed +0.1 / -0.1
@@ -40,7 +42,8 @@ ZL / ZR      Hyperspace speed -1 / +1
 C-Stick      Bridge: review earlier messages (left/right)
              Other displays: move the magnified view
 START        Open this manual
-SELECT       Show or hide the keyboard
+SELECT       Bridge: quick save (the game's Ctrl+Q)
+             Elsewhere: show or hide the keyboard
 
 # Using this manual
 Circle Pad or C-Stick: scroll the text (hold to keep scrolling).

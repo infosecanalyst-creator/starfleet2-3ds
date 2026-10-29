@@ -1,6 +1,8 @@
 #!/usr/bin/env bash
-# Build out/starfleet2.3dsx with devkitARM + libctru + 3ds-sdl (SDL 1.2).
+# Build the Star Fleet II 3DS app with devkitARM + libctru + 3ds-sdl (SDL 1.2).
 #   devkitPro MSYS2 shell (Windows) or Linux:  ./build-3ds.sh
+# The .3dsx lives in exactly one place: sd/3ds/starfleet2/ (the SD card layout, with the
+# settings, manual and game files) -- no other copies are left behind.
 set -euo pipefail
 cd "$(dirname "$0")"
 : "${DEVKITPRO:=/opt/devkitpro}"; export DEVKITPRO
@@ -17,6 +19,9 @@ if command -v python3 >/dev/null 2>&1; then python3 tools/mkfont.py; else echo "
 JOBS=$(nproc 2>/dev/null || echo 4)
 echo "== building with $JOBS jobs"
 make -C dosbox -f Makefile.ctr -j"$JOBS"
-mkdir -p out && cp dosbox/starfleet2.3dsx out/
-ls -la out/starfleet2.3dsx
+DEST=sd/3ds/starfleet2
+mkdir -p "$DEST"
+mv -f dosbox/starfleet2.3dsx "$DEST/starfleet2.3dsx"
+rm -rf out                                  # old output folder from earlier builds
+ls -la "$DEST/starfleet2.3dsx"
 echo "== BUILD OK"
