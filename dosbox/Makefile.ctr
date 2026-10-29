@@ -309,7 +309,7 @@ $(TARGET).smdh    : $(APP_ICON)
 %_bgr.h %.bgr.o: %.bgr
 	@echo $(notdir $<)
 	@python3 $(TOPDIR)/../tools/bin2s.py $< $<.s $(basename $<)_bgr.h
-	@$(AS) $(ARCH) -o $<.o $<.s
+	@$(AS) -march=armv6k -mfloat-abi=hard -o $<.o $<.s
 
 #---------------------------------------------------------------------------------
 # rules for assembling GPU shaders
