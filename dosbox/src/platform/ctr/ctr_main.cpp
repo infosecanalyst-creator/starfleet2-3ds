@@ -546,6 +546,9 @@ int main(int argc, char* argv[]) {
 	osSetSpeedupEnable(true);
 
 	ctr_check_dsp();
+#ifdef SF2_3DS
+	sf2ctr_check_install();
+#endif
 
 	cfguInit();
 

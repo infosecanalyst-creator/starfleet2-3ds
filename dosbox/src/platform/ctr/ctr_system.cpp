@@ -1,3 +1,4 @@
+#include <sys/stat.h>
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
@@ -28,6 +29,7 @@ void ctr_backlight_enable(bool enable, u32 screen) {
 
 void ctr_sys_error(bool fatal, const char* error) {
 	svcOutputDebugString(error, strlen(error));
+	mkdir("sdmc:/3ds", 0777); mkdir("sdmc:/3ds/starfleet2", 0777);   // so the log can always be written
 	{ FILE *lf = fopen("sdmc:/3ds/starfleet2/error.log", "a"); if (lf) { fprintf(lf, "%s\n", error); fclose(lf); } }
 	if (!gspHasGpuRight())
 		gfxInitDefault();

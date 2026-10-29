@@ -10,6 +10,7 @@
 #include <math.h>
 #include <stdio.h>
 #include <stdarg.h>
+#include <sys/stat.h>
 #include "sf2ui.h"
 #include "sf2_dosbox.h"
 #include "sf2_ctr.h"
@@ -97,6 +98,25 @@ static void init() {
 
 bool sf2ctr_owns_top() { return owns_top; }
 
+// Before DOSBox starts: make sure the settings and the game are on the SD card, and say
+// exactly what is missing if not (instead of booting a bare DOS prompt).
+void sf2ctr_check_install() {
+  const char* need[] = {"sdmc:/3ds/starfleet2/starfleet2.conf", "sdmc:/3ds/starfleet2/game/SF2.EXE"};
+  char missing[300] = "";
+  for (const char* f : need) {
+    FILE* t = fopen(f, "rb");
+    if (t) fclose(t);
+    else { strncat(missing, "\n", sizeof missing - strlen(missing) - 1); strncat(missing, f + 5, sizeof missing - strlen(missing) - 1); }
+  }
+  if (!missing[0]) return;
+  char msg[512];
+  snprintf(msg, sizeof msg, "Star Fleet II is not fully installed on the SD card. Missing:%s\n\n"
+           "Copy the starfleet2 folder (settings, manual and game files) to /3ds/starfleet2/.", missing);
+  sf2ctr_log("%s", msg);
+  extern void ctr_sys_error(bool fatal, const char* error);
+  ctr_sys_error(true, msg);
+}
+
 // ------------------------------------------------------------------ logs (sdmc:/3ds/starfleet2/)
 static const char* LOG_PATH = "sdmc:/3ds/starfleet2/debug.log";
 static int log_lines = 0;
@@ -105,6 +125,7 @@ void sf2ctr_log(const char* fmt, ...) {
   char buf[256];
   va_list ap; va_start(ap, fmt); vsnprintf(buf, sizeof buf, fmt, ap); va_end(ap);
   svcOutputDebugString(buf, strlen(buf));       // also visible in emulator logs
+  if (!log_lines) { mkdir("sdmc:/3ds", 0777); mkdir("sdmc:/3ds/starfleet2", 0777); }
   FILE* f = fopen(LOG_PATH, log_lines ? "a" : "w");
   if (f) { fprintf(f, "%8llu %s\n", (unsigned long long)osGetTime() % 100000000ull, buf); fclose(f); }
   log_lines++;
