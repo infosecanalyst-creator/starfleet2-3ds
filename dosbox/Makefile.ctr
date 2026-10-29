@@ -304,15 +304,12 @@ $(TARGET).smdh    : $(APP_ICON)
 	@$(bin2o)
 #---------------------------------------------------------------------------------
 
+# Star Fleet II: UI graphics are embedded from the pre-converted .bgr files in the repo
+# (no ffmpeg needed; upstream's bin2s line had an unbalanced bracket).
 %_bgr.h %.bgr.o: %.bgr
 	@echo $(notdir $<)
-	@$(TOOLDIR)/bin2s -a 4 -H `(echo $(<)) | tr . _)`.h $< | $(AS) -o $(<).o
-	
-#---------------------------------------------------------------------------------
-
-%.bgr: %.png
-	@echo $(notdir $<)
-	@ffmpeg -vcodec png -i $< -vcodec rawvideo -f rawvideo -vf "transpose=1" -pix_fmt rgb565 $@
+	@python3 $(TOPDIR)/../tools/bin2s.py $< $<.s $(basename $<)_bgr.h
+	@$(AS) $(ARCH) -o $<.o $<.s
 
 #---------------------------------------------------------------------------------
 # rules for assembling GPU shaders
