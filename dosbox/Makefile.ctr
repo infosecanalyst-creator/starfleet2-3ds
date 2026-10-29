@@ -267,7 +267,8 @@ endif
 #---------------------------------------------------------------------------------
 .PHONY : all
 
-all               : $(OUTPUT).3dsx $(OUTPUT).cia
+# Star Fleet II: the .3dsx is all we need (the .cia needs makerom/bannertool)
+all               : $(OUTPUT).3dsx
 
 $(OUTPUT).3dsx    : $(OUTPUT).elf $(TARGET).smdh
 
@@ -283,7 +284,8 @@ $(TARGET).bnr     : $(APP_BANNER_IMAGE) $(APP_BANNER_AUDIO)
 	@$(BANNERTOOL) makebanner -i $(APP_BANNER_IMAGE) -a $(APP_BANNER_AUDIO) -o $(TARGET).bnr > /dev/null
 
 $(TARGET).smdh    : $(APP_ICON)
-	@$(BANNERTOOL) makesmdh -s "$(APP_TITLE)" -l "$(APP_DESCRIPTION)" -p "$(APP_AUTHOR)" -i $(APP_ICON) -o $(TARGET).smdh > /dev/null
+	@if [ -x "$(BANNERTOOL)" ]; then $(BANNERTOOL) makesmdh -s "$(APP_TITLE)" -l "$(APP_DESCRIPTION)" -p "$(APP_AUTHOR)" -i $(APP_ICON) -o $(TARGET).smdh > /dev/null; \
+	else smdhtool --create "$(APP_TITLE)" "$(APP_DESCRIPTION)" "$(APP_AUTHOR)" $(APP_ICON) $(TARGET).smdh; fi
 
 #---------------------------------------------------------------------------------
 # you need a rule like this for each extension you use as binary data
