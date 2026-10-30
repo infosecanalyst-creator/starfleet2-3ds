@@ -40,6 +40,27 @@ struct SF2Prof { int k; unsigned long long t0; SF2Prof(int k_) : k(k_), t0(sf2_n
 #define SF2_PROF(k)
 #endif
 #include "inout.h"
+#ifdef SF2_3DS
+#include "../../../glue/sf2_writer.h"
+#endif
+#ifdef SF2_3DS
+#include <map>
+#include <string>
+// stat(), corrected for writes still queued in the background writer (the card has the old size).
+static int sf2_stat(const char* path, struct stat* st) {
+	int r = stat(path, st);
+	size_t n;
+	if (r == 0 && sf2w_pending_size(path, &n)) { st->st_size = (off_t)n; st->st_mtime = time(0); }
+	return r;
+}
+static void sf2_stat_forget(const char*) {}
+static void sf2_stat_size(const char*, Bit32u) {}
+#define SF2_STAT(p, b) sf2_stat(p, b)
+#define SF2_FORGET(p) sf2_stat_forget(p)
+#else
+#define SF2_STAT(p, b) stat(p, b)
+#define SF2_FORGET(p)
+#endif
 
 
 bool localDrive::FileCreate(DOS_File * * file,char * name,Bit16u /*attributes*/) {
@@ -50,6 +71,11 @@ bool localDrive::FileCreate(DOS_File * * file,char * name,Bit16u /*attributes*/)
 	strcat(newname,name);
 	CROSS_FILENAME(newname);
 	char* temp_name = dirCache.GetExpandName(newname); //Can only be used in till a new drive_cache action is preformed */
+#ifdef SF2_3DS
+	char sf2_host[CROSS_LEN]; safe_strncpy(sf2_host, temp_name, CROSS_LEN);
+	sf2w_cancel(sf2_host);                     // being re-created: older queued contents are void
+	SF2_FORGET(sf2_host);
+#endif
 	/* Test if file exists (so we need to truncate it). don't add to dirCache then */
 	bool existing_file = false;
 	
@@ -70,6 +96,9 @@ bool localDrive::FileCreate(DOS_File * * file,char * name,Bit16u /*attributes*/)
 	/* Make the 16 bit device information */
 	*file=new localFile(name,hand);
 	(*file)->flags=OPEN_READWRITE;
+#ifdef SF2_3DS
+	((localFile*)*file)->sf2_attach(sf2_host);
+#endif
 
 	return true;
 }
@@ -123,6 +152,9 @@ bool localDrive::FileOpen(DOS_File * * file,char * name,Bit32u flags) {
 
 	*file=new localFile(name,hand);
 	(*file)->flags=flags;  //for the inheritance flag and maybe check for others.
+#ifdef SF2_3DS
+	((localFile*)*file)->sf2_attach(newname);
+#endif
 //	(*file)->SetFileName(newname);
 	return true;
 }
@@ -154,6 +186,10 @@ bool localDrive::FileUnlink(char * name) {
 	strcat(newname,name);
 	CROSS_FILENAME(newname);
 	char *fullname = dirCache.GetExpandName(newname);
+#ifdef SF2_3DS
+	sf2w_cancel(fullname);
+	SF2_FORGET(fullname);
+#endif
 	if (unlink(fullname)) {
 		//Unlink failed for some reason try finding it.
 		struct stat buffer;
@@ -283,7 +319,7 @@ again:
 	//and due to its design dir_ent might be lost.)
 	//Copying dir_ent first
 	strcpy(dir_entcopy,dir_ent);
-	if (stat(dirCache.GetExpandName(full_name),&stat_block)!=0) { 
+	if (SF2_STAT(dirCache.GetExpandName(full_name),&stat_block)!=0) { 
 		goto again;//No symlinks and such
 	}	
 
@@ -321,7 +357,7 @@ bool localDrive::GetFileAttr(char * name,Bit16u * attr) {
 	dirCache.ExpandName(newname);
 
 	struct stat status;
-	if (stat(newname,&status)==0) {
+	if (SF2_STAT(newname,&status)==0) {
 		*attr=DOS_ATTR_ARCHIVE;
 		if(status.st_mode & S_IFDIR) *attr|=DOS_ATTR_DIRECTORY;
 		return true;
@@ -331,6 +367,7 @@ bool localDrive::GetFileAttr(char * name,Bit16u * attr) {
 }
 
 bool localDrive::MakeDir(char * dir) {
+	SF2_FORGET(0);
 	char newdir[CROSS_LEN];
 	strcpy(newdir,basedir);
 	strcat(newdir,dir);
@@ -346,6 +383,7 @@ bool localDrive::MakeDir(char * dir) {
 }
 
 bool localDrive::RemoveDir(char * dir) {
+	SF2_FORGET(0);
 	char newdir[CROSS_LEN];
 	strcpy(newdir,basedir);
 	strcat(newdir,dir);
@@ -385,7 +423,12 @@ bool localDrive::Rename(char * oldname,char * newname) {
 	strcpy(newnew,basedir);
 	strcat(newnew,newname);
 	CROSS_FILENAME(newnew);
+#ifdef SF2_3DS
+	SF2_FORGET(0);
+	int temp=sf2w_rename(newold,dirCache.GetExpandName(newnew));
+#else
 	int temp=rename(newold,dirCache.GetExpandName(newnew));
+#endif
 	if (temp==0) dirCache.CacheOut(newnew);
 	return (temp==0);
 
@@ -407,7 +450,7 @@ bool localDrive::FileExists(const char* name) {
 	CROSS_FILENAME(newname);
 	dirCache.ExpandName(newname);
 	struct stat temp_stat;
-	if(stat(newname,&temp_stat)!=0) return false;
+	if(SF2_STAT(newname,&temp_stat)!=0) return false;
 	if(temp_stat.st_mode & S_IFDIR) return false;
 	return true;
 }
@@ -420,7 +463,7 @@ bool localDrive::FileStat(const char* name, FileStat_Block * const stat_block) {
 	CROSS_FILENAME(newname);
 	dirCache.ExpandName(newname);
 	struct stat temp_stat;
-	if(stat(newname,&temp_stat)!=0) return false;
+	if(SF2_STAT(newname,&temp_stat)!=0) return false;
 	/* Convert the stat to a FileStat */
 	struct tm *time;
 	if((time=localtime(&temp_stat.st_mtime))!=0) {
@@ -601,15 +644,30 @@ localFile::localFile(const char* _name, FILE * handle) {
 	name=0;
 	SetName(_name);
 #ifdef SF2_3DS
-	mem = 0; mem_size = mem_cap = mem_pos = 0; mem_dirty = false;
-	mem_load();
+	mem = 0; mem_size = mem_cap = mem_pos = 0; mem_dirty = false; sf2_path[0] = 0;
 #endif
 }
 
 #ifdef SF2_3DS
 unsigned int sf2_io_ops = 0, sf2_io_disk = 0;     // file operations, and those that went to the SD card
+void localFile::sf2_attach(const char* host_path) {
+	safe_strncpy(sf2_path, host_path, sizeof sf2_path);
+	mem_load();
+}
 void localFile::mem_load(void) {
 	if (!fhandle) return;
+	if (sf2_path[0]) {                         // a write of this file still queued: that is its content
+		std::vector<Bit8u> q;
+		if (sf2w_pending(sf2_path, q)) {
+			Bit32u cap = q.size() ? (Bit32u)q.size() : 4096;
+			Bit8u* m = (Bit8u*)malloc(cap);
+			if (m) {
+				if (q.size()) memcpy(m, q.data(), q.size());
+				mem = m; mem_cap = cap; mem_size = (Bit32u)q.size(); mem_pos = 0; mem_dirty = false;
+				return;
+			}
+		}
+	}
 	long cur = ftell(fhandle);
 	if (fseek(fhandle, 0, SEEK_END) != 0) return;
 	long sz = ftell(fhandle);
@@ -624,6 +682,12 @@ void localFile::mem_load(void) {
 }
 void localFile::mem_writeback(void) {
 	if (!mem || !mem_dirty || !fhandle) return;
+	if (sf2_path[0]) {                         // the background writer puts it on the card
+		sf2w_queue(sf2_path, mem, mem_size);
+		sf2_stat_size(sf2_path, mem_size);
+		mem_dirty = false;
+		return;
+	}
 	fseek(fhandle, 0, SEEK_SET);
 	if (mem_size) fwrite(mem, 1, mem_size, fhandle);
 	fflush(fhandle);

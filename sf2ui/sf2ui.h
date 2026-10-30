@@ -41,6 +41,7 @@ struct Host {
   uint32_t (*ms)();                   // monotonic milliseconds
   const char* manual_path;            // text file for the built-in manual
   const char* profile_path;           // remembered officer for one-tap sign-on
+  void (*save)(const char* path, const char* data, unsigned n);   // write a small file (0: plain fopen)
 };
 
 // The game's text screen, as read from video memory.

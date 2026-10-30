@@ -137,8 +137,11 @@ private:
 	// files in tiny seek+read steps, and each one is a slow SD card access on the 3DS). Changes are
 	// written back when the file is flushed or closed.
 	Bit8u* mem; Bit32u mem_size, mem_cap, mem_pos; bool mem_dirty;
+	char sf2_path[512];                  // the file on the SD card (writes go through the background writer)
 	void mem_load(void);
 	void mem_writeback(void);
+public:
+	void sf2_attach(const char* host_path);
 #endif
 };
 

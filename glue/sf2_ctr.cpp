@@ -14,6 +14,7 @@
 #include "sf2ui.h"
 #include "sf2_dosbox.h"
 #include "sf2_ctr.h"
+#include "sf2_writer.h"
 #include "SDL.h"
 
 static uint16_t top_img[sf2ui::TOP_W * sf2ui::TOP_H];
@@ -111,7 +112,8 @@ static void key_logged(sf2ui::Key k, bool down) {
   if (keys_logged < 300) { keys_logged++; sf2ctr_log("key %d %s", (int)k, down ? "down" : "up"); }
   sf2_key(k, down);
 }
-static sf2ui::Host host = {key_logged, click, ms, "sdmc:/3ds/starfleet2/manual.txt", "sdmc:/3ds/starfleet2/officer.txt"};
+static void save_bg(const char* path, const char* data, unsigned n) { sf2w_queue(path, (const uint8_t*)data, n); }
+static sf2ui::Host host = {key_logged, click, ms, "sdmc:/3ds/starfleet2/manual.txt", "sdmc:/3ds/starfleet2/officer.txt", save_bg};
 
 static void init() {
   gfxSet3D(false);
@@ -131,6 +133,7 @@ void sf2ctr_screen_reset() { top_refresh = 15; if (inited) sf2ui::force_redraw()
 // Before DOSBox starts: make sure the settings and the game are on the SD card, and say
 // exactly what is missing if not (instead of booting a bare DOS prompt).
 void sf2ctr_check_install() {
+  sf2w_start();                                 // background SD writer, before DOSBox opens any file
   const char* need[] = {"sdmc:/3ds/starfleet2/starfleet2.conf", "sdmc:/3ds/starfleet2/game/SF2.EXE"};
   char missing[300] = "";
   for (const char* f : need) {

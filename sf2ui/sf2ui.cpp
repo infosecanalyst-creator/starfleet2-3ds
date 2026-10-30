@@ -143,10 +143,15 @@ static void load_officer() {
   off_name = a; off_pass = b;
 }
 static void save_officer(const std::string& n, const std::string& p) {
-  FILE* f = H && H->profile_path ? fopen(H->profile_path, "wb") : 0;
-  if (!f) return;
-  fprintf(f, "%s\n%s\n", n.c_str(), p.c_str());
-  fclose(f);
+  if (!H || !H->profile_path) return;
+  std::string text = n + "\n" + p + "\n";
+  if (H->save) H->save(H->profile_path, text.data(), (unsigned)text.size());   // (3DS: in the background)
+  else {
+    FILE* f = fopen(H->profile_path, "wb");
+    if (!f) return;
+    fwrite(text.data(), 1, text.size(), f);
+    fclose(f);
+  }
   off_name = n; off_pass = p;
 }
 static void type_text(const std::string& t) {
@@ -608,10 +613,10 @@ static void clamp_loupe() {
 static void generic_top(Surf& s, const TextScreen& ts) {
   s.fill(0, 0, TOP_W, TOP_H, BG);
   cells(s, ts, 0, 0, 79, 24, F5x9, 0, 0, 5, 9);
-  // where the magnifier is looking
-  s.rect(lx * 5 - 1, ly * 9 - 1, (lx + LP_COLS) * 5 + 1, (ly + LP_ROWS) * 9 + 1, LOUPE);
   s.fill(0, 225, TOP_W, TOP_H, BG);
-  fit_text(s, 4, 226, TOP_W - 2, "Touch screen: magnified view. Drag to look around, tap to aim.", F6x12, HINT, "magnifier hint");
+  fit_text(s, 4, 226, TOP_W - 2, kb_open ? "Type on the touch screen keyboard. HIDE KEYS shows the magnifier."
+                                         : "Touch screen: magnified view. Drag to look around, tap to aim.",
+           F6x12, HINT, "magnifier hint");
 }
 static uint32_t user_pan_ms = 0;
 static uint32_t screen_sig(const TextScreen& ts) {   // changes when a different screen appears
