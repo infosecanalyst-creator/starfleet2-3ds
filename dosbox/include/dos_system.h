@@ -132,6 +132,14 @@ public:
 private:
 	bool read_only_medium;
 	enum { NONE,READ,WRITE } last_action;
+#ifdef SF2_3DS
+	// Star Fleet II: small files are held in memory while open (the game reads and writes its data
+	// files in tiny seek+read steps, and each one is a slow SD card access on the 3DS). Changes are
+	// written back when the file is flushed or closed.
+	Bit8u* mem; Bit32u mem_size, mem_cap, mem_pos; bool mem_dirty;
+	void mem_load(void);
+	void mem_writeback(void);
+#endif
 };
 
 /* The following variable can be lowered to free up some memory.

@@ -814,6 +814,11 @@ bool DOS_Drive_Cache::ReadDir(Bit16u id, char* &result) {
 	if (id>MAX_OPENDIRS) return false;
 
 	if (!IsCachedIn(dirSearch[id])) {
+#ifdef SF2_3DS
+		extern unsigned long long sf2_now_us(); extern unsigned long long sf2_prof_us[12]; extern unsigned int sf2_prof_n[12];
+		unsigned long long sf2_t0 = sf2_now_us();
+		struct T { unsigned long long t0; ~T() { sf2_prof_us[10] += sf2_now_us() - t0; sf2_prof_n[10]++; } } sf2_t = {sf2_t0};
+#endif
 		// Try to open directory
 		dir_information* dirp = open_directory(dirPath);
 		if (!dirp) {

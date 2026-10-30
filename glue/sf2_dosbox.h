@@ -6,3 +6,5 @@
 void sf2_read_screen(sf2ui::TextScreen& ts);
 // Inject a key event into the emulated keyboard.
 void sf2_key(sf2ui::Key k, bool down);
+// One-line state snapshot for logs.
+void sf2_debug_state(char* buf, int n);

@@ -56,47 +56,77 @@ static void click() {
 
 // ------------------------------------------------------------------ framebuffers
 // 3DS framebuffers are stored rotated: pixel (x, y) of the landscape screen lives at
-// fb[x * 240 + (239 - y)].
-static void blit(gfxScreen_t scr, const uint16_t* img, int w, int h) {
-  u16 fw, fh;
-  u8* fb = gfxGetFramebuffer(scr, GFX_LEFT, &fw, &fh);
-  GSPGPU_FramebufferFormat fmt = gfxGetScreenFormat(scr);
+// fb[x * 240 + (239 - y)]. Rows y0..y1 only (a strip redraw touches a few rows).
+static void blit_to(u8* fb, GSPGPU_FramebufferFormat fmt, const uint16_t* img, int w, int y0, int y1) {
   if (fmt == GSP_RGB565_OES) {
     u16* p = (u16*)fb;
-    for (int x = 0; x < w; x++) {
-      u16* col = p + x * 240;
-      for (int y = 0; y < h; y++) col[239 - y] = img[y * w + x];
+    for (int x0 = 0; x0 < w; x0 += 8) {         // 8 columns at a time: sequential reads, 8 write streams
+      int xe = x0 + 8 < w ? x0 + 8 : w;
+      for (int y = y0; y < y1; y++) {
+        const uint16_t* src = img + y * w;
+        for (int x = x0; x < xe; x++) p[x * 240 + 239 - y] = src[x];
+      }
     }
   } else {                                      // BGR8 (3 bytes per pixel)
     for (int x = 0; x < w; x++)
-      for (int y = 0; y < h; y++) {
+      for (int y = y0; y < y1; y++) {
         uint16_t c = img[y * w + x];
         u8* d = fb + (x * 240 + (239 - y)) * 3;
         d[0] = (u8)((c & 31) << 3); d[1] = (u8)(((c >> 5) & 63) << 2); d[2] = (u8)((c >> 11) << 3);
       }
   }
 }
-// Write both buffers of the screen's double buffer so whichever one is shown is current.
-static void present(gfxScreen_t scr, const uint16_t* img, int w, int h) {
-  blit(scr, img, w, h);
+static int bytes_per_px(GSPGPU_FramebufferFormat fmt) { return fmt == GSP_RGB565_OES ? 2 : 3; }
+
+// Top screen: SDL (DOSBox's own output) double-buffers it, so draw into the back buffer, show it,
+// and copy the finished picture into the other buffer too, so whichever one is shown is current.
+static void present_top(const uint16_t* img) {
+  u16 fw, fh;
+  GSPGPU_FramebufferFormat fmt = gfxGetScreenFormat(GFX_TOP);
+  u8* drawn = gfxGetFramebuffer(GFX_TOP, GFX_LEFT, &fw, &fh);
+  blit_to(drawn, fmt, img, sf2ui::TOP_W, 0, sf2ui::TOP_H);
+  gfxScreenSwapBuffers(GFX_TOP, false);
+  u8* other = gfxGetFramebuffer(GFX_TOP, GFX_LEFT, &fw, &fh);
+  if (other != drawn) memcpy(other, drawn, sf2ui::TOP_W * 240 * bytes_per_px(fmt));
   gfxFlushBuffers();
-  gfxScreenSwapBuffers(scr, false);
-  blit(scr, img, w, h);
+}
+// Touch screen: only sf2ui draws it, single-buffered (set up in init), so write just the changed rows.
+static void present_bottom(const uint16_t* img, int y0, int y1) {
+  u16 fw, fh;
+  GSPGPU_FramebufferFormat fmt = gfxGetScreenFormat(GFX_BOTTOM);
+  u8* fb = gfxGetFramebuffer(GFX_BOTTOM, GFX_LEFT, &fw, &fh);
+  blit_to(fb, fmt, img, sf2ui::BOT_W, y0, y1);
   gfxFlushBuffers();
+  gfxScreenSwapBuffers(GFX_BOTTOM, false);      // single-buffered: re-presents the same buffer, and
+                                               // hands its current format to the display
 }
 
 // ------------------------------------------------------------------ main hook
-static uint32_t ms() { return (uint32_t)osGetTime(); }
-static sf2ui::Host host = {sf2_key, click, ms, "sdmc:/3ds/starfleet2/manual.txt", "sdmc:/3ds/starfleet2/officer.txt"};
+// Milliseconds since start-up. (osGetTime() counts from 1900, so its low 32 bits can have the
+// top bit set; sf2ui compares times with signed differences against zero-initialised values.)
+static u64 ms_base = 0;
+static uint32_t ms() { if (!ms_base) ms_base = osGetTime(); return (uint32_t)(osGetTime() - ms_base) + 1000; }
+static int keys_logged = 0;
+static void key_logged(sf2ui::Key k, bool down) {
+  if (keys_logged < 300) { keys_logged++; sf2ctr_log("key %d %s", (int)k, down ? "down" : "up"); }
+  sf2_key(k, down);
+}
+static sf2ui::Host host = {key_logged, click, ms, "sdmc:/3ds/starfleet2/manual.txt", "sdmc:/3ds/starfleet2/officer.txt"};
 
 static void init() {
   gfxSet3D(false);
+  gfxSetDoubleBuffering(GFX_BOTTOM, false);    // nothing else draws the touch screen
   click_init();
   sf2ui::init(&host);
   inited = true;
 }
 
 bool sf2ctr_owns_top() { return owns_top; }
+
+// SDL draws the top screen from its own thread (citro3d), and a video mode change can repaint it
+// after our last frame. While we own the top screen, re-present it for a while afterwards.
+static int top_refresh = 0;
+void sf2ctr_screen_reset() { top_refresh = 15; if (inited) sf2ui::force_redraw(); }  // (a mode change can also reformat the touch screen)
 
 // Before DOSBox starts: make sure the settings and the game are on the SD card, and say
 // exactly what is missing if not (instead of booting a bare DOS prompt).
@@ -130,6 +160,8 @@ void sf2ctr_log(const char* fmt, ...) {
   if (f) { fprintf(f, "%8llu %s\n", (unsigned long long)osGetTime() % 100000000ull, buf); fclose(f); }
   log_lines++;
 }
+
+unsigned long long sf2_now_us() { return svcGetSystemTick() / (SYSCLOCK_ARM11 / 1000000); }
 
 unsigned int sf2_emu_ticks = 0;                 // emulated milliseconds (GFX_Events runs once per emulated ms)
 extern unsigned int sf2_mixer_underruns;        // counted in mixer.cpp
@@ -179,6 +211,16 @@ void sf2ctr_events() {
     unsigned int speed = (unsigned int)((sf2_emu_ticks - perf_ticks) * 100 / (now - perf_t));
     sf2ctr_log("speed %u%% of real time, audio underruns %u, %u redraws, avg %u us",
                speed, sf2_mixer_underruns - perf_under, draws, draws ? (unsigned int)(draw_us / draws) : 0);
+    { char st[128]; sf2_debug_state(st, sizeof st); sf2ctr_log("state %s", st); }
+    { extern unsigned int sf2_io_ops, sf2_io_disk; static unsigned int o0 = 0, d0 = 0;
+      if (sf2_io_ops != o0) sf2ctr_log("files: %u operations, %u on the SD card", sf2_io_ops - o0, sf2_io_disk - d0);
+      o0 = sf2_io_ops; d0 = sf2_io_disk; }
+    { extern const char* sf2_prof_name[12]; extern unsigned long long sf2_prof_us[12]; extern unsigned int sf2_prof_n[12];
+      char line[240]; int n = 0;
+      for (int k = 0; k < 12; k++)
+        if (sf2_prof_n[k]) n += snprintf(line + n, sizeof line - n, " %s %ux %llums", sf2_prof_name[k], sf2_prof_n[k], sf2_prof_us[k] / 1000);
+      if (n) sf2ctr_log("dos:%s", line);
+      memset(sf2_prof_us, 0, sizeof sf2_prof_us); memset(sf2_prof_n, 0, sizeof sf2_prof_n); }
     for (auto& p : sf2ui::fit_problems()) sf2ctr_log("FIT: %s", p.c_str());
     perf_t = now; perf_ticks = sf2_emu_ticks; perf_under = sf2_mixer_underruns; draw_us = 0; draws = 0;
   }
@@ -189,10 +231,14 @@ void sf2ctr_events() {
   u64 t0 = svcGetSystemTick();
   sf2ui::TextScreen ts;
   sf2_read_screen(ts);
+  bool was_owner = owns_top;
   owns_top = ts.text_mode || sf2ui::modal();
+  if (owns_top && !was_owner) top_refresh = 15;
+  if (!owns_top && was_owner) sf2_dosbox_redraw();   // e.g. manual closed over the title art
   sf2ui::Redraw rd = sf2ui::frame(ts, top_img, bot_img);
-  if (rd.top && owns_top) present(GFX_TOP, top_img, sf2ui::TOP_W, sf2ui::TOP_H);
-  if (rd.bottom) present(GFX_BOTTOM, bot_img, sf2ui::BOT_W, sf2ui::BOT_H);
+  if (owns_top && (rd.top || top_refresh > 0)) present_top(top_img);
+  if (top_refresh > 0) top_refresh--;
+  if (rd.bottom) present_bottom(bot_img, rd.by0, rd.by1);
   if (rd.top || rd.bottom) { draws++; draw_us += (svcGetSystemTick() - t0) / (SYSCLOCK_ARM11 / 1000000); }
 }
 #endif  // SF2_3DS

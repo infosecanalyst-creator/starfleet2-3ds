@@ -4,6 +4,9 @@
 #include "mem.h"
 #include "vga.h"
 #include "keyboard.h"
+#include "regs.h"
+#include "cpu.h"
+#include <stdio.h>
 #include <string.h>
 
 using namespace sf2ui;
@@ -56,4 +59,11 @@ static KBD_KEYS map_key(Key k) {
 void sf2_key(Key k, bool down) {
   KBD_KEYS kk = map_key(k);
   if (kk != KBD_NONE) KEYBOARD_AddKey(kk, down);
+}
+
+// One-line snapshot for the debug log: video mode, CPU position, BIOS keyboard buffer.
+void sf2_debug_state(char* buf, int n) {
+  snprintf(buf, n, "mode %d cols %u cs:ip %04X:%04X kbbuf head %04X tail %04X if %d",
+           (int)vga.mode, (unsigned)mem_readw(BDA_COLS), (unsigned)SegValue(cs), (unsigned)reg_eip,
+           (unsigned)mem_readw(0x41A), (unsigned)mem_readw(0x41C), GETFLAG(IF) ? 1 : 0);
 }

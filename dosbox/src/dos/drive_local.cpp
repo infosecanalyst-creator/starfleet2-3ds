@@ -28,10 +28,22 @@
 #include "drives.h"
 #include "support.h"
 #include "cross.h"
+#ifdef SF2_3DS
+extern unsigned int sf2_io_ops, sf2_io_disk;
+// Time spent in each kind of DOS file call (printed in the 3DS debug log).
+unsigned long long sf2_now_us();
+const char* sf2_prof_name[12] = {"open", "create", "findfirst", "findnext", "attr", "exists", "stat", "unlink", "rename", "close", "dirscan", "other"};
+unsigned long long sf2_prof_us[12]; unsigned int sf2_prof_n[12];
+struct SF2Prof { int k; unsigned long long t0; SF2Prof(int k_) : k(k_), t0(sf2_now_us()) {} ~SF2Prof() { sf2_prof_us[k] += sf2_now_us() - t0; sf2_prof_n[k]++; } };
+#define SF2_PROF(k) SF2Prof sf2prof_(k)
+#else
+#define SF2_PROF(k)
+#endif
 #include "inout.h"
 
 
 bool localDrive::FileCreate(DOS_File * * file,char * name,Bit16u /*attributes*/) {
+	SF2_PROF(1);
 //TODO Maybe care for attributes but not likely
 	char newname[CROSS_LEN];
 	strcpy(newname,basedir);
@@ -63,6 +75,7 @@ bool localDrive::FileCreate(DOS_File * * file,char * name,Bit16u /*attributes*/)
 }
 
 bool localDrive::FileOpen(DOS_File * * file,char * name,Bit32u flags) {
+	SF2_PROF(0);
 	const char* type;
 	switch (flags&0xf) {
 	case OPEN_READ:        type = "rb" ; break;
@@ -135,6 +148,7 @@ bool localDrive::GetSystemFilename(char *sysName, char const * const dosName) {
 }
 
 bool localDrive::FileUnlink(char * name) {
+	SF2_PROF(7);
 	char newname[CROSS_LEN];
 	strcpy(newname,basedir);
 	strcat(newname,name);
@@ -188,6 +202,7 @@ bool localDrive::FileUnlink(char * name) {
 }
 
 bool localDrive::FindFirst(char * _dir,DOS_DTA & dta,bool fcb_findfirst) {
+	SF2_PROF(2);
 	char tempDir[CROSS_LEN];
 	strcpy(tempDir,basedir);
 	strcat(tempDir,_dir);
@@ -241,6 +256,7 @@ bool localDrive::FindFirst(char * _dir,DOS_DTA & dta,bool fcb_findfirst) {
 }
 
 bool localDrive::FindNext(DOS_DTA & dta) {
+	SF2_PROF(3);
 
 	char * dir_ent;
 	struct stat stat_block;
@@ -297,6 +313,7 @@ again:
 }
 
 bool localDrive::GetFileAttr(char * name,Bit16u * attr) {
+	SF2_PROF(4);
 	char newname[CROSS_LEN];
 	strcpy(newname,basedir);
 	strcat(newname,name);
@@ -357,6 +374,7 @@ bool localDrive::TestDir(char * dir) {
 }
 
 bool localDrive::Rename(char * oldname,char * newname) {
+	SF2_PROF(8);
 	char newold[CROSS_LEN];
 	strcpy(newold,basedir);
 	strcat(newold,oldname);
@@ -382,6 +400,7 @@ bool localDrive::AllocationInfo(Bit16u * _bytes_sector,Bit8u * _sectors_cluster,
 }
 
 bool localDrive::FileExists(const char* name) {
+	SF2_PROF(5);
 	char newname[CROSS_LEN];
 	strcpy(newname,basedir);
 	strcat(newname,name);
@@ -394,6 +413,7 @@ bool localDrive::FileExists(const char* name) {
 }
 
 bool localDrive::FileStat(const char* name, FileStat_Block * const stat_block) {
+	SF2_PROF(6);
 	char newname[CROSS_LEN];
 	strcpy(newname,basedir);
 	strcat(newname,name);
@@ -450,9 +470,23 @@ bool localFile::Read(Bit8u * data,Bit16u * size) {
 		DOS_SetError(DOSERR_ACCESS_DENIED);
 		return false;
 	}
+#ifdef SF2_3DS
+	if (mem) {
+		Bit32u n = mem_pos < mem_size ? mem_size - mem_pos : 0;
+		if (n > *size) n = *size;
+		memcpy(data, mem + mem_pos, n); mem_pos += n; *size = (Bit16u)n;
+		sf2_io_ops++;
+		Bit8u mask = IO_Read(0x21);                 // (same fake disk-motion IRQ as below)
+		if (mask & 0x4) IO_Write(0x21, mask & 0xfb);
+		return true;
+	}
+#endif
 	if (last_action==WRITE) fseek(fhandle,ftell(fhandle),SEEK_SET);
 	last_action=READ;
 	*size=(Bit16u)fread(data,1,*size,fhandle);
+#ifdef SF2_3DS
+	sf2_io_ops++; sf2_io_disk++;
+#endif
 	/* Fake harddrive motion. Inspector Gadget with soundblaster compatible */
 	/* Same for Igor */
 	/* hardrive motion => unmask irq 2. Only do it when it's masked as unmasking is realitively heavy to emulate */
@@ -467,6 +501,26 @@ bool localFile::Write(Bit8u * data,Bit16u * size) {
 		DOS_SetError(DOSERR_ACCESS_DENIED);
 		return false;
 	}
+#ifdef SF2_3DS
+	if (mem) {
+		sf2_io_ops++;
+		if (*size == 0) { mem_size = mem_pos; mem_dirty = true; return true; }   // DOS truncate
+		Bit32u end = mem_pos + *size;
+		if (end > mem_cap) {
+			Bit32u cap = mem_cap ? mem_cap : 4096;
+			while (cap < end) cap *= 2;
+			Bit8u* m = (Bit8u*)realloc(mem, cap);
+			if (!m) { mem_writeback(); free(mem); mem = 0; fseek(fhandle, mem_pos, SEEK_SET); goto disk; }
+			mem = m; mem_cap = cap;
+		}
+		if (mem_pos > mem_size) memset(mem + mem_size, 0, mem_pos - mem_size);   // gap after a seek past the end
+		memcpy(mem + mem_pos, data, *size);
+		mem_pos = end; if (end > mem_size) mem_size = end;
+		mem_dirty = true;
+		return true;
+	}
+disk:
+#endif
 	if (last_action==READ) fseek(fhandle,ftell(fhandle),SEEK_SET);
 	last_action=WRITE;
 	if(*size==0){  
@@ -489,6 +543,16 @@ bool localFile::Seek(Bit32u * pos,Bit32u type) {
 	//TODO Give some doserrorcode;
 		return false;//ERROR
 	}
+#ifdef SF2_3DS
+	if (mem) {
+		Bit32s off = *reinterpret_cast<Bit32s*>(pos);
+		Bit64s np = (seektype == SEEK_SET ? 0 : seektype == SEEK_CUR ? (Bit64s)mem_pos : (Bit64s)mem_size) + off;
+		if (np < 0) np = mem_size;                  // out of range: to the end (as below)
+		mem_pos = (Bit32u)np; *pos = mem_pos;
+		sf2_io_ops++;
+		return true;
+	}
+#endif
 	int ret=fseek(fhandle,*reinterpret_cast<Bit32s*>(pos),seektype);
 	if (ret!=0) {
 		// Out of file range, pretend everythings ok 
@@ -507,8 +571,12 @@ bool localFile::Seek(Bit32u * pos,Bit32u type) {
 }
 
 bool localFile::Close() {
+	SF2_PROF(9);
 	// only close if one reference left
 	if (refCtr==1) {
+#ifdef SF2_3DS
+		if (mem) { mem_writeback(); free(mem); mem = 0; }
+#endif
 		if(fhandle) fclose(fhandle);
 		fhandle = 0;
 		open = false;
@@ -532,7 +600,38 @@ localFile::localFile(const char* _name, FILE * handle) {
 
 	name=0;
 	SetName(_name);
+#ifdef SF2_3DS
+	mem = 0; mem_size = mem_cap = mem_pos = 0; mem_dirty = false;
+	mem_load();
+#endif
 }
+
+#ifdef SF2_3DS
+unsigned int sf2_io_ops = 0, sf2_io_disk = 0;     // file operations, and those that went to the SD card
+void localFile::mem_load(void) {
+	if (!fhandle) return;
+	long cur = ftell(fhandle);
+	if (fseek(fhandle, 0, SEEK_END) != 0) return;
+	long sz = ftell(fhandle);
+	if (sz < 0 || sz > 2 * 1024 * 1024) { fseek(fhandle, cur, SEEK_SET); return; }   // big files stay on disk
+	Bit32u cap = sz > 0 ? (Bit32u)sz : 4096;
+	Bit8u* m = (Bit8u*)malloc(cap);
+	if (!m) { fseek(fhandle, cur, SEEK_SET); return; }
+	fseek(fhandle, 0, SEEK_SET);
+	if (sz > 0 && fread(m, 1, sz, fhandle) != (size_t)sz) { free(m); fseek(fhandle, cur, SEEK_SET); return; }
+	sf2_io_disk++;
+	mem = m; mem_cap = cap; mem_size = (Bit32u)sz; mem_pos = cur > 0 ? (Bit32u)cur : 0; mem_dirty = false;
+}
+void localFile::mem_writeback(void) {
+	if (!mem || !mem_dirty || !fhandle) return;
+	fseek(fhandle, 0, SEEK_SET);
+	if (mem_size) fwrite(mem, 1, mem_size, fhandle);
+	fflush(fhandle);
+	if (ftruncate(fileno(fhandle), mem_size) != 0) { /* keep going: the data is written */ }
+	sf2_io_disk++;
+	mem_dirty = false;
+}
+#endif
 
 void localFile::FlagReadOnlyMedium(void) {
 	read_only_medium = true;
@@ -553,6 +652,9 @@ bool localFile::UpdateDateTimeFromHost(void) {
 }
 
 void localFile::Flush(void) {
+#ifdef SF2_3DS
+	if (mem) { mem_writeback(); return; }
+#endif
 	if (last_action==WRITE) {
 		fseek(fhandle,ftell(fhandle),SEEK_SET);
 		last_action=NONE;

@@ -176,6 +176,11 @@ void GFX_TearDown(void) {
 	}
 }
 
+#ifdef SF2_3DS
+// The frontend hands the top screen back to DOSBox (title art): repaint the whole picture.
+void sf2_dosbox_redraw() { if (sdl.draw.callback) sdl.draw.callback(GFX_CallBackRedraw); }
+#endif
+
 Bitu GFX_SetSize(Bitu width,Bitu height,Bitu flags,double scalex,double scaley,GFX_CallBack_t callback) {
 	if (sdl.updating)
 		GFX_EndUpdate( 0 );
@@ -198,6 +203,9 @@ Bitu GFX_SetSize(Bitu width,Bitu height,Bitu flags,double scalex,double scaley,G
 
 	sdl.clip.x=0;sdl.clip.y=0;
 	sdl.surface=SDL_SetVideoMode_Wrap(width,height,bpp,(flags & GFX_CAN_RANDOM) ? SDL_SWSURFACE : SDL_HWSURFACE);
+#ifdef SF2_3DS
+	sf2ctr_screen_reset();            // SDL may repaint the top screen asynchronously: redraw ours
+#endif
 	if (sdl.surface == NULL)
 		E_Exit("Could not set windowed video mode %ix%i-%i: %s",(int)width,(int)height,bpp,SDL_GetError());
 

@@ -41,6 +41,7 @@ struct BtnId { int x0, y0, x1, y1; std::string label; bool valid; };
 static BtnId pressed_id = {0, 0, 0, 0, "", false};   // button under the stylus
 static BtnId flash_id = {0, 0, 0, 0, "", false};     // button just released (brief press look)
 static uint32_t flash_until = 0;
+static bool flash_on = false;       // a release flash is showing or just ended (needs redraws)
 static BtnId id_of(const Btn& b) { BtnId i = {b.x0, b.y0, b.x1, b.y1, b.label, true}; return i; }
 static bool same(const BtnId& i, const Btn& b) { return i.valid && i.x0 == b.x0 && i.y0 == b.y0 && i.x1 == b.x1 && i.y1 == b.y1 && i.label == b.label; }
 
@@ -85,7 +86,13 @@ static uint32_t now() { return H && H->ms ? H->ms() : 0; }
 
 // ------------------------------------------------------------------ keys
 static void push(Key k, bool d) { queue.push_back(Ev{k, d}); }
+// The screen as it was when the player last sent a key: the magnifier frames everything that
+// changed since then (the game prints slowly, so frame-to-frame changes are only the latest few
+// characters).
+static TextScreen base_ts; static bool base_ok = false;
+static void mark_base();
 static void press(Key k, uint8_t mods = 0) {
+  mark_base();
   if (mods & M_SHIFT) push(K_LSHIFT, true);
   if (mods & M_CTRL) push(K_LCTRL, true);
   if (mods & M_ALT) push(K_LALT, true);
@@ -119,9 +126,12 @@ static void say(const char* msg, uint32_t ms = 2200) { toast = msg; toast_until 
 
 // ---- remembered officer (one-tap sign-on). Saved after a successful sign-on.
 static std::string typed;                       // characters typed on the on-screen keyboard
+static int typed_y = -1;                        // screen row they were typed on (a new prompt starts afresh)
+static uint32_t pass_seen = 0;                  // when the password prompt appeared (auto sign-on waits)
 static std::string off_name, off_pass;          // remembered officer
 static std::string pend_name, pend_pass;        // typed at this sign-on, saved once it succeeds
-static int autologin = 0;                       // 1 = name sent, waiting for the password prompt
+static int autologin = 0;                       // 1 = name sent, waiting for the password prompt; 2 = password sent
+static uint32_t pass_sent = 0; static int pass_tries = 0; static uint32_t pass_sig = 0;
 static void load_officer() {
   off_name.clear(); off_pass.clear();
   FILE* f = H && H->profile_path ? fopen(H->profile_path, "rb") : 0;
@@ -253,7 +263,7 @@ static Act kind_act(ActKind k, int arg = 0) { Act a; a.kind = k; a.key = K_NONE;
 
 static void draw_btn(Surf& s, int i) {
   const Btn& b = btns[i];
-  bool down = same(pressed_id, b) || (same(flash_id, b) && (int32_t)(flash_until - now()) > 0);
+  bool down = same(pressed_id, b) || (flash_on && same(flash_id, b) && (int32_t)(flash_until - now()) > 0);
   s.fill(b.x0, b.y0, b.x1, b.y1, BG);
   s.round_rect(b.x0 + 1, b.y0 + 1, b.x1 - 1, b.y1 - 1, down ? BTN_DOWN : (b.sel ? BTN_SEL : BTN), down ? BTN_TXT : BTN_EDGE);
   // label: pick the biggest font that fits, never cut off
@@ -356,10 +366,9 @@ static std::vector<MenuItem> parse_menu(const TextScreen& ts, std::string& promp
   return items;
 }
 
-static void bottom_rows(Surf& s, const TextScreen& ts) {
-  // prompt strip (y 180..194), menu row (194..217), views row (217..240)
-  std::string prompt;
-  std::vector<MenuItem> items = parse_menu(ts, prompt);
+static bool cursor_question(const TextScreen& ts);
+// Prompt strip (y 180..194): the game's question, a toast, or the line being typed; scrolls when long.
+static void prompt_strip(Surf& s, const TextScreen& ts, const std::string& prompt) {
   s.fill(0, 180, BOT_W, 194, PROMPT_BG);
   bool showing_toast = !toast.empty() && (int32_t)(toast_until - now()) > 0;
   std::string line = showing_toast ? toast : prompt;
@@ -383,8 +392,15 @@ static void bottom_rows(Surf& s, const TextScreen& ts) {
     }
     marquee = true;
   }
+}
+static void bottom_rows(Surf& s, const TextScreen& ts) {
+  // prompt strip (y 180..194), menu row (194..217), views row (217..240)
+  std::string prompt;
+  std::vector<MenuItem> items = parse_menu(ts, prompt);
+  prompt_strip(s, ts, prompt);
 
-  bool yesno = prompt.find('?') != std::string::npos && items.empty();
+  bool yesno = (prompt.find('?') != std::string::npos && items.empty()) || cursor_question(ts);
+  if (yesno) items.clear();
   for (int r = 1; r < 24 && !yesno; r++) {        // a dialog asking a question ("Do you still want to exit?")
     std::string row = row_str(ts, r, 0, 80);
     size_t q = row.find('?');
@@ -435,7 +451,16 @@ static void bottom_rows(Surf& s, const TextScreen& ts) {
 }
 
 // ------------------------------------------------------------------ on-screen keyboard
+// The line the cursor is on asks a yes/no question ("Are you a new recruit [Y]?").
+static bool cursor_question(const TextScreen& ts) {
+  if (ts.cursor_y < 0 || ts.cursor_y > 24) return false;
+  std::string row = row_str(ts, ts.cursor_y, 0, 80);
+  if (row.find('?') == std::string::npos) return false;
+  return row.find("[Y]") != std::string::npos || row.find("[N]") != std::string::npos ||
+         row.find("Y/N") != std::string::npos || row.find("y/n") != std::string::npos;
+}
 static bool wants_text(const TextScreen& ts) {
+  if (cursor_question(ts)) return false;
   return screen_has(ts, "Enter your name") || screen_has(ts, "enter your password") ||
          screen_has(ts, "Enter new password") || screen_has(ts, "NOTEPAD") || screen_has(ts, "Notepad");
 }
@@ -610,6 +635,7 @@ static void frame_content(const TextScreen& ts) {
 }
 // Aim at the cells that changed since the previous screen (a dialog that popped up, a panel
 // that was replaced); fall back to framing the whole content when most of the screen changed.
+static void mark_base() { if (!base_ok || queue.empty()) { base_ts = last; base_ok = true; } }
 static bool frame_changes(const TextScreen& ts, const TextScreen& before) {
   int r0 = 25, r1 = -1, c0 = 80, c1 = -1, n = 0;
   for (int r = 0; r < 24; r++)                 // row 24 is the prompt line, shown separately
@@ -636,7 +662,8 @@ static void generic_bottom(Surf& s, const TextScreen& ts) {
     if (now() - user_pan_ms > 4000) {
       follow = true;
       // `last` still holds the previous screen (any layout) at this point
-      if (!(last.text_mode && frame_changes(ts, last))) frame_content(ts);
+      const TextScreen& ref = base_ok ? base_ts : last;
+      if (!(ref.text_mode && frame_changes(ts, ref))) frame_content(ts);
     }
   }
   if (follow && find_tdb(ts, tc, tr)) { lx = tc - LP_COLS / 2; ly = tr - LP_ROWS / 2; }
@@ -721,6 +748,7 @@ static void graphics_bottom(Surf& s) {
 // ------------------------------------------------------------------ public API
 void init(const Host* host) {
   H = host;
+  next_key_ms = now();
   memset(&last, 0, sizeof last);
   load_manual();
   load_officer();
@@ -744,13 +772,14 @@ static void fire(const Act& a) {
   switch (a.kind) {
     case A_KEY: if (a.key != K_NONE) press(a.key, a.mods); if (a.key == K_ENTER) typed_enter(); break;
     case A_TYPE:
+      if (last.cursor_y != typed_y) { typed.clear(); typed_y = last.cursor_y; }
       press(a.key, a.mods);
       if (a.arg == 8) { if (!typed.empty()) typed.erase(typed.size() - 1); }
       else if (a.arg == 13) typed_enter();
       else typed += (char)(a.arg >= 'A' && a.arg <= 'Z' ? a.arg + 32 : a.arg);
       break;
     case A_SIGNON:
-      typed.clear(); type_text(off_name); press(K_ENTER); autologin = 1; say("Signing on...", 1500);
+      typed.clear(); type_text(off_name); press(K_ENTER); autologin = 1; pass_tries = 0; pend_name = off_name; say("Signing on...", 1500);
       break;
     case A_SAVE: press(K_Q, M_CTRL); say("Quick save", 1500); break;
     case A_MODE:
@@ -773,7 +802,7 @@ static void fire(const Act& a) {
 Redraw frame(const TextScreen& ts, uint16_t* top, uint16_t* bottom) {
   pump_keys();
   uint32_t t = now();
-  Redraw rd = {false, false};
+  Redraw rd = {false, false, 0, BOT_H};
 
   // keyboard opens by itself when the game asks for typed text
   if (ts.text_mode && !manual_open) {
@@ -783,10 +812,23 @@ Redraw frame(const TextScreen& ts, uint16_t* top, uint16_t* bottom) {
   }
 
   // auto sign-on: send the password when its prompt appears
-  if (autologin == 1 && queue.empty() && ts.text_mode && at_pass_prompt(ts)) {
-    type_text(off_pass); press(K_ENTER); autologin = 0; typed.clear();
+  // The game clears keys typed ahead when its password prompt comes up (sometimes well after the
+  // prompt is drawn, while it reads the officer files), so wait until the screen has been still for
+  // a moment, and if the same prompt is still waiting a few seconds after the password went in, send
+  // it again (up to 3 tries).
+  bool pass_up = (autologin == 1 || autologin == 2) && queue.empty() && ts.text_mode && at_pass_prompt(ts) &&
+                 !screen_has(ts, "SIGN-ON OPTIONS");
+  uint32_t sg = screen_sig(ts);
+  if (!pass_up) pass_seen = 0;
+  else if (!pass_seen || sg != pass_sig) { pass_seen = t; pass_sig = sg; }    // restart the wait on any change
+  bool still = pass_up && t - pass_seen >= 1200;
+  if (still && (autologin == 1 || (autologin == 2 && t - pass_sent >= 2500 && pass_tries < 3))) {
+    if (autologin == 2) for (int i = 0; i < 12; i++) press(K_BACKSPACE);   // clear a half-taken first try
+    type_text(off_pass); press(K_ENTER); autologin = 2; pass_sent = t; pass_tries++; typed.clear();
+    pend_pass = off_pass;
   }
-  if (autologin == 1 && ts.text_mode && screen_has(ts, "SIGN-ON OPTIONS")) autologin = 0;
+  if (autologin && ts.text_mode && (screen_has(ts, "SIGN-ON OPTIONS") || (autologin == 2 && pass_tries >= 3 && t - pass_sent > 5000)))
+    autologin = 0;
   // a successful sign-on with a newly typed officer: remember it
   if (ts.text_mode && screen_has(ts, "SIGN-ON OPTIONS") && !pend_name.empty() && !pend_pass.empty()) {
     if (pend_name != off_name || pend_pass != off_pass) { save_officer(pend_name, pend_pass); say("Officer remembered for one-tap sign-on"); }
@@ -816,27 +858,39 @@ Redraw frame(const TextScreen& ts, uint16_t* top, uint16_t* bottom) {
 
   bool changed = memcmp(&ts, &last, sizeof ts) != 0;
   static uint32_t last_anim = 0;
-  bool anim = (int32_t)(flash_until - t) > 0 || (!toast.empty() && (int32_t)(toast_until - t) > -50) ||
-              (marquee && t - last_anim >= 50);
-  if (anim) last_anim = t;
-  if (!changed && drawn_version == ui_version && !anim) return rd;
+  // (-50: keep redrawing a little past the end so the button's released look gets drawn)
+  if (flash_on && (int32_t)(flash_until - t) <= -50) flash_on = false;
+  bool toast_anim = !toast.empty() && (int32_t)(toast_until - t) > -50;
+  bool scroll_due = marquee && t - last_anim >= 50;
+  bool full = changed || drawn_version != ui_version;
+  if (!full && !flash_on && !toast_anim && !scroll_due) return rd;
+  if (flash_on || toast_anim || scroll_due) last_anim = t;
 
   Surf ts_top = {top, TOP_W, TOP_H}, ts_bot = {bottom, BOT_W, BOT_H};
+  // Only the scrolling prompt moved: redraw just that strip (keeps idle screens cheap).
+  if (!full && !flash_on && !toast_anim && ts.text_mode && !manual_open) {
+    std::string prompt; parse_menu(ts, prompt);
+    prompt_strip(ts_bot, ts, prompt);
+    rd.bottom = true; rd.by0 = 180; rd.by1 = 194;
+    return rd;
+  }
+  bool draw_top = full;      // a button flash or toast only touches the touch screen
   btns.clear();
   if (manual_open) {
-    manual_top(ts_top); manual_bottom(ts_bot); rd.top = rd.bottom = true;
+    if (draw_top) manual_top(ts_top);
+    manual_bottom(ts_bot); rd.top = draw_top; rd.bottom = true;
   } else if (!ts.text_mode) {
     graphics_bottom(ts_bot); rd.bottom = true;
   } else if (is_bridge(ts)) {
-    bridge_top(ts_top, ts);
+    if (draw_top) bridge_top(ts_top, ts);
     if (kb_open) keyboard(ts_bot); else bridge_bottom(ts_bot, ts);
     bottom_rows(ts_bot, ts);
-    rd.top = rd.bottom = true;
+    rd.top = draw_top; rd.bottom = true;
   } else {
     if (kb_open) keyboard(ts_bot); else generic_bottom(ts_bot, ts);
-    generic_top(ts_top, ts);
+    if (draw_top) generic_top(ts_top, ts);
     bottom_rows(ts_bot, ts);
-    rd.top = rd.bottom = true;
+    rd.top = draw_top; rd.bottom = true;
   }
   for (int i = 0; i < (int)btns.size(); i++) draw_btn(ts_bot, i);
   memcpy(&last, &ts, sizeof ts);
@@ -954,7 +1008,7 @@ void touch(int x, int y, bool down) {
       int i = -1;
       for (int k = 0; k < (int)btns.size(); k++) if (same(p, btns[k])) i = k;
       if (i >= 0 && x >= p.x0 - 8 && x < p.x1 + 8 && y >= p.y0 - 8 && y < p.y1 + 8) {
-        flash_id = p; flash_until = now() + 110;
+        flash_id = p; flash_until = now() + 110; flash_on = true;
         fire(btns[i].act);
       }
       dirty();

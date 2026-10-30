@@ -78,3 +78,9 @@ typedef             Bit32s  Bits;
 #define sBit32t
 #define sBit32fs(a) sBit32t #a
 #define sBitfs      sBit32fs
+
+#ifdef SF2_3DS
+/* devkitPro's readdir() fills in d_type, so directory scans need no stat() per file
+   (each stat is a slow SD card access: a scan of the game's ~290 files took seconds). */
+#define DIRENT_HAS_D_TYPE 1
+#endif

@@ -59,7 +59,7 @@ void init(const Host* host);
 // for that screen (a screen is only redrawn when something on it changed).
 // When ts.text_mode is false, sf2ui leaves the top screen to the platform
 // (the game's own graphics) and only draws the touch screen.
-struct Redraw { bool top, bottom; };
+struct Redraw { bool top, bottom; int by0, by1; };  // by0..by1: touch-screen rows that changed
 Redraw frame(const TextScreen& ts, uint16_t* top, uint16_t* bottom);
 
 // Input. Touch coordinates are touch-screen pixels; down=false on release.
