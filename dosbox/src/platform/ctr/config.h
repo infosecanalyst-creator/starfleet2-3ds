@@ -1,3 +1,4 @@
+/* Modified for starfleet2-3ds (Nintendo 3DS port), 2026-10 */
 #define VERSION "SVN"
 
 /* Define to 1 to enable internal debugger, requires libcurses */

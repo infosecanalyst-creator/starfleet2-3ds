@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: GPL-2.0-or-later
+// Copyright (C) 2026 the starfleet2-3ds authors
 // Background SD card writer for the 3DS build.
 //
 // On the 3DS each small file write can take seconds (the SD card's file system is slow to

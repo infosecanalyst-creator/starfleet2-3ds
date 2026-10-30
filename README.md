@@ -2,6 +2,8 @@
 
 > **Bring your own game files.** No game data is included: you need your own copy of *Star Fleet II: Krellan Commander* (GOG or Steam).
 
+> Not affiliated with or endorsed by the game's rights holders, the DOSBox team or Nintendo. Star Fleet is a trademark of its owner, used only to say which game files it runs.
+
 A split-cockpit frontend for the GOG release of *Star Fleet II: Krellan Commander* (v2.0,
 Trevor C. Sorensen & Mark L. Baldwin). The unmodified DOS game runs inside a DOSBox-3DS fork;
 the frontend reads the game's 80x25 text screen and redraws it across both 3DS screens:
@@ -58,7 +60,7 @@ sd/       files for the SD card (DOSBox settings)
 Needs devkitPro with `3ds-dev` and `3ds-sdl` (SDL 1.2), plus Python 3 with `pdfplumber`.
 ```
 ./build-3ds.sh
-./install-3ds.sh 3DS-IP "/path/to/STAR FLEET II - Krellan Commander Version 2.0"
+./install-3ds.sh <3DS-IP> "/path/to/STAR FLEET II - Krellan Commander Version 2.0"
 ```
 `sd/3ds/starfleet2/` is the one place the app lives: the build moves `starfleet2.3dsx` there, next
 to `starfleet2.conf`; the installer adds `manual.txt` and `game/` (the contents of the GOG install's
@@ -69,7 +71,10 @@ Logs on the 3DS: `/3ds/starfleet2/debug.log` (speed, audio underruns, text-fit p
 10 s) and `/3ds/starfleet2/error.log` (fatal errors).
 
 ## Licences
-- DOSBox and DOSBox-3DS: GPL-2.0 (see `dosbox/COPYING`); this port is GPL-2.0 as a result.
+- This port is licensed under the GNU General Public License, version 2 or (at your option) any
+  later version (GPL-2.0-or-later); the full text is in `LICENSE`. DOSBox and DOSBox-3DS are
+  GPL-2.0-or-later (see `dosbox/COPYING`). DOSBox files changed for this port carry a
+  "Modified for starfleet2-3ds" notice at the top.
 - Terminus Font: SIL Open Font License 1.1 (`assets/OFL.txt`). Tamzen: `assets/Tamzen-LICENSE`.
   X11 Misc Fixed 5x8: public domain.
 - *Star Fleet II* and its manuals are (c) Trevor C. Sorensen; buy it on GOG or Steam.

@@ -1,4 +1,6 @@
 #!/usr/bin/env python3
+# SPDX-License-Identifier: GPL-2.0-or-later
+# Copyright (C) 2026 the starfleet2-3ds authors
 """Embed a binary file for the ARM build (replaces devkitPro's bin2s for the UI graphics).
 
 usage: bin2s.py INPUT.bgr OUT.s OUT.h

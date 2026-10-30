@@ -1,3 +1,4 @@
+/* Modified for starfleet2-3ds (Nintendo 3DS port), 2026-10 */
 /*
  *  Copyright (C) 2002-2021  The DOSBox Team
  *

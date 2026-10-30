@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: GPL-2.0-or-later
+// Copyright (C) 2026 the starfleet2-3ds authors
 // Drawing primitives for sf2ui: RGB565 surfaces, bitmap fonts, CP437 cells.
 #pragma once
 #include <stdint.h>

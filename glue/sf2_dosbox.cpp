@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: GPL-2.0-or-later
+// Copyright (C) 2026 the starfleet2-3ds authors
 // Glue between sf2ui and DOSBox internals (shared by the 3DS build and the desktop harness).
 #include "sf2_dosbox.h"
 #include "dosbox.h"

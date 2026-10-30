@@ -1,4 +1,6 @@
 #!/usr/bin/env python3
+# SPDX-License-Identifier: GPL-2.0-or-later
+# Copyright (C) 2026 the starfleet2-3ds authors
 """Build the in-game manual (manual.txt) from the port guide plus the game's own manuals.
 
 The game manuals come from YOUR GOG install (docs/Manuals/2.0/*.pdf); their text belongs

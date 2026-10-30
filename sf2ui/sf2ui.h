@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: GPL-2.0-or-later
+// Copyright (C) 2026 the starfleet2-3ds authors
 // sf2ui: Star Fleet II split-cockpit frontend for the New 3DS XL.
 //
 // Platform independent. Each frame the platform hands in the game's 80x25 text

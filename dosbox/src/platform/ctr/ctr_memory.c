@@ -1,3 +1,4 @@
+/* Modified for starfleet2-3ds (Nintendo 3DS port), 2026-10 */
 
 // Taken from PicoDrive's libretro implementation for 3DS.
 #include <3ds.h>

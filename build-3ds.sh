@@ -1,4 +1,6 @@
 #!/usr/bin/env bash
+# SPDX-License-Identifier: GPL-2.0-or-later
+# Copyright (C) 2026 the starfleet2-3ds authors
 # Build the Star Fleet II 3DS app with devkitARM + libctru + 3ds-sdl (SDL 1.2).
 #   devkitPro MSYS2 shell (Windows) or Linux:  ./build-3ds.sh
 # The .3dsx lives in exactly one place: sd/3ds/starfleet2/ (the SD card layout, with the

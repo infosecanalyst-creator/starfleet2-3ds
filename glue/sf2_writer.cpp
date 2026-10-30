@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: GPL-2.0-or-later
+// Copyright (C) 2026 the starfleet2-3ds authors
 // Background SD card writer (see sf2_writer.h).
 #ifdef SF2_3DS
 #include <3ds.h>

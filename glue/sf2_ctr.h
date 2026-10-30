@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: GPL-2.0-or-later
+// Copyright (C) 2026 the starfleet2-3ds authors
 // 3DS platform layer for sf2ui (see sf2_ctr.cpp).
 #pragma once
 #ifdef SF2_3DS

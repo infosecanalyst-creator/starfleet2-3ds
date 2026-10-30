@@ -1,3 +1,4 @@
+/* Modified for starfleet2-3ds (Nintendo 3DS port), 2026-10 */
 #include <sys/stat.h>
 #include <stdlib.h>
 #include <string.h>

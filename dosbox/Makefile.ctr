@@ -1,3 +1,4 @@
+# Modified for starfleet2-3ds (Nintendo 3DS port), 2026-10
 #---------------------------------------------------------------------------------
 .SUFFIXES:
 #---------------------------------------------------------------------------------
@@ -225,7 +226,7 @@ clean:
 	@rm -fr $(BUILD) $(TARGET).3dsx $(TARGET).cia $(TARGET).elf $(GFXBUILD) $(GFX_BIN) $(GFX_HDR)
 
 3dslink: all
-	@3dslink -r 10 -a 3DS-IP $(OUTPUT).3dsx
+	@3dslink -r 10 $(if $(THREEDS_IP),-a $(THREEDS_IP)) $(OUTPUT).3dsx
 
 #---------------------------------------------------------------------------------
 $(GFXBUILD)/%.t3x	$(BUILD)/%.h	:	%.t3s

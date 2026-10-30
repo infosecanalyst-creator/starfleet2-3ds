@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: GPL-2.0-or-later
+// Copyright (C) 2026 the starfleet2-3ds authors
 // sf2ui: Star Fleet II split-cockpit frontend. See sf2ui.h.
 #include "sf2ui.h"
 #include "draw.h"

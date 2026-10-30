@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: GPL-2.0-or-later
+// Copyright (C) 2026 the starfleet2-3ds authors
 // 3DS platform layer for sf2ui: screens, touch, buttons and the click sound.
 //
 // While the game shows its 80x25 text screen, sf2ui owns both 3DS screens: DOSBox's own

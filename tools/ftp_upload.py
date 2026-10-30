@@ -1,4 +1,6 @@
 #!/usr/bin/env python3
+# SPDX-License-Identifier: GPL-2.0-or-later
+# Copyright (C) 2026 the starfleet2-3ds authors
 """Upload a local SD-card tree to the 3DS's ftpd and verify each file's size.
 
 usage: ftp_upload.py IP PORT LOCAL_SD_ROOT   (LOCAL_SD_ROOT/3ds/... -> sdmc:/3ds/...)
