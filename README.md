@@ -1,5 +1,7 @@
 # Star Fleet II: Krellan Commander for the New 3DS XL
 
+> **Bring your own game files.** No game data is included: you need your own copy of *Star Fleet II: Krellan Commander* (GOG or Steam).
+
 A split-cockpit frontend for the GOG release of *Star Fleet II: Krellan Commander* (v2.0,
 Trevor C. Sorensen & Mark L. Baldwin). The unmodified DOS game runs inside a DOSBox-3DS fork;
 the frontend reads the game's 80x25 text screen and redraws it across both 3DS screens:
