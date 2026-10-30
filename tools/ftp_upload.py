@@ -11,17 +11,32 @@ import time
 
 ip, port, root = sys.argv[1], int(sys.argv[2]), sys.argv[3]
 upload_all = '--all' in sys.argv
-ftp = ftplib.FTP()
-for attempt in range(5):
-    try:
-        ftp.connect(ip, port, timeout=40)
-        ftp.login()
-        break
-    except OSError as e:
-        print(f'connect failed ({e}); retrying...')
-        time.sleep(3)
-else:
+ftp = None
+
+
+def connect():
+    """(Re)connect: ftpd on the 3DS sometimes drops or stalls a session, so every failure
+    starts a fresh one."""
+    global ftp
+    if ftp is not None:
+        try:
+            ftp.close()
+        except Exception:
+            pass
+    for attempt in range(8):
+        try:
+            ftp = ftplib.FTP()
+            ftp.connect(ip, port, timeout=60)
+            ftp.login()
+            ftp.voidcmd('TYPE I')
+            return
+        except (OSError, ftplib.Error) as e:
+            print(f'connect failed ({e}); retrying...')
+            time.sleep(4)
     sys.exit('could not reach ftpd on the 3DS')
+
+
+connect()
 
 
 def ensure_dir(path):
@@ -36,15 +51,23 @@ def ensure_dir(path):
 
 
 def remote_size(path):
-    try:
-        return ftp.size(path)
-    except ftplib.error_perm:
-        return None
+    for attempt in range(3):
+        try:
+            return ftp.size(path)
+        except ftplib.error_perm:
+            return None
+        except (OSError, ftplib.Error):
+            connect()
+    return None
 
 
 ok = bad = skipped = 0
+todo = []
 for dirpath, _, files in sorted(os.walk(root)):
     for name in sorted(files):
+        todo.append((dirpath, name))
+todo.sort(key=lambda t: t[1].endswith('.3dsx'))       # the app last: game files first
+for dirpath, name in todo:
         local = os.path.join(dirpath, name)
         rel = os.path.relpath(local, root).replace(os.sep, '/')
         remote = '/' + rel
@@ -56,11 +79,12 @@ for dirpath, _, files in sorted(os.walk(root)):
         for attempt in range(3):
             try:
                 with open(local, 'rb') as f:
-                    ftp.storbinary('STOR ' + remote, f, 65536)
+                    ftp.storbinary('STOR ' + remote, f, 16384)
                 break
             except (OSError, ftplib.Error) as e:
                 print(f'  retry {remote}: {e}')
                 time.sleep(2)
+                connect()
         got = remote_size(remote)
         if got == size:
             ok += 1
@@ -68,6 +92,9 @@ for dirpath, _, files in sorted(os.walk(root)):
         else:
             bad += 1
             print(f'FAIL  {remote} (local {size}, 3DS {got})')
-ftp.quit()
+try:
+    ftp.quit()
+except Exception:
+    pass
 print(f'uploaded {ok}, unchanged {skipped}, failed {bad}')
 sys.exit(1 if bad else 0)
