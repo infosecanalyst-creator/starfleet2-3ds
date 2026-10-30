@@ -9,8 +9,9 @@ the frontend reads the game's 80x25 text screen and redraws it across both 3DS s
 - **Touch screen: everything you touch.** The tactical display (Terminus 8x14), navigation, action
   buttons, the game's own command menu (read live from the screen) and one-tap view tabs.
 
-Other displays (star, system and war maps, Combat Control, fleet command, briefings, menus) show
-complete on the top screen with a sharp, draggable magnifier on the touch screen.
+Other displays are split by content so nothing appears twice: menus become big touch buttons,
+maps (star, system and war maps, Combat Control) go on the touch screen to be tapped, and the
+rest of the screen stays on top.
 
 ## What the stylus adds
 The PC game is keyboard-only. On the 3DS:
@@ -34,7 +35,7 @@ The PC game is keyboard-only. On the 3DS:
 | D-Pad | Arrow keys |
 | Circle Pad | Course -1 / +1 degree (left/right), sublight speed (up/down) |
 | ZL / ZR | Hyperspace speed -1 / +1 |
-| C-Stick | Review earlier messages (bridge), move the magnifier (other displays) |
+| C-Stick | Review earlier messages (bridge) |
 | START | Manual |
 | SELECT | Quick save on the bridge; keyboard elsewhere |
 

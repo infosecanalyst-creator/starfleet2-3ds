@@ -35,14 +35,14 @@ static void click_init() {
   if (!click_pcm) return;
   for (int i = 0; i < n; i++) {               // short decaying tick
     float t = (float)i / rate, env = expf(-t * 260.0f);
-    click_pcm[i] = (s16)(env * 9000.0f * sinf(2.0f * 3.14159265f * 1900.0f * t));
+    click_pcm[i] = (s16)(env * 2200.0f * sinf(2.0f * 3.14159265f * 1900.0f * t));
   }
   DSP_FlushDataCache(click_pcm, n * sizeof(s16));
   ndspChnReset(CLICK_CH);
   ndspChnSetInterp(CLICK_CH, NDSP_INTERP_LINEAR);
   ndspChnSetRate(CLICK_CH, (float)rate);
   ndspChnSetFormat(CLICK_CH, NDSP_FORMAT_MONO_PCM16);
-  float mix[12] = {0}; mix[0] = mix[1] = 0.8f;
+  float mix[12] = {0}; mix[0] = mix[1] = 0.5f;
   ndspChnSetMix(CLICK_CH, mix);
   memset(&click_buf, 0, sizeof click_buf);
   click_buf.data_vaddr = click_pcm;

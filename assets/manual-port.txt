@@ -20,7 +20,7 @@ COMMAND MENU: the row of buttons under the prompt is the game's own menu, read l
 
 VIEW TABS: STARS, SYSTEM, WAR, COMBAT, FLEET, ORDERS and LOG jump straight to those displays. MANUAL opens this manual.
 
-OTHER DISPLAYS: maps and other full-screen displays show complete on the top screen, with a sharp magnified view on the touch screen. Drag it to look around; it follows the target box by itself. Tap a spot to move the target box there, and tap it again to select.
+OTHER DISPLAYS: nothing is shown twice. On a menu screen the menu becomes big buttons on the touch screen (tap one to choose it) and the rest of the screen stays on top. On a map (star, system and war maps, combat control) the map goes on the touch screen: tap a star or ship to move the target box there, and tap it again to select. Other screens stay on top, with arrow, page and space keys on the touch screen.
 
 KEYBOARD: opens by itself when the game wants typed text (your name, password, notepad). The KEYBOARD button opens it any time (SELECT does too, away from the bridge).
 
@@ -40,7 +40,6 @@ Circle Pad   Left/right: course -1 / +1 degree (hold to keep turning)
              Up/down: sublight speed +0.1 / -0.1
 ZL / ZR      Hyperspace speed -1 / +1
 C-Stick      Bridge: review earlier messages (left/right)
-             Other displays: move the magnified view
 START        Open this manual
 SELECT       Bridge: quick save (the game's Ctrl+Q)
              Elsewhere: show or hide the keyboard

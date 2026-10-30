@@ -610,13 +610,173 @@ static void clamp_loupe() {
   if (ly < 0) ly = 0;
   if (ly > 25 - LP_ROWS) ly = 25 - LP_ROWS;
 }
+// ------------------------------------------------------------------ other displays
+// Every screen apart from the bridge is split by its content, so nothing appears on both
+// screens: a menu becomes big buttons on the touch screen, a map goes on the touch screen to
+// be tapped, and the rest of the game's screen stays on top.
+enum Kind { G_PLAIN, G_MENU, G_MAP };
+struct GLine { int row, col, end; char key; std::string label; bool sel; };
+struct GLayout {
+  Kind kind;
+  int r0, c0, r1, c1;                 // the part of the game screen shown on the touch screen
+  std::vector<GLine> items;           // menu items (G_MENU)
+  int ox, oy, cw, lh; const Font* f;  // where the map is drawn (G_MAP)
+};
+static GLayout glay;
+
+static bool is_key_char(uint8_t c) { return (c >= 'A' && c <= 'Z') || (c >= '0' && c <= '9'); }
+static bool is_alpha(uint8_t c) { return (c >= 'A' && c <= 'Z') || (c >= 'a' && c <= 'z'); }
+
+// Grow a rectangle over the box drawn around it (frame lines), at most a few cells each way.
+static void grow_to_box(const TextScreen& ts, int& r0, int& c0, int& r1, int& c1) {
+  for (int step = 0; step < 3; step++) {
+    bool any = false;
+    if (c0 > 0) { for (int r = r0; r <= r1; r++) if (is_box(ts.ch[r][c0 - 1])) { c0--; any = true; break; } }
+    if (c1 < 79) { for (int r = r0; r <= r1; r++) if (is_box(ts.ch[r][c1 + 1])) { c1++; any = true; break; } }
+    if (!any) break;
+  }
+  for (int step = 0; step < 4; step++) {
+    bool any = false;
+    if (r0 > 0) { for (int c = c0; c <= c1; c++) if (is_box(ts.ch[r0 - 1][c])) { r0--; any = true; break; } }
+    if (r1 < 23) { for (int c = c0; c <= c1; c++) if (is_box(ts.ch[r1 + 1][c])) { r1++; any = true; break; } }
+    if (!any) break;
+  }
+}
+
+// Menu lines of the form "N  Start a new mission": a key, two spaces, a label; 3 or more in a column.
+static bool find_menu(const TextScreen& ts, GLayout& g) {
+  std::vector<GLine> all;
+  for (int r = 0; r < 24; r++)
+    for (int c = 0; c + 4 < 80; c++) {
+      uint8_t k = ts.ch[r][c];
+      if (!is_key_char(k)) continue;
+      if (c > 0 && ts.ch[r][c - 1] != ' ' && !is_box(ts.ch[r][c - 1])) continue;
+      if (ts.ch[r][c + 1] != ' ' || ts.ch[r][c + 2] != ' ' || !is_alpha(ts.ch[r][c + 3])) continue;
+      int e = c + 3;
+      while (e + 1 < 80 && !is_box(ts.ch[r][e + 1]) && !(ts.ch[r][e + 1] == ' ' && (e + 2 >= 80 || ts.ch[r][e + 2] == ' '))) e++;
+      std::string lab = trim(row_str(ts, r, c + 3, e + 1));
+      if (lab.size() < 3) continue;
+      GLine l; l.row = r; l.col = c; l.end = e; l.key = (char)k; l.label = lab;
+      l.sel = ((ts.at[r][c + 3] >> 4) & 7) == 7;
+      all.push_back(l);
+      c = e;
+    }
+  int best_col = -1, best_n = 0;
+  for (auto& l : all) {
+    int n = 0;
+    for (auto& m : all) if (abs(m.col - l.col) <= 1) n++;
+    if (n > best_n) { best_n = n; best_col = l.col; }
+  }
+  if (best_n < 3) return false;
+  g.items.clear();
+  for (auto& l : all) if (abs(l.col - best_col) <= 1) g.items.push_back(l);
+  g.r0 = 24; g.r1 = -1; g.c0 = 80; g.c1 = -1;
+  for (auto& l : g.items) {
+    g.r0 = std::min(g.r0, l.row); g.r1 = std::max(g.r1, l.row);
+    g.c0 = std::min(g.c0, l.col); g.c1 = std::max(g.c1, l.end);
+  }
+  if (g.r1 - g.r0 + 1 > (int)g.items.size() * 2) return false;    // scattered: not one menu
+  grow_to_box(ts, g.r0, g.c0, g.r1, g.c1);
+  g.kind = G_MENU;
+  return true;
+}
+
+// A map: the biggest framed area whose inside is mostly empty space with scattered symbols
+// (star, system and war maps, combat control), or failing that a block of grid-dot rows.
+static bool tl_corner(uint8_t c) { return c == 0xDA || c == 0xC9 || c == 0xD5 || c == 0xD6; }
+static bool tr_corner(uint8_t c) { return c == 0xBF || c == 0xBB || c == 0xB8 || c == 0xB7; }
+static bool bl_corner(uint8_t c) { return c == 0xC0 || c == 0xC8 || c == 0xD4 || c == 0xD3; }
+static bool fit_map(GLayout& g, int r0, int c0, int r1, int c1) {
+  int cols = c1 - c0 + 1, rows = r1 - r0 + 1;
+  int cw = std::min(8, BOT_W / cols), lh = std::min(14, 180 / rows);
+  if (cw < 4 || lh < 8) return false;                    // too big for the touch screen
+  g.f = (cw >= 8 && lh >= 14) ? &F8x14 : (cw >= 6 && lh >= 12) ? &F6x12 : &F5x9;
+  g.cw = cw; g.lh = lh;                                  // (5x9 in 4-px cells: its spacing column is dropped)
+  g.r0 = r0; g.r1 = r1; g.c0 = c0; g.c1 = c1;
+  g.ox = (BOT_W - cols * cw) / 2; g.oy = (180 - rows * lh) / 2;
+  g.kind = G_MAP;
+  return true;
+}
+static bool find_map(const TextScreen& ts, GLayout& g) {
+  int best = 0, br0 = 0, bc0 = 0, br1 = 0, bc1 = 0;
+  for (int r = 0; r < 23; r++)
+    for (int c = 0; c < 79; c++) {
+      if (!tl_corner(ts.ch[r][c])) continue;
+      // (frame edges may carry labels, e.g. "0  20  40" along a map's top: mostly line is enough)
+      int c1 = c + 1, line = 0;
+      while (c1 < 80 && !tr_corner(ts.ch[r][c1])) { if (is_box(ts.ch[r][c1])) line++; c1++; }
+      if (c1 >= 80 || line * 10 < (c1 - c - 1) * 6) continue;
+      int r1 = r + 1; line = 0;
+      while (r1 < 24 && !bl_corner(ts.ch[r1][c])) { if (is_box(ts.ch[r1][c])) line++; r1++; }
+      if (r1 >= 24 || line * 10 < (r1 - r - 1) * 6) continue;
+      int w = c1 - c - 1, h = r1 - r - 1;
+      if (w < 24 || h < 6) continue;
+      int used = 0, letters = 0, symbols = 0;
+      for (int rr = r + 1; rr < r1; rr++)
+        for (int cc = c + 1; cc < c1; cc++) {
+          uint8_t ch = ts.ch[rr][cc];
+          if (ch > ' ' && ch != 0xFF && !is_box(ch)) { used++; if (ch != 0xFA && ch != 0xF9) symbols++; }
+          if (is_alpha(ch)) letters++;
+        }
+      // a map is sparse, has something on it, and is not a page of words
+      if (symbols < 2 || used * 100 > w * h * 45 || letters * 100 > w * h * 12) continue;
+      if (w * h > best) { best = w * h; br0 = r; bc0 = c; br1 = r1; bc1 = c1; }
+    }
+  if (best) {
+    // take in the axis labels just outside the frame
+    int ec0 = bc0, ec1 = bc1;
+    for (int k = 0; k < 3 && ec0 > 0; k++) { bool any = false; for (int rr = br0 + 1; rr < br1; rr++) if (ts.ch[rr][ec0 - 1] > ' ') any = true; if (!any) break; ec0--; }
+    for (int k = 0; k < 3 && ec1 < 79; k++) { bool any = false; for (int rr = br0 + 1; rr < br1; rr++) if (ts.ch[rr][ec1 + 1] > ' ') any = true; if (!any) break; ec1++; }
+    if (fit_map(g, br0, ec0, br1, ec1)) return true;
+    if (fit_map(g, br0, bc0, br1, bc1)) return true;
+    if (fit_map(g, br0 + 1, bc0 + 1, br1 - 1, bc1 - 1)) return true;      // without its frame
+  }
+  // grid dots (e.g. an unframed tactical grid)
+  int dots[24] = {0};
+  for (int r = 0; r < 24; r++)
+    for (int c = 0; c < 80; c++) if (ts.ch[r][c] == 0xFA || ts.ch[r][c] == 0xF9) dots[r]++;
+  int b0 = -1, b1 = -1, r = 0;
+  while (r < 24) {
+    if (dots[r] < 6) { r++; continue; }
+    int a = r, b = r;
+    while (b + 1 < 24 && (dots[b + 1] >= 6 || (b + 2 < 24 && dots[b + 2] >= 6))) b++;
+    if (b - a > b1 - b0) { b0 = a; b1 = b; }
+    r = b + 1;
+  }
+  if (b0 < 0 || b1 - b0 + 1 < 5) return false;
+  int c0 = 80, c1 = -1;
+  for (int rr = b0; rr <= b1; rr++)
+    for (int c = 0; c < 80; c++) if (ts.ch[rr][c] == 0xFA || ts.ch[rr][c] == 0xF9) { c0 = std::min(c0, c); c1 = std::max(c1, c); }
+  return fit_map(g, b0, c0, b1, c1);
+}
+
+static void analyse(const TextScreen& ts) {
+  glay.kind = G_PLAIN; glay.items.clear(); glay.r0 = glay.c0 = 0; glay.r1 = glay.c1 = -1;
+  if (kb_open) return;
+  if (find_map(ts, glay)) return;
+  if (find_menu(ts, glay)) return;
+  glay.kind = G_PLAIN; glay.r1 = glay.c1 = -1;
+}
+
 static void generic_top(Surf& s, const TextScreen& ts) {
   s.fill(0, 0, TOP_W, TOP_H, BG);
   cells(s, ts, 0, 0, 79, 24, F5x9, 0, 0, 5, 9);
+  const char* hint = kb_open ? "Type on the touch screen keyboard."
+                   : glay.kind == G_MENU ? "Tap a menu item on the touch screen."
+                   : glay.kind == G_MAP ? "The map is on the touch screen: tap a star or ship to aim."
+                   : "Touch screen: keys for this screen.";
+  if (glay.kind != G_PLAIN) {        // the part on the touch screen is not repeated here
+    int x0 = glay.c0 * 5, y0 = glay.r0 * 9, x1 = (glay.c1 + 1) * 5, y1 = (glay.r1 + 1) * 9;
+    s.fill(x0, y0, x1, y1, BG);
+    s.rect(x0, y0, x1, y1, BTN_EDGE);
+    const char* note = glay.kind == G_MENU ? "Menu on the touch screen" : "Map on the touch screen";
+    const Font* nf = text_width(note, F6x12) <= x1 - x0 - 4 ? &F6x12 : &F5x9;
+    int tw = text_width(note, *nf);
+    if (tw <= x1 - x0 - 4 && y1 - y0 >= nf->h + 2)
+      draw_text(s, x0 + (x1 - x0 - tw) / 2, y0 + (y1 - y0 - nf->h) / 2, note, *nf, HINT);
+  }
   s.fill(0, 225, TOP_W, TOP_H, BG);
-  fit_text(s, 4, 226, TOP_W - 2, kb_open ? "Type on the touch screen keyboard. HIDE KEYS shows the magnifier."
-                                         : "Touch screen: magnified view. Drag to look around, tap to aim.",
-           F6x12, HINT, "magnifier hint");
+  fit_text(s, 4, 226, TOP_W - 2, hint, F6x12, HINT, "top hint");
 }
 static uint32_t user_pan_ms = 0;
 static uint32_t screen_sig(const TextScreen& ts) {   // changes when a different screen appears
@@ -659,22 +819,36 @@ static bool frame_changes(const TextScreen& ts, const TextScreen& before) {
   return true;
 }
 static void generic_bottom(Surf& s, const TextScreen& ts) {
-  int tc, tr;
-  static uint32_t sig = 0;
-  uint32_t sg = screen_sig(ts);
-  if (sg != sig) {
-    sig = sg;
-    if (now() - user_pan_ms > 4000) {
-      follow = true;
-      // `last` still holds the previous screen (any layout) at this point
-      const TextScreen& ref = base_ok ? base_ts : last;
-      if (!(ref.text_mode && frame_changes(ts, ref))) frame_content(ts);
+  s.fill(0, 0, BOT_W, 180, BG);
+  if (glay.kind == G_MENU) {
+    int n = (int)glay.items.size();
+    int cols = n > 6 ? 2 : 1, rows = (n + cols - 1) / cols;
+    for (int i = 0; i < n; i++) {
+      int col = i / rows, row = i % rows;
+      int x0, x1, y0, y1;
+      split(BOT_W, cols, col, x0, x1);
+      split(180, rows, row, y0, y1);
+      const GLine& l = glay.items[i];
+      int hot = -1;
+      for (size_t k = 0; k < l.label.size(); k++)
+        if (toupper((unsigned char)l.label[k]) == l.key) { hot = (int)k; break; }
+      std::string lab = l.label;
+      if (hot < 0) { lab = std::string(1, l.key) + " " + l.label; hot = 0; }
+      add_btn(x0, y0, x1, y1, lab, cols == 1 ? &F8x16 : &F6x12, key_act(key_for_char(l.key)), hot, l.sel);
+    }
+  } else if (glay.kind == G_MAP) {
+    cells(s, ts, glay.c0, glay.r0, glay.c1, glay.r1, *glay.f, glay.ox, glay.oy, glay.cw, glay.lh);
+  } else {
+    // keys for screens that are read or stepped through: arrows, page keys, space
+    static const char* labs[9] = {"PG UP", "\x18", "PG DN", "\x1b", "SPACE", "\x1a", "HOME", "\x19", "END"};
+    static const Key keys[9] = {K_PGUP, K_UP, K_PGDN, K_LEFT, K_SPACE, K_RIGHT, K_NONE, K_DOWN, K_NONE};
+    for (int i = 0; i < 9; i++) {
+      if (keys[i] == K_NONE) continue;
+      int x0, x1, y0, y1;
+      split(BOT_W, 3, i % 3, x0, x1); split(180, 3, i / 3, y0, y1);
+      add_btn(x0, y0, x1, y1, labs[i], &F8x16, key_act(keys[i]));
     }
   }
-  if (follow && find_tdb(ts, tc, tr)) { lx = tc - LP_COLS / 2; ly = tr - LP_ROWS / 2; }
-  clamp_loupe();
-  s.fill(0, 0, BOT_W, 180, BG);
-  cells(s, ts, lx, ly, lx + LP_COLS - 1, ly + LP_ROWS - 1, F6x12, 1, 0, 6, 12);
 }
 
 // ------------------------------------------------------------------ manual
@@ -892,6 +1066,7 @@ Redraw frame(const TextScreen& ts, uint16_t* top, uint16_t* bottom) {
     bottom_rows(ts_bot, ts);
     rd.top = draw_top; rd.bottom = true;
   } else {
+    analyse(ts);
     if (kb_open) keyboard(ts_bot); else generic_bottom(ts_bot, ts);
     if (draw_top) generic_top(ts_top, ts);
     bottom_rows(ts_bot, ts);
@@ -969,20 +1144,14 @@ static char hotkey_at(const TextScreen& ts, int col, int row) {
   return 0;
 }
 
-static void loupe_tap(int x, int y) {
-  int col = lx + (x - 1) / 6, row = ly + y / 12;
+static void map_tap(int x, int y) {
+  if (glay.kind != G_MAP) return;
+  int col = glay.c0 + (x - glay.ox) / glay.cw, row = glay.r0 + (y - glay.oy) / glay.lh;
+  if (col < glay.c0 || col > glay.c1 || row < glay.r0 || row > glay.r1) return;
   int c, r;
-  if (!find_tdb(last, c, r)) {
-    char k = hotkey_at(last, col, row);
-    std::string prompt; std::vector<MenuItem> items = parse_menu(last, prompt);
-    if (k) { press(key_for_char(k)); char m[32]; snprintf(m, sizeof m, "Sent %c", k); say(m, 900); }
-    else if (items.empty()) press(K_ENTER);
-    else say("Use the menu buttons below");
-    return;
-  }
-  snap_to_object(last, col, row, 1, 1, 78, 23);
+  if (!find_tdb(last, c, r)) { say("No target box: choose a targeting option first"); return; }
+  snap_to_object(last, col, row, glay.c0, glay.r0, glay.c1, glay.r1);
   start_drive(col, row, c, r);
-  follow = true;
 }
 
 void touch(int x, int y, bool down) {
@@ -995,18 +1164,10 @@ void touch(int x, int y, bool down) {
       dirty();
     } else if (!manual_open && !kb_open && last.text_mode) {
       if (is_bridge(last) && x < 180 && y < 180) { tap_kind = 1; tap_x = x; tap_y = y; }
-      else if (!is_bridge(last) && y < 180) {
-        tap_kind = 2; dragging = true; drag_x = x; drag_y = y; drag_lx = lx; drag_ly = ly; drag_moved = 0;
-      }
+      else if (!is_bridge(last) && y < 180 && glay.kind == G_MAP) { tap_kind = 2; tap_x = x; tap_y = y; }
     }
   } else if (down && touch_was_down) {
-    if (dragging) {
-      int dx = x - drag_x, dy = y - drag_y;
-      if (abs(dx) + abs(dy) > 6) drag_moved = 1;
-      if (drag_moved) {
-        lx = drag_lx - dx / 6; ly = drag_ly - dy / 12; clamp_loupe(); follow = false; user_pan_ms = now(); dirty();
-      }
-    }
+
   } else if (!down && touch_was_down) {
     if (pressed_id.valid) {
       BtnId p = pressed_id; pressed_id.valid = false;
@@ -1020,8 +1181,7 @@ void touch(int x, int y, bool down) {
     } else if (tap_kind == 1) {
       tactical_tap(tap_x, tap_y);
     } else if (tap_kind == 2) {
-      dragging = false;
-      if (!drag_moved) loupe_tap(drag_x, drag_y);
+      map_tap(tap_x, tap_y);
     }
     tap_kind = 0;
   }
@@ -1076,11 +1236,6 @@ void buttons(uint32_t held, uint32_t pr, uint32_t rel) {
   if (bridge) {
     if (repeat_due(B_CSTICK_LEFT, held, pr)) press(K_LEFT, M_CTRL);   // earlier messages
     if (repeat_due(B_CSTICK_RIGHT, held, pr)) press(K_RIGHT, M_CTRL);
-  } else {
-    if (repeat_due(B_CSTICK_LEFT, held, pr)) { lx -= 2; follow = false; clamp_loupe(); dirty(); }
-    if (repeat_due(B_CSTICK_RIGHT, held, pr)) { lx += 2; follow = false; clamp_loupe(); dirty(); }
-    if (repeat_due(B_CSTICK_UP, held, pr)) { ly -= 1; follow = false; clamp_loupe(); dirty(); }
-    if (repeat_due(B_CSTICK_DOWN, held, pr)) { ly += 1; follow = false; clamp_loupe(); dirty(); }
   }
 }
 
