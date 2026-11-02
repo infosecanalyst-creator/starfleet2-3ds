@@ -61,16 +61,24 @@ static void run(void*) {
 
 static void drain_at_exit() { sf2w_wait(0); }
 
+// Called from every wait loop: if a wait drags on, say so once in the debug log.
+static void waited(int& n, const char* what) {
+  if (++n == 5000) sf2ctr_log("still waiting for the background writer (%s)", what);   // ~10 s
+}
+
 void sf2w_start() {
   if (started) return;
   started = true;
   LightLock_Init(&lock);
   LightEvent_Init(&wake, RESET_ONESHOT);
   LightEvent_Init(&done, RESET_PULSE);
-  // the system core first (the game's own core stays free); else the game's core at the same priority
+  // On the game's own core, one step above the game's priority: it wakes as soon as a write is
+  // queued and spends nearly all its time waiting on the SD card, when the game runs. (A thread on
+  // the system core is not guaranteed any time on real hardware: there the writer never ran and
+  // the game hung waiting for it.)
   s32 prio = 0x30; svcGetThreadPriority(&prio, CUR_THREAD_HANDLE);
-  worker = threadCreate(run, 0, 32 * 1024, prio, 1, true);
-  if (!worker) worker = threadCreate(run, 0, 32 * 1024, prio, -2, true);
+  worker = threadCreate(run, 0, 64 * 1024, prio > 0x19 ? prio - 1 : prio, -2, true);
+  sf2ctr_log("background writer %s", worker ? "started" : "not started (writing directly)");
   atexit(drain_at_exit);
 }
 
@@ -96,7 +104,9 @@ bool sf2w_pending(const char* path, std::vector<uint8_t>& out) {
   LightLock_Unlock(&lock);
   if (trace && found) sf2ctr_log("wr %s %u", path, (unsigned)out.size());
   if (!found) {                              // being written right now: wait for it, then read the card
+    int n = 0;
     for (;;) {
+      waited(n, path);
       LightLock_Lock(&lock); bool b = same_path(busy_path, path); LightLock_Unlock(&lock);
       if (!b) break;
       svcSleepThread(2 * 1000 * 1000);
@@ -107,7 +117,9 @@ bool sf2w_pending(const char* path, std::vector<uint8_t>& out) {
 
 void sf2w_wait(const char* path) {
   if (!started || !worker) return;
+  int n = 0;
   for (;;) {
+    waited(n, path ? path : "all");
     LightLock_Lock(&lock);
     bool b = path ? same_path(busy_path, path) : !busy_path.empty();
     if (!b) for (auto& j : jobs) if (!path || same_path(j.path, path)) { b = true; break; }
@@ -119,7 +131,9 @@ void sf2w_wait(const char* path) {
 }
 
 static void wait_not_busy(const char* path) {
+  int n = 0;
   for (;;) {
+    waited(n, path);
     LightLock_Lock(&lock); bool b = same_path(busy_path, path); LightLock_Unlock(&lock);
     if (!b) return;
     svcSleepThread(2 * 1000 * 1000);
@@ -139,7 +153,9 @@ int sf2w_rename(const char* from, const char* to) {
   if (!started) return rename(from, to);
   if (trace) sf2ctr_log("wm %s -> %s", from, to);
   // rename and re-target under the lock, so the worker never writes the old name after the move
+  int n = 0;
   for (;;) {
+    waited(n, from);
     LightLock_Lock(&lock);
     if (!same_path(busy_path, from)) break;
     LightLock_Unlock(&lock);
