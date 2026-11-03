@@ -18,9 +18,72 @@ import pdfplumber
 MAX_TITLE = 52          # fits a full-width manual button (320 px) in the 6x12 font
 
 
+def columns(line):
+    """A printed line, with two spaces where the page leaves a wide gap between words (table
+    columns), so the cleaner keeps tables as rows instead of running them into prose."""
+    chars = [c for c in line.get('chars', []) if c['text'].strip()]
+    if not chars:
+        return line['text']
+    out, prev = '', None
+    for c in chars:
+        if prev is not None:
+            gap = c['x0'] - prev['x1']
+            w = max(prev['x1'] - prev['x0'], 3)
+            if gap > w * 2.2:
+                out += '  '
+            elif gap > w * 0.25:
+                out += ' '
+        out += c['text']
+        prev = c
+    return out
+
+
 def pdf_text(path):
+    """Page text, one line per printed line, with an empty line wherever the printed page leaves
+    extra space (a new paragraph, heading or table), so paragraphs survive into the manual."""
+    out = []
     with pdfplumber.open(path) as p:
-        return '\n'.join((pg.extract_text() or '') for pg in p.pages)
+        for pg in p.pages:
+            lines = pg.extract_text_lines() or []
+            gaps = sorted(b['top'] - a['top'] for a, b in zip(lines, lines[1:]) if b['top'] > a['top'])
+            step = gaps[len(gaps) // 4] if gaps else 12        # the usual line-to-line distance
+            prev = None
+            for L in lines:
+                if prev is not None and L['top'] - prev['top'] > step * 1.5:
+                    out.append('')
+                out.append(columns(L))
+                prev = L
+            out.append('')
+    return '\n'.join(out)
+
+
+def quick_ref(text):
+    """The Quick Reference card is a two-column table (key, what it does | key, what it does):
+    list the left column, then the right, one key per line."""
+    left, right, other = [], [], []
+    for L in text.split('\n'):
+        cells = [c.strip() for c in re.split(r'\s{2,}', L.strip()) if c.strip()]
+        if not cells or cells[0] == 'KEYSTROKE':
+            continue
+        if len(cells) >= 4 and cells[0].startswith('[') and cells[2].startswith('['):
+            left.append(cells[0] + '  ' + cells[1]); right.append(cells[2] + '  ' + ' '.join(cells[3:]))
+        elif len(cells) == 3 and cells[0].startswith('['):
+            if cells[1].startswith('['):        # left key whose text went missing
+                left.append(cells[0]); right.append(cells[1] + '  ' + cells[2])
+            else:                                # left entry + a line continuing the right one
+                left.append(cells[0] + '  ' + cells[1])
+                if right: right[-1] += ' ' + cells[2]
+                else: right.append(cells[2])
+        elif len(cells) == 2 and cells[0].startswith('['):
+            left.append(cells[0] + '  ' + cells[1])
+        elif right and not cells[0].startswith('['):
+            right[-1] += ' ' + ' '.join(cells)    # a wrapped description
+        else:
+            other.append(' '.join(cells))
+    out = left + right
+    if other:
+        out += [''] + other
+    return '\n'.join(out)
 
 
 def title_case(s):
@@ -55,7 +118,7 @@ def clean(lines, header_res):
     out = []
     for L in lines:
         s = L.rstrip()
-        if any(r.match(s) for r in header_res):
+        if any(r.match(' '.join(s.split())) for r in header_res):   # (page headers, spacing ignored)
             continue
         out.append(s)
     # join hard-wrapped lines into paragraphs; keep blank lines and table-like lines
@@ -77,12 +140,16 @@ def clean(lines, header_res):
                 paras.append(cur); cur = ''
     if cur:
         paras.append(cur)
-    # squeeze repeated blank lines
+    # one empty line between paragraphs (the manual draws it as a gap); none inside tables
     res = []
     for p in paras:
-        if p == '' and res and res[-1] == '':
+        if p == '':
+            if res and res[-1] != '':
+                res.append('')
             continue
         res.append(p)
+    while res and res[-1] == '':
+        res.pop()
     return res
 
 
@@ -115,7 +182,7 @@ def main():
     parts = [open(guide, encoding='utf-8').read().rstrip() + '\n']
 
     qr = pdf_text(man + 'Star Fleet II Quick Reference Guide.pdf')
-    parts.append('# Keyboard Quick Reference\nThe game\'s own keyboard shortcuts (the port presses these for you).\n' + qr.strip() + '\n')
+    parts.append('# Keyboard Quick Reference\nThe game\'s own keyboard shortcuts (the port presses these for you).\n\n' + quick_ref(qr) + '\n')
 
     ops = pdf_text(man + 'Klagar-Class Battlecruiser Operations Manual.pdf')
     ops_hdr = [re.compile(r'^\d+ KLAGAR-CLASS BATTLECRUISER OPS MANUAL\s*$'),

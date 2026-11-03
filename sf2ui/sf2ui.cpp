@@ -863,7 +863,7 @@ static void load_manual() {
     cur.lines.push_back(H && H->manual_path ? H->manual_path : "");
     manual.push_back(cur); return;
   }
-  char buf[1024];
+  static char buf[16384];                  // a whole paragraph is one line in the file
   bool any = false;
   while (fgets(buf, sizeof buf, f)) {
     size_t n = strlen(buf); while (n && (buf[n - 1] == '\n' || buf[n - 1] == '\r')) buf[--n] = 0;
