@@ -20,10 +20,13 @@ static bool same_path(const std::string& a, const char* b) { return b && strcase
 struct Job { std::string path; std::vector<uint8_t> data; };
 static std::deque<Job> jobs;          // queued writes, oldest first (at most one per file)
 static std::string busy_path;         // the write in progress
+static Job cur;                       // its contents: the worker only reads them while busy_path is set
 static LightLock lock;
 static LightEvent wake, done;
 static Thread worker = 0;
 static bool started = false;
+static bool trace = false;                 // log what the writer does (slowsd.txt test mode)
+static int slow_ms = 0;                    // test mode: make every write as slow as the real SD card
 
 static void write_file(const Job& j) {
   u64 t0 = svcGetSystemTick();
@@ -39,6 +42,7 @@ static void write_file(const Job& j) {
   fflush(f);
   if (old > (long)j.data.size()) { if (ftruncate(fileno(f), (off_t)j.data.size()) != 0) {} }
   fclose(f);
+  if (slow_ms) svcSleepThread((s64)slow_ms * 1000000);
   unsigned ms = (unsigned)((svcGetSystemTick() - t0) / (SYSCLOCK_ARM11 / 1000));
   if (ms > 300) sf2ctr_log("slow write: %s (%u bytes) %u ms", j.path.c_str(), (unsigned)j.data.size(), ms);
 }
@@ -47,13 +51,12 @@ static void run(void*) {
   for (;;) {
     LightEvent_Wait(&wake);
     for (;;) {
-      Job j;
       LightLock_Lock(&lock);
       if (jobs.empty()) { busy_path.clear(); LightLock_Unlock(&lock); LightEvent_Signal(&done); break; }
-      j = std::move(jobs.front()); jobs.pop_front(); busy_path = j.path;
+      cur = std::move(jobs.front()); jobs.pop_front(); busy_path = cur.path;
       LightLock_Unlock(&lock);
-      write_file(j);
-      LightLock_Lock(&lock); busy_path.clear(); LightLock_Unlock(&lock);
+      write_file(cur);                       // (seconds on a real SD card)
+      LightLock_Lock(&lock); busy_path.clear(); cur.data.clear(); cur.data.shrink_to_fit(); LightLock_Unlock(&lock);
       LightEvent_Signal(&done);
     }
   }
@@ -76,13 +79,15 @@ void sf2w_start() {
   // queued and spends nearly all its time waiting on the SD card, when the game runs. (A thread on
   // the system core is not guaranteed any time on real hardware: there the writer never ran and
   // the game hung waiting for it.)
+  // Test mode for the emulator, whose SD card is fast: sdmc:/3ds/starfleet2/slowsd.txt makes each
+  // write take as long as on a real 3DS and logs every queue operation.
+  if (FILE* t = fopen("sdmc:/3ds/starfleet2/slowsd.txt", "r")) { fclose(t); slow_ms = 4000; trace = true; sf2ctr_log("slow SD test mode"); }
   s32 prio = 0x30; svcGetThreadPriority(&prio, CUR_THREAD_HANDLE);
   worker = threadCreate(run, 0, 64 * 1024, prio > 0x19 ? prio - 1 : prio, -2, true);
   sf2ctr_log("background writer %s", worker ? "started" : "not started (writing directly)");
   atexit(drain_at_exit);
 }
 
-static bool trace = false;                 // (test builds: log what the writer does)
 void sf2w_queue(const char* path, const uint8_t* data, size_t n) {
   if (trace) sf2ctr_log("wq %s %u", path, (unsigned)n);
   if (!started || !worker) {                 // no worker: write now
@@ -101,17 +106,10 @@ bool sf2w_pending(const char* path, std::vector<uint8_t>& out) {
   bool found = false;
   LightLock_Lock(&lock);
   for (auto& j : jobs) if (same_path(j.path, path)) { out = j.data; found = true; }
+  // Being written right now: the card holds a half-written file, so serve what is being written.
+  if (!found && same_path(busy_path, path)) { out = cur.data; found = true; }
   LightLock_Unlock(&lock);
   if (trace && found) sf2ctr_log("wr %s %u", path, (unsigned)out.size());
-  if (!found) {                              // being written right now: wait for it, then read the card
-    int n = 0;
-    for (;;) {
-      waited(n, path);
-      LightLock_Lock(&lock); bool b = same_path(busy_path, path); LightLock_Unlock(&lock);
-      if (!b) break;
-      svcSleepThread(2 * 1000 * 1000);
-    }
-  }
   return found;
 }
 
@@ -172,6 +170,7 @@ bool sf2w_pending_size(const char* path, size_t* n) {
   bool found = false;
   LightLock_Lock(&lock);
   for (auto& j : jobs) if (same_path(j.path, path)) { *n = j.data.size(); found = true; }
+  if (!found && same_path(busy_path, path)) { *n = cur.data.size(); found = true; }   // mid-write
   LightLock_Unlock(&lock);
   return found;
 }

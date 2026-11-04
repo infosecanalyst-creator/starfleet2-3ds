@@ -157,6 +157,9 @@ static const char* LOG_PATH = "sdmc:/3ds/starfleet2/debug.log";
 static int log_lines = 0;
 void sf2ctr_log(const char* fmt, ...) {
   if (log_lines > 2000) return;                 // keep the file small
+  static LightLock log_lock; static bool log_lock_ready = false;   // the SD writer thread logs too
+  if (!log_lock_ready) { LightLock_Init(&log_lock); log_lock_ready = true; }
+  LightLock_Lock(&log_lock);
   char buf[256];
   va_list ap; va_start(ap, fmt); vsnprintf(buf, sizeof buf, fmt, ap); va_end(ap);
   svcOutputDebugString(buf, strlen(buf));       // also visible in emulator logs
@@ -164,6 +167,7 @@ void sf2ctr_log(const char* fmt, ...) {
   FILE* f = fopen(LOG_PATH, log_lines ? "a" : "w");
   if (f) { fprintf(f, "%8llu %s\n", (unsigned long long)osGetTime() % 100000000ull, buf); fclose(f); }
   log_lines++;
+  LightLock_Unlock(&log_lock);
 }
 
 unsigned long long sf2_now_us() { return svcGetSystemTick() / (SYSCLOCK_ARM11 / 1000000); }
