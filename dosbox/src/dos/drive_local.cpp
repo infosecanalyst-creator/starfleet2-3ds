@@ -43,6 +43,7 @@ struct SF2Prof { int k; unsigned long long t0; SF2Prof(int k_) : k(k_), t0(sf2_n
 #include "inout.h"
 #ifdef SF2_3DS
 #include "../../../glue/sf2_writer.h"
+void sf2ctr_log(const char* fmt, ...);
 #endif
 #ifdef SF2_3DS
 #include <map>
@@ -138,9 +139,15 @@ bool localDrive::FileOpen(DOS_File * * file,char * name,Bit32u flags) {
 		}
 	}
 
+#ifdef SF2_3DS
+	sf2w_wait_busy(newname);                   // the real 3DS refuses to open a file being written
+#endif
 	FILE * hand = fopen_wrap(newname,type);
 //	Bit32u err=errno;
 	if (!hand) { 
+#ifdef SF2_3DS
+		{ struct stat sb; if (stat(newname, &sb) == 0) sf2ctr_log("open refused: %s (%s), errno %d", newname, type, errno); }
+#endif
 		if((flags&0xf) != OPEN_READ) {
 			FILE * hmm = fopen_wrap(newname,"rb");
 			if (hmm) {

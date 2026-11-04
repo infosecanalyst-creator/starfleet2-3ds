@@ -17,4 +17,5 @@ bool sf2w_pending(const char* path, std::vector<uint8_t>& out);     // latest qu
 void sf2w_wait(const char* path);                          // until the file's writes have landed (0 = all)
 void sf2w_cancel(const char* path);                        // the file is being deleted: drop its writes
 int  sf2w_rename(const char* from, const char* to);        // rename on the card; queued writes follow the file
+void sf2w_wait_busy(const char* path);                     // until a write in progress of this file ends
 bool sf2w_pending_size(const char* path, size_t* n);      // size of the latest queued contents, if any

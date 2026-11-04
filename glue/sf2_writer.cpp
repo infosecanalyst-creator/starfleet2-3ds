@@ -7,6 +7,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
+#include <errno.h>
 #include <string>
 #include <deque>
 #include "sf2_writer.h"
@@ -32,8 +33,13 @@ static void write_file(const Job& j) {
   u64 t0 = svcGetSystemTick();
   // Rewrite in place ("r+b") rather than truncating to zero first: freeing and re-allocating the
   // file's clusters is the slow part on the 3DS.
-  FILE* f = fopen(j.path.c_str(), "r+b");
-  if (!f) f = fopen(j.path.c_str(), "wb");
+  // The real 3DS refuses to open a file the game has open: try again for a few seconds.
+  FILE* f = 0;
+  for (int tries = 0; !f && tries < 30; tries++) {
+    f = fopen(j.path.c_str(), "r+b");
+    if (!f) f = fopen(j.path.c_str(), "wb");
+    if (!f) { if (tries == 0) sf2ctr_log("write refused, retrying: %s (errno %d)", j.path.c_str(), errno); svcSleepThread(200 * 1000 * 1000); }
+  }
   if (!f) { sf2ctr_log("write failed: %s", j.path.c_str()); return; }
   fseek(f, 0, SEEK_END);
   long old = ftell(f);
@@ -137,6 +143,8 @@ static void wait_not_busy(const char* path) {
     svcSleepThread(2 * 1000 * 1000);
   }
 }
+
+void sf2w_wait_busy(const char* path) { if (started) wait_not_busy(path); }
 
 void sf2w_cancel(const char* path) {
   if (!started) return;

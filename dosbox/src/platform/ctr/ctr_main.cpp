@@ -52,6 +52,7 @@
 #include "ctr_input.h"
 #ifdef SF2_3DS
 #include "sf2_ctr.h"
+#include <exception>
 #endif
 
 #include "../../gui/dosbox_splash.h"
@@ -663,15 +664,20 @@ int main(int argc, char* argv[]) {
 		/* Start up main machine */
 		control->StartUp();
 		/* Shutdown everything */
+		sf2ctr_log("DOSBox finished (the game quit)");
 	} catch (char * error) {
+		sf2ctr_log("DOSBox error: %s", error);
 		ctr_sys_error(false,error);
 		gfxExit();
 	}
 	catch (int){
-		; //nothing, pressed killswitch
+		sf2ctr_log("DOSBox stopped (killswitch)");
+	}
+	catch (std::exception& e) {
+		sf2ctr_log("DOSBox stopped by an exception: %s", e.what());
 	}
 	catch(...){
-		; // Unknown error, let's just exit.
+		sf2ctr_log("DOSBox stopped by an unknown exception");
 	}
 	SDL_Quit();//Let's hope sdl will quit as well when it catches an exception
 

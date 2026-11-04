@@ -76,7 +76,13 @@ void DOS_UpdatePSPName(void) {
 	GFX_SetTitle(-1,-1,false);
 }
 
+#ifdef SF2_3DS
+void sf2ctr_log(const char* fmt, ...);
+#endif
 void DOS_Terminate(Bit16u pspseg,bool tsr,Bit8u exitcode) {
+#ifdef SF2_3DS
+	sf2ctr_log("program ended, exit code %u%s", (unsigned)exitcode, tsr ? " (TSR)" : "");
+#endif
 
 	dos.return_code=exitcode;
 	dos.return_mode=(tsr)?(Bit8u)RETURN_TSR:(Bit8u)RETURN_EXIT;
@@ -238,6 +244,9 @@ bool DOS_Execute(char * name,PhysPt block_pt,Bit8u flags) {
 	EXE_Header head;Bitu i;
 	Bit16u fhandle;Bit16u len;Bit32u pos;
 	Bit16u pspseg,envseg,loadseg,memsize,readsize;
+#ifdef SF2_3DS
+	sf2ctr_log("run %s", name);
+#endif
 	PhysPt loadaddress;RealPt relocpt;
 	Bitu headersize=0,imagesize=0;
 	DOS_ParamBlock block(block_pt);
