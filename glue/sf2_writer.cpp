@@ -72,8 +72,12 @@ static void drain_at_exit() { sf2w_wait(0); }
 
 // Called from every wait loop: if a wait drags on, say so once in the debug log.
 static void waited(int& n, const char* what) {
-  if (++n == 5000) sf2ctr_log("still waiting for the background writer (%s)", what);   // ~10 s
+  if (++n == 200) sf2ctr_log("still waiting for the background writer (%s)", what);   // ~10 s
 }
+
+// Sleep until the writer finishes a file (or 50 ms pass). Waking every couple of milliseconds to
+// check instead slowed the writer from 0.3 s to ~16 s per file on a real 3DS.
+static void block_until_done() { LightEvent_WaitTimeout(&done, 50LL * 1000 * 1000); }
 
 void sf2w_start() {
   if (started) return;
@@ -130,7 +134,7 @@ void sf2w_wait(const char* path) {
     LightLock_Unlock(&lock);
     if (!b) return;
     LightEvent_Signal(&wake);
-    svcSleepThread(2 * 1000 * 1000);
+    block_until_done();
   }
 }
 
@@ -140,7 +144,7 @@ static void wait_not_busy(const char* path) {
     waited(n, path);
     LightLock_Lock(&lock); bool b = same_path(busy_path, path); LightLock_Unlock(&lock);
     if (!b) return;
-    svcSleepThread(2 * 1000 * 1000);
+    block_until_done();
   }
 }
 
@@ -165,7 +169,7 @@ int sf2w_rename(const char* from, const char* to) {
     LightLock_Lock(&lock);
     if (!same_path(busy_path, from)) break;
     LightLock_Unlock(&lock);
-    svcSleepThread(2 * 1000 * 1000);
+    block_until_done();
   }
   int r = rename(from, to);
   if (r == 0) for (auto& j : jobs) if (same_path(j.path, from)) j.path = to;
