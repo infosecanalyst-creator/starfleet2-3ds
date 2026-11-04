@@ -29,7 +29,7 @@ static std::vector<Ev> queue;          // pending key events
 static uint32_t next_key_ms = 0;
 static const uint32_t KEY_GAP_MS = 35; // spacing between injected key events
 
-enum ActKind { A_NONE, A_KEY, A_MODE, A_MANUAL, A_KB, A_SECTION, A_CLOSE, A_TYPE, A_SIGNON, A_SAVE };
+enum ActKind { A_NONE, A_KEY, A_MODE, A_MANUAL, A_KB, A_SECTION, A_CLOSE, A_TYPE, A_SIGNON, A_SAVE, A_VIEW, A_PAUSE, A_QUIT, A_QUIT_YES, A_SETTINGS };
 struct Act { ActKind kind; Key key; uint8_t mods; int arg; };
 enum { M_SHIFT = 1, M_CTRL = 2, M_ALT = 4 };
 
@@ -37,6 +37,7 @@ struct Btn {
   int x0, y0, x1, y1;
   std::string label; int hot; bool sel;
   const Font* font; Act act; bool on_top;
+  bool off;                            // can't be used on this screen: greyed out, taps do nothing
 };
 static std::vector<Btn> btns;          // buttons drawn on the touch screen this frame
 struct BtnId { int x0, y0, x1, y1; std::string label; bool valid; };
@@ -60,6 +61,12 @@ static bool dragging = false; static int drag_x, drag_y, drag_lx, drag_ly, drag_
 static int tap_x = -1, tap_y = -1;
 
 // target box driver (closed loop: press an arrow, look where the box went, repeat)
+// START menu (pause): resume, manual, quick save, game settings, exit.
+static bool pause_open = false, quit_confirm = false;
+// Busy feedback: a button was pressed and the game hasn't answered yet (see frame()).
+static uint32_t busy_since = 0; static bool busy_now = false;
+// Jumping straight to another view: close what's open (Esc) until the game is back at a view, then switch.
+static int view_goal = -1, view_esc = 0; static uint32_t view_next = 0;
 static bool tdb_drive = false; static int tdb_tc, tdb_tr, tdb_steps; static uint32_t tdb_next = 0;
 static bool tdb_enter_after = false; static int tdb_best = 9999;
 
@@ -262,17 +269,19 @@ static Box tile(Surf& s, int x0, int y0, int x1, int y1, const char* title) {
 static void add_btn(int x0, int y0, int x1, int y1, const std::string& label, const Font* f, Act a,
                     int hot = -1, bool sel = false) {
   Btn b; b.x0 = x0; b.y0 = y0; b.x1 = x1; b.y1 = y1; b.label = label; b.hot = hot; b.sel = sel;
-  b.font = f; b.act = a; b.on_top = false;
+  b.font = f; b.act = a; b.on_top = false; b.off = false;
   btns.push_back(b);
 }
 static Act key_act(Key k, uint8_t mods = 0) { Act a; a.kind = A_KEY; a.key = k; a.mods = mods; a.arg = 0; return a; }
 static Act kind_act(ActKind k, int arg = 0) { Act a; a.kind = k; a.key = K_NONE; a.mods = 0; a.arg = arg; return a; }
 
+static const uint16_t OFF_BG = rgb(14, 16, 22), OFF_EDGE = rgb(36, 40, 50), OFF_TXT = rgb(72, 78, 92);
 static void draw_btn(Surf& s, int i) {
   const Btn& b = btns[i];
-  bool down = same(pressed_id, b) || (flash_on && same(flash_id, b) && (int32_t)(flash_until - now()) > 0);
+  bool down = !b.off && (same(pressed_id, b) || (flash_on && same(flash_id, b) && (int32_t)(flash_until - now()) > 0));
   s.fill(b.x0, b.y0, b.x1, b.y1, BG);
-  s.round_rect(b.x0 + 1, b.y0 + 1, b.x1 - 1, b.y1 - 1, down ? BTN_DOWN : (b.sel ? BTN_SEL : BTN), down ? BTN_TXT : BTN_EDGE);
+  if (b.off) s.round_rect(b.x0 + 1, b.y0 + 1, b.x1 - 1, b.y1 - 1, OFF_BG, OFF_EDGE);
+  else s.round_rect(b.x0 + 1, b.y0 + 1, b.x1 - 1, b.y1 - 1, down ? BTN_DOWN : (b.sel ? BTN_SEL : BTN), down ? BTN_TXT : BTN_EDGE);
   // label: pick the biggest font that fits, never cut off
   const Font* f = b.font;
   if (text_width(b.label.c_str(), *f) > b.x1 - b.x0 - 4 && f != &F6x12) f = &F6x12;
@@ -285,7 +294,7 @@ static void draw_btn(Surf& s, int i) {
   int ty = b.y0 + (b.y1 - b.y0 - f->h) / 2 + (down ? 1 : 0);
   for (size_t k = 0; k < lab.size(); k++) {
     char one[2] = {lab[k], 0};
-    draw_text(s, tx + (int)k * f->w, ty, one, *f, (int)k == b.hot ? HOT : BTN_TXT);
+    draw_text(s, tx + (int)k * f->w, ty, one, *f, b.off ? OFF_TXT : (int)k == b.hot ? HOT : BTN_TXT);
   }
 }
 
@@ -303,6 +312,44 @@ static bool menu_sep(const TextScreen& ts, int c) {
   return (ch >= 0xB0 && ch <= 0xDF) || ts.at[24][c] == 0x08;
 }
 static bool has_letter(const std::string& w) { for (char c : w) if (isalpha((unsigned char)c)) return true; return false; }
+// Key hints in brackets on one row: "[M]: menu  [Esc]: exit  [Ctrl][M]: menu  [D]elete [CR]:accept".
+static const Key VIEW_KEYS[7] = {K_N, K_S, K_W, K_X, K_F, K_O, K_L};
+static const uint8_t VIEW_MODS[7] = {M_ALT, M_ALT, M_ALT, M_ALT, M_ALT, M_CTRL, M_CTRL};
+static void parse_hints(std::string row, std::vector<MenuItem>& items, std::string* prompt) {
+  for (auto& ch2 : row) if ((uint8_t)ch2 >= 0xB0 && (uint8_t)ch2 <= 0xDF) ch2 = ' ';   // drop border/filler cells
+  size_t p = 0;
+  uint8_t mods = 0;
+  while ((p = row.find('[', p)) != std::string::npos) {
+    size_t q = row.find(']', p);
+    if (q == std::string::npos || q - p > 6) break;
+    std::string key = row.substr(p + 1, q - p - 1), lab;
+    std::string ku = key; for (auto& ch2 : ku) ch2 = (char)toupper((unsigned char)ch2);
+    if (ku == "CTRL" || ku == "ALT" || ku == "SHFT" || ku == "SHIFT") {     // modifier for the next key
+      mods |= ku == "CTRL" ? M_CTRL : ku == "ALT" ? M_ALT : M_SHIFT;
+      p = q + 1;
+      continue;
+    }
+    size_t t = q + 1;
+    bool joined = key.size() == 1 && t < row.size() && isalpha((unsigned char)row[t]);   // "[D]elete"
+    if (joined) lab = key;
+    while (t < row.size() && (row[t] == ':' || row[t] == ' ' || row[t] == '=' || row[t] == '-')) t++;
+    while (t < row.size() && row[t] != '[' && (uint8_t)row[t] >= ' ' && (uint8_t)row[t] < 0x7F &&
+           !(row[t] == ' ' && t + 1 < row.size() && row[t + 1] == ' ')) lab += row[t++];
+    MenuItem m; m.hot = -1; m.sel = false; m.key = 0; m.mods = mods; mods = 0;
+    if (key == "Esc" || key == "ESC") m.key = 27;
+    else if (key == "Enter" || key == "CR") m.key = 13;
+    else if (key.size() == 1) m.key = key[0];
+    if (m.key) {
+      m.label = trim(lab).empty() ? key : trim(lab);
+      if (m.label.size() > 10 && m.label.find(' ') != std::string::npos) m.label = m.label.substr(0, m.label.find(' '));   // a button, not a sentence
+      for (auto& ch2 : m.label) if (ch2 >= 'a' && ch2 <= 'z') ch2 -= 32;
+      if (joined) m.hot = 0;
+      items.push_back(m);
+      if (prompt && prompt->find('[') != std::string::npos) *prompt = trim(prompt->substr(0, prompt->find('[')));
+    }
+    p = q + 1;
+  }
+}
 static std::vector<MenuItem> parse_menu(const TextScreen& ts, std::string& prompt) {
   std::vector<MenuItem> items;
   int c = 0;
@@ -340,43 +387,35 @@ static std::vector<MenuItem> parse_menu(const TextScreen& ts, std::string& promp
     // key hints in brackets: "[M]: menu  [Esc]: exit  [Ctrl][M]: menu"
     { int e = 0; while (e < 80 && !menu_sep(ts, e)) e++;      // the prompt is the text before the first separator
       prompt = trim(row_str(ts, 24, 0, e)); }
-    for (auto& ch2 : row) if ((uint8_t)ch2 >= 0xB0 && (uint8_t)ch2 <= 0xDF) ch2 = ' ';   // drop border/filler cells
-    size_t p = 0;
-    uint8_t mods = 0;
-    while ((p = row.find('[', p)) != std::string::npos) {
-      size_t q = row.find(']', p);
-      if (q == std::string::npos || q - p > 6) break;
-      std::string key = row.substr(p + 1, q - p - 1), lab;
-      std::string ku = key; for (auto& ch2 : ku) ch2 = (char)toupper((unsigned char)ch2);
-      if (ku == "CTRL" || ku == "ALT" || ku == "SHFT" || ku == "SHIFT") {     // modifier for the next key
-        mods |= ku == "CTRL" ? M_CTRL : ku == "ALT" ? M_ALT : M_SHIFT;
-        p = q + 1;
-        continue;
-      }
-      size_t t = q + 1;
-      while (t < row.size() && (row[t] == ':' || row[t] == ' ')) t++;
-      while (t < row.size() && row[t] != '[' && (uint8_t)row[t] >= ' ' && (uint8_t)row[t] < 0x7F &&
-             !(row[t] == ' ' && t + 1 < row.size() && row[t + 1] == ' ')) lab += row[t++];
-      MenuItem m; m.hot = -1; m.sel = false; m.key = 0; m.mods = mods; mods = 0;
-      if (key == "Esc" || key == "ESC") m.key = 27;
-      else if (key == "Enter" || key == "CR") m.key = 13;
-      else if (key.size() == 1) m.key = key[0];
-      if (m.key) {
-        m.label = trim(lab).empty() ? key : trim(lab);
-        for (auto& ch2 : m.label) if (ch2 >= 'a' && ch2 <= 'z') ch2 -= 32;
-        items.push_back(m);
-        if (prompt.find('[') != std::string::npos) prompt = trim(prompt.substr(0, prompt.find('[')));
-      }
-      p = q + 1;
-    }
+    parse_hints(row, items, &prompt);
+  }
+  // A window open over the screen with its own key hints ("[D]elete [S]wap [R]eset [CR]:accept"):
+  // those keys are what the game is waiting for, so they win over the menu row.
+  for (int r = 23; r >= 1; r--) {
+    std::vector<MenuItem> h;
+    parse_hints(row_str(ts, r, 0, 80), h, 0);
+    if (h.size() >= 2) { items = h; break; }
   }
   return items;
+}
+static bool window_hints(const TextScreen& ts) {     // a window with its own keys is open
+  for (int r = 23; r >= 1; r--) { std::vector<MenuItem> h; parse_hints(row_str(ts, r, 0, 80), h, 0); if (h.size() >= 2) return true; }
+  return false;
 }
 
 static bool cursor_question(const TextScreen& ts);
 // Prompt strip (y 180..194): the game's question, a toast, or the line being typed; scrolls when long.
 static void prompt_strip(Surf& s, const TextScreen& ts, const std::string& prompt) {
   s.fill(0, 180, BOT_W, 194, PROMPT_BG);
+  if (busy_now) {                                // moving bar: the game is still working on the press
+    draw_text(s, 4, 181, "Working...", F6x12, LOUPE);
+    int x0 = 74, x1 = BOT_W - 6, w = 40, span = x1 - x0 - w;
+    int pos = (int)((now() / 12) % (uint32_t)(2 * span)); if (pos > span) pos = 2 * span - pos;
+    s.fill(x0, 185, x1, 189, BTN);
+    s.fill(x0 + pos, 184, x0 + pos + w, 190, LOUPE);
+    marquee = false;
+    return;
+  }
   bool showing_toast = !toast.empty() && (int32_t)(toast_until - now()) > 0;
   std::string line = showing_toast ? toast : prompt;
   if (!showing_toast && kb_open && ts.cursor_y >= 0 && ts.cursor_y < 25) line = trim(row_str(ts, ts.cursor_y, 0, 80));
@@ -449,11 +488,12 @@ static void bottom_rows(Surf& s, const TextScreen& ts) {
     add_btn(213, 194, 320, 217, kb_open ? "HIDE KEYS" : "KEYBOARD", &F8x16, kind_act(A_KB));
   }
   static const char* views[8] = {"STARS", "SYSTEM", "WAR", "COMBAT", "FLEET", "ORDERS", "LOG", "MANUAL"};
-  static const Key vkeys[8] = {K_N, K_S, K_W, K_X, K_F, K_O, K_L, K_NONE};
-  static const uint8_t vmods[8] = {M_ALT, M_ALT, M_ALT, M_ALT, M_ALT, M_CTRL, M_CTRL, 0};
+  // The views only exist during a mission (the status lights are on the top row then).
+  bool in_mission = row_str(ts, 0, 0, 80).find("LOW PWR") != std::string::npos;
   for (int i = 0; i < 8; i++) {
     int a, b; split(BOT_W, 8, i, a, b);
-    add_btn(a, 217, b, 240, views[i], &F6x12, i == 7 ? kind_act(A_MANUAL) : key_act(vkeys[i], vmods[i]));
+    add_btn(a, 217, b, 240, views[i], &F6x12, i == 7 ? kind_act(A_MANUAL) : kind_act(A_VIEW, i));
+    if (i < 7 && !in_mission) btns.back().off = true;
   }
 }
 
@@ -926,6 +966,31 @@ static void graphics_bottom(Surf& s) {
   add_btn(160, 194, 320, 217, "MANUAL", &F8x16, kind_act(A_MANUAL));
 }
 
+// ------------------------------------------------------------------ START menu
+static void pause_bottom(Surf& s, const TextScreen& ts) {
+  s.fill(0, 0, BOT_W, BOT_H, BG);
+  if (quit_confirm) {
+    fit_text(s, (BOT_W - text_width("Exit Star Fleet II?", F8x16)) / 2, 50, BOT_W, "Exit Star Fleet II?", F8x16, TITLE, "pause");
+    const char* l2 = "Anything since your last save is lost.";
+    fit_text(s, (BOT_W - text_width(l2, F6x12)) / 2, 80, BOT_W, l2, F6x12, BTN_TXT, "pause");
+    add_btn(20, 130, 155, 175, "EXIT GAME", &F8x16, kind_act(A_QUIT_YES));
+    add_btn(165, 130, 300, 175, "KEEP PLAYING", &F8x16, kind_act(A_PAUSE));
+    return;
+  }
+  fit_text(s, (BOT_W - text_width("MENU", F8x16)) / 2, 6, BOT_W, "MENU", F8x16, TITLE, "pause");
+  bool bridge = ts.text_mode && is_bridge(ts);
+  bool menu = ts.text_mode && screen_has(ts, "Change default settings", 0, 24);
+  const char* lab[5] = {"RESUME", "MANUAL", "QUICK SAVE", "GAME SETTINGS", "EXIT GAME"};
+  Act act[5] = {kind_act(A_PAUSE), kind_act(A_MANUAL), kind_act(A_SAVE), kind_act(A_SETTINGS), kind_act(A_QUIT)};
+  for (int i = 0; i < 5; i++) {
+    add_btn(40, 28 + i * 36, 280, 60 + i * 36, lab[i], &F8x16, act[i]);
+    if ((i == 2 && !bridge) || (i == 3 && !menu) || (i == 4 && !(H && H->quit))) btns.back().off = true;
+  }
+  const char* note = bridge ? "B or START: back to the game" :
+                     menu ? "Quick save works on the bridge." : "Quick save: on the bridge. Settings: main menu.";
+  fit_text(s, (BOT_W - text_width(note, F6x12)) / 2, 216, BOT_W, note, F6x12, HINT, "pause");
+}
+
 // ------------------------------------------------------------------ public API
 void init(const Host* host) {
   H = host;
@@ -951,7 +1016,8 @@ static void typed_enter() {
 
 static void fire(const Act& a) {
   switch (a.kind) {
-    case A_KEY: if (a.key != K_NONE) press(a.key, a.mods); if (a.key == K_ENTER) typed_enter(); break;
+    case A_KEY: if (a.key != K_NONE) press(a.key, a.mods); if (a.key == K_ENTER) typed_enter(); busy_since = now(); break;
+    case A_VIEW: view_goal = a.arg; view_esc = 0; view_next = now(); busy_since = now(); break;
     case A_TYPE:
       if (last.cursor_y != typed_y) { typed.clear(); typed_y = last.cursor_y; }
       press(a.key, a.mods);
@@ -962,13 +1028,17 @@ static void fire(const Act& a) {
     case A_SIGNON:
       typed.clear(); type_text(off_name); press(K_ENTER); autologin = 1; pass_tries = 0; pend_name = off_name; say("Signing on...", 1500);
       break;
-    case A_SAVE: press(K_Q, M_CTRL); say("Quick save", 1500); break;
+    case A_SAVE: press(K_Q, M_CTRL); say("Quick save", 1500); pause_open = false; break;
+    case A_PAUSE: pause_open = false; quit_confirm = false; break;
+    case A_QUIT: quit_confirm = true; break;
+    case A_QUIT_YES: if (H && H->quit) H->quit(); break;
+    case A_SETTINGS: pause_open = false; press(K_C); break;
     case A_MODE:
       tap_mode = (TapMode)((tap_mode + 1) % 3);
       say(tap_mode == TM_AUTO ? "Taps target when the target box is up, else steer" :
           tap_mode == TM_STEER ? "Taps always steer" : "Taps always move the target box");
       break;
-    case A_MANUAL: manual_open = true; man_scroll = 0; break;
+    case A_MANUAL: manual_open = true; man_scroll = 0; pause_open = false; break;
     case A_KB:
       if (kb_open) { kb_open = false; kb_user_hidden = true; kb_forced = false; }
       else { kb_open = true; kb_forced = true; kb_user_hidden = false; }
@@ -1037,19 +1107,34 @@ Redraw frame(const TextScreen& ts, uint16_t* top, uint16_t* bottom) {
     }
   }
 
+  // jump to a view: Esc out of whatever is open first (at most 4 times), then the view's key
+  if (view_goal >= 0 && queue.empty() && (int32_t)(t - view_next) >= 0) {
+    bool open_thing = ts.text_mode && (window_hints(ts) || cursor_question(ts) || wants_text(ts) ||
+                      screen_has(ts, "PRESS ANY KEY", 0, 24) || screen_has(ts, "PRESS KEY", 0, 24));
+    if (!open_thing || view_esc >= 4) { press(VIEW_KEYS[view_goal], VIEW_MODS[view_goal]); view_goal = -1; }
+    else { press(K_ESC); view_esc++; view_next = t + 900; }
+  }
+
   bool changed = memcmp(&ts, &last, sizeof ts) != 0;
+  // Busy feedback: after a press, if the game hasn't changed the screen within 0.35 s, the prompt
+  // strip shows a moving "Working" bar until it does (or 60 s pass), so a slow step never looks dead.
+  if (busy_since && changed && view_goal < 0) busy_since = 0;
+  if (busy_since && (int32_t)(t - busy_since) > 60000) busy_since = 0;
+  bool was_busy = busy_now;
+  busy_now = busy_since && (int32_t)(t - busy_since) > 350;
+  if (was_busy && !busy_now) dirty();
   static uint32_t last_anim = 0;
   // (-50: keep redrawing a little past the end so the button's released look gets drawn)
   if (flash_on && (int32_t)(flash_until - t) <= -50) flash_on = false;
   bool toast_anim = !toast.empty() && (int32_t)(toast_until - t) > -50;
-  bool scroll_due = marquee && t - last_anim >= 50;
+  bool scroll_due = (marquee || busy_now) && t - last_anim >= 50;
   bool full = changed || drawn_version != ui_version;
   if (!full && !flash_on && !toast_anim && !scroll_due) return rd;
   if (flash_on || toast_anim || scroll_due) last_anim = t;
 
   Surf ts_top = {top, TOP_W, TOP_H}, ts_bot = {bottom, BOT_W, BOT_H};
   // Only the scrolling prompt moved: redraw just that strip (keeps idle screens cheap).
-  if (!full && !flash_on && !toast_anim && ts.text_mode && !manual_open) {
+  if (!full && !flash_on && !toast_anim && ts.text_mode && !manual_open && !pause_open) {
     std::string prompt; parse_menu(ts, prompt);
     prompt_strip(ts_bot, ts, prompt);
     rd.bottom = true; rd.by0 = 180; rd.by1 = 194;
@@ -1060,6 +1145,8 @@ Redraw frame(const TextScreen& ts, uint16_t* top, uint16_t* bottom) {
   if (manual_open) {
     if (draw_top) manual_top(ts_top);
     manual_bottom(ts_bot); rd.top = draw_top; rd.bottom = true;
+  } else if (pause_open) {
+    pause_bottom(ts_bot, ts); rd.bottom = true;
   } else if (!ts.text_mode) {
     graphics_bottom(ts_bot); rd.bottom = true;
   } else if (is_bridge(ts)) {
@@ -1086,7 +1173,7 @@ static bool touch_was_down = false;
 static int tap_kind = 0;   // 0 none, 1 tactical, 2 loupe
 static int hit(int x, int y) {
   for (int i = (int)btns.size() - 1; i >= 0; i--)
-    if (x >= btns[i].x0 && x < btns[i].x1 && y >= btns[i].y0 && y < btns[i].y1) return i;
+    if (x >= btns[i].x0 && x < btns[i].x1 && y >= btns[i].y0 && y < btns[i].y1) return btns[i].off ? -2 : i;
   return -1;
 }
 
@@ -1164,7 +1251,7 @@ void touch(int x, int y, bool down) {
       pressed_id = id_of(btns[i]);
       if (H && H->click) H->click();
       dirty();
-    } else if (!manual_open && !kb_open && last.text_mode) {
+    } else if (!manual_open && !pause_open && !kb_open && last.text_mode) {
       if (is_bridge(last) && x < 180 && y < 180) { tap_kind = 1; tap_x = x; tap_y = y; }
       else if (!is_bridge(last) && y < 180 && glay.kind == G_MAP) { tap_kind = 2; tap_x = x; tap_y = y; }
     }
@@ -1216,7 +1303,11 @@ void buttons(uint32_t held, uint32_t pr, uint32_t rel) {
     if (pr & (B_B | B_START)) { manual_open = false; dirty(); }
     return;
   }
-  if (pr & B_START) { manual_open = true; man_scroll = 0; dirty(); return; }
+  if (pause_open) {
+    if (pr & (B_B | B_START)) { if (quit_confirm) quit_confirm = false; else pause_open = false; dirty(); }
+    return;
+  }
+  if (pr & B_START) { pause_open = true; quit_confirm = false; dirty(); return; }
   if (pr & B_SELECT) fire(kind_act(is_bridge(last) ? A_SAVE : A_KB));   // quick save on the bridge
   if (pr & B_A) { press(K_ENTER); typed_enter(); }
   if (pr & B_B) press(K_ESC);

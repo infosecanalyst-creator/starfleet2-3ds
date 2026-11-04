@@ -49,11 +49,16 @@ void sf2ctr_log(const char* fmt, ...);
 #include <map>
 #include <string>
 // stat(), corrected for writes still queued in the background writer (the card has the old size).
+// A file that is queued or being written is answered from the writer's copy without touching the
+// card: on a real 3DS, looking at a file while it is being written stalls both for ~20 s.
 static int sf2_stat(const char* path, struct stat* st) {
-	int r = stat(path, st);
 	size_t n;
-	if (r == 0 && sf2w_pending_size(path, &n)) { st->st_size = (off_t)n; st->st_mtime = time(0); }
-	return r;
+	if (sf2w_pending_size(path, &n)) {
+		memset(st, 0, sizeof *st);
+		st->st_mode = S_IFREG | 0666; st->st_size = (off_t)n; st->st_mtime = time(0); st->st_nlink = 1;
+		return 0;
+	}
+	return stat(path, st);
 }
 static void sf2_stat_forget(const char*) {}
 static void sf2_stat_size(const char*, Bit32u) {}
@@ -139,6 +144,9 @@ bool localDrive::FileOpen(DOS_File * * file,char * name,Bit32u flags) {
 		}
 	}
 
+#ifdef SF2_3DS
+	sf2w_wait_busy(newname);                   // opening a file while it is written stalls ~20 s on a 3DS
+#endif
 	FILE * hand = fopen_wrap(newname,type);
 #ifdef SF2_3DS
 	if (!hand) {                               // the real 3DS may refuse a file being written: wait, retry
@@ -629,7 +637,15 @@ bool localFile::Close() {
 	// only close if one reference left
 	if (refCtr==1) {
 #ifdef SF2_3DS
+		if (mem && sf2_path[0]) {
+			// close the card's handle first, then queue the contents: closing a file while the
+			// writer is writing it stalls ~20 s on a real 3DS
+			if (fhandle) { fclose(fhandle); fhandle = 0; }
+			if (mem_dirty) { sf2w_queue(sf2_path, mem, mem_size); mem_dirty = false; }
+			free(mem); mem = 0;
+		}
 		if (mem) { mem_writeback(); free(mem); mem = 0; }
+		if (fhandle && sf2_path[0]) sf2w_wait_busy(sf2_path);
 #endif
 		if(fhandle) fclose(fhandle);
 		fhandle = 0;

@@ -116,7 +116,9 @@ static void key_logged(sf2ui::Key k, bool down) {
   sf2_key(k, down);
 }
 static void save_bg(const char* path, const char* data, unsigned n) { sf2w_queue(path, (const uint8_t*)data, n); }
-static sf2ui::Host host = {key_logged, click, ms, "sdmc:/3ds/starfleet2/manual.txt", "sdmc:/3ds/starfleet2/officer.txt", save_bg};
+static bool quit_req = false;                  // START menu > EXIT GAME
+static void quit_app() { sf2ctr_log("exit chosen in the START menu"); quit_req = true; }
+static sf2ui::Host host = {key_logged, click, ms, "sdmc:/3ds/starfleet2/manual.txt", "sdmc:/3ds/starfleet2/officer.txt", save_bg, quit_app};
 
 static void init() {
   gfxSet3D(false);
@@ -218,7 +220,7 @@ void sf2ctr_events() {
 
   SDL_Event e;
   while (SDL_PollEvent(&e)) if (e.type == SDL_QUIT) throw(0);
-  if (!aptMainLoop()) throw(0);
+  if (!aptMainLoop() || quit_req) throw(0);
   hidScanInput();
 
   // SDL's event pump also calls hidScanInput(), so hidKeysDown()/hidKeysUp() miss presses:
