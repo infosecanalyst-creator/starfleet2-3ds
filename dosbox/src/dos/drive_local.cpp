@@ -139,10 +139,13 @@ bool localDrive::FileOpen(DOS_File * * file,char * name,Bit32u flags) {
 		}
 	}
 
-#ifdef SF2_3DS
-	sf2w_wait_busy(newname);                   // the real 3DS refuses to open a file being written
-#endif
 	FILE * hand = fopen_wrap(newname,type);
+#ifdef SF2_3DS
+	if (!hand) {                               // the real 3DS may refuse a file being written: wait, retry
+		sf2w_wait_busy(newname);
+		hand = fopen_wrap(newname,type);
+	}
+#endif
 //	Bit32u err=errno;
 	if (!hand) { 
 #ifdef SF2_3DS

@@ -679,6 +679,7 @@ int main(int argc, char* argv[]) {
 	catch(...){
 		sf2ctr_log("DOSBox stopped by an unknown exception");
 	}
+	sf2ctr_log_flush(true);
 	SDL_Quit();//Let's hope sdl will quit as well when it catches an exception
 
 #if defined(CTR_ROMFS)

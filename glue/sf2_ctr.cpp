@@ -13,6 +13,7 @@
 #include <stdio.h>
 #include <stdarg.h>
 #include <sys/stat.h>
+#include <string>
 #include "sf2ui.h"
 #include "sf2_dosbox.h"
 #include "sf2_ctr.h"
@@ -136,6 +137,7 @@ void sf2ctr_screen_reset() { top_refresh = 15; if (inited) sf2ui::force_redraw()
 // exactly what is missing if not (instead of booting a bare DOS prompt).
 void sf2ctr_check_install() {
   sf2w_start();                                 // background SD writer, before DOSBox opens any file
+  sf2ctr_log_buffered();
   const char* need[] = {"sdmc:/3ds/starfleet2/starfleet2.conf", "sdmc:/3ds/starfleet2/game/SF2.EXE"};
   char missing[300] = "";
   for (const char* f : need) {
@@ -155,19 +157,47 @@ void sf2ctr_check_install() {
 // ------------------------------------------------------------------ logs (sdmc:/3ds/starfleet2/)
 static const char* LOG_PATH = "sdmc:/3ds/starfleet2/debug.log";
 static int log_lines = 0;
+// The log is kept in memory and handed to the background SD writer about once a second: opening
+// and appending to a file on the real 3DS's SD card takes 100-200 ms, which stalled the game on
+// every line. Until the writer runs (start-up), and when the app is stopping, lines go straight
+// to the card.
+static LightLock log_lock; static bool log_lock_ready = false;   // the SD writer thread logs too
+static std::string log_buf;
+static bool log_dirty = false;
+static bool log_direct = true;
 void sf2ctr_log(const char* fmt, ...) {
   if (log_lines > 2000) return;                 // keep the file small
-  static LightLock log_lock; static bool log_lock_ready = false;   // the SD writer thread logs too
   if (!log_lock_ready) { LightLock_Init(&log_lock); log_lock_ready = true; }
-  LightLock_Lock(&log_lock);
   char buf[256];
   va_list ap; va_start(ap, fmt); vsnprintf(buf, sizeof buf, fmt, ap); va_end(ap);
   svcOutputDebugString(buf, strlen(buf));       // also visible in emulator logs
+  char line[300];
+  snprintf(line, sizeof line, "%8llu %s\n", (unsigned long long)osGetTime() % 100000000ull, buf);
+  LightLock_Lock(&log_lock);
   if (!log_lines) { mkdir("sdmc:/3ds", 0777); mkdir("sdmc:/3ds/starfleet2", 0777); }
-  FILE* f = fopen(LOG_PATH, log_lines ? "a" : "w");
-  if (f) { fprintf(f, "%8llu %s\n", (unsigned long long)osGetTime() % 100000000ull, buf); fclose(f); }
+  log_buf += line;
+  if (log_direct) {
+    FILE* f = fopen(LOG_PATH, log_lines ? "a" : "w");
+    if (f) { fputs(line, f); fclose(f); }
+  } else log_dirty = true;
   log_lines++;
   LightLock_Unlock(&log_lock);
+}
+
+// Main thread only. now: write it before returning (the app is stopping).
+void sf2ctr_log_flush(bool now) {
+  if (!log_lock_ready) return;
+  LightLock_Lock(&log_lock);
+  bool d = log_dirty; log_dirty = false;
+  std::string copy; if (d) copy = log_buf;
+  if (now) log_direct = true;                   // from here on, write each line directly
+  LightLock_Unlock(&log_lock);
+  if (d) sf2w_queue(LOG_PATH, (const uint8_t*)copy.data(), copy.size());
+  if (now) sf2w_wait(0);
+}
+void sf2ctr_log_buffered() {                    // once the background writer runs
+  if (!log_lock_ready) { LightLock_Init(&log_lock); log_lock_ready = true; }
+  LightLock_Lock(&log_lock); log_direct = false; LightLock_Unlock(&log_lock);
 }
 
 unsigned long long sf2_now_us() { return svcGetSystemTick() / (SYSCLOCK_ARM11 / 1000000); }
@@ -233,6 +263,9 @@ void sf2ctr_events() {
     for (auto& p : sf2ui::fit_problems()) sf2ctr_log("FIT: %s", p.c_str());
     perf_t = now; perf_ticks = sf2_emu_ticks; perf_under = sf2_mixer_underruns; draw_us = 0; draws = 0;
   }
+
+  static u64 flush_t = 0;                       // hand the log to the SD writer every 5 s
+  if (now - flush_t >= 5000) { flush_t = now; sf2ctr_log_flush(false); }
 
   // redraw at most ~30 times a second
   if (now - last_frame < 33) return;
