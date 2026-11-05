@@ -1,0 +1,37 @@
+name: build-3dsx
+# Builds starfleet2.3dsx with devkitARM and publishes it (with the build log) to the `builds`
+# branch, so it can be tested in an emulator and installed over Wi-Fi without a local build.
+on:
+  push:
+    branches: ["**", "!builds"]
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    container: devkitpro/devkitarm
+    steps:
+      - name: Tools
+        run: |
+          apt-get update -qq
+          apt-get install -y -qq git python3 make ca-certificates >/dev/null
+          git config --global --add safe.directory '*'
+      - uses: actions/checkout@v4
+      - name: Build
+        run: bash ./build-3ds.sh 2>&1 | tee build.log; test -f sd/3ds/starfleet2/starfleet2.3dsx
+      - name: Collect
+        if: always()
+        run: |
+          mkdir -p out
+          cp sd/3ds/starfleet2/starfleet2.3dsx out/ 2>/dev/null || true
+          cp build.log out/ 2>/dev/null || true
+          echo "$GITHUB_SHA" > out/SOURCE_COMMIT
+      - name: Publish to builds branch
+        if: always()
+        run: |
+          cd out
+          git init -q -b builds
+          git config user.name "build-bot"; git config user.email "build-bot@users.noreply.github.com"
+          git add -A; git commit -qm "build of ${GITHUB_SHA}"
+          git push -f "https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}.git" builds
