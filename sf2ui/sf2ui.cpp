@@ -865,6 +865,13 @@ static void generic_bottom(Surf& s, const TextScreen& ts) {
   if (glay.kind == G_MENU) {
     int n = (int)glay.items.size();
     int cols = n > 6 ? 2 : 1, rows = (n + cols - 1) / cols;
+    // Long labels ("6 Capturing ships (tractor beam/boarding)") don't fit half the width: use one
+    // full-width column in the small font when the rows are still tall enough (>= 14 px).
+    if (cols == 2 && n <= 12) {
+      int half = BOT_W / 2 - 6;
+      for (auto& l : glay.items) if (text_width((std::string("X ") + l.label).c_str(), F6x12) > half) { cols = 1; rows = n; break; }
+    }
+    bool small = cols == 2 || rows > 7;
     for (int i = 0; i < n; i++) {
       int col = i / rows, row = i % rows;
       int x0, x1, y0, y1;
@@ -876,7 +883,7 @@ static void generic_bottom(Surf& s, const TextScreen& ts) {
         if (toupper((unsigned char)l.label[k]) == l.key) { hot = (int)k; break; }
       std::string lab = l.label;
       if (hot < 0) { lab = std::string(1, l.key) + " " + l.label; hot = 0; }
-      add_btn(x0, y0, x1, y1, lab, cols == 1 ? &F8x16 : &F6x12, key_act(key_for_char(l.key)), hot, l.sel);
+      add_btn(x0, y0, x1, y1, lab, small ? &F6x12 : &F8x16, key_act(key_for_char(l.key)), hot, l.sel);
     }
   } else if (glay.kind == G_MAP) {
     cells(s, ts, glay.c0, glay.r0, glay.c1, glay.r1, *glay.f, glay.ox, glay.oy, glay.cw, glay.lh);
