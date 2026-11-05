@@ -38,7 +38,8 @@ The PC game is keyboard-only. On the 3DS:
 | R | Tap mode: auto (default), steer, target |
 | D-Pad | Arrow keys |
 | Circle Pad | Course -1 / +1 degree (left/right), sublight speed (up/down) |
-| ZL / ZR | Hyperspace speed -1 / +1 |
+| ZL | Swap the screens (dashboard on the touch screen, game controls on top) |
+| C-Stick up / down | Hyperspace speed +1 / -1 |
 | C-Stick | Review earlier messages (bridge) |
 | START | Manual |
 | SELECT | Quick save on the bridge; keyboard elsewhere |

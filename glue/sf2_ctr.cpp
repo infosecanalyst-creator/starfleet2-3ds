@@ -20,6 +20,7 @@
 #include "sf2_writer.h"
 #include "SDL.h"
 
+static bool swapped = false, swap_eff = false, swap_force = false;
 static uint16_t top_img[sf2ui::TOP_W * sf2ui::TOP_H];
 static uint16_t bot_img[sf2ui::BOT_W * sf2ui::BOT_H];
 static bool inited = false, owns_top = false;
@@ -84,7 +85,7 @@ static int bytes_per_px(GSPGPU_FramebufferFormat fmt) { return fmt == GSP_RGB565
 
 // Top screen: SDL (DOSBox's own output) double-buffers it, so draw into the back buffer, show it,
 // and copy the finished picture into the other buffer too, so whichever one is shown is current.
-static void present_top(const uint16_t* img) {
+static void present_top_raw(const uint16_t* img) {
   u16 fw, fh;
   GSPGPU_FramebufferFormat fmt = gfxGetScreenFormat(GFX_TOP);
   u8* drawn = gfxGetFramebuffer(GFX_TOP, GFX_LEFT, &fw, &fh);
@@ -95,7 +96,7 @@ static void present_top(const uint16_t* img) {
   gfxFlushBuffers();
 }
 // Touch screen: only sf2ui draws it, single-buffered (set up in init), so write just the changed rows.
-static void present_bottom(const uint16_t* img, int y0, int y1) {
+static void present_bottom_raw(const uint16_t* img, int y0, int y1) {
   u16 fw, fh;
   GSPGPU_FramebufferFormat fmt = gfxGetScreenFormat(GFX_BOTTOM);
   u8* fb = gfxGetFramebuffer(GFX_BOTTOM, GFX_LEFT, &fw, &fh);
@@ -197,6 +198,25 @@ void sf2ctr_log_flush(bool now) {
   if (d) sf2w_queue(LOG_PATH, (const uint8_t*)copy.data(), copy.size());
   if (now) sf2w_wait(0);
 }
+
+// ZL swaps the screens: the touch-screen picture goes to the top screen (centred, black bars) and the
+// dashboard goes to the touch screen squeezed from 400 to 320 columns. Only while sf2ui owns the top
+// screen (the game's own graphics are drawn by DOSBox on the top screen and cannot move).
+
+static uint16_t sw_top[sf2ui::TOP_W * sf2ui::TOP_H], sw_bot[sf2ui::BOT_W * sf2ui::BOT_H];
+static void present_top(const uint16_t* img) {            // img = the dashboard
+  if (!swap_eff) { present_top_raw(img); return; }
+  for (int y = 0; y < sf2ui::BOT_H; y++)
+    for (int x = 0; x < sf2ui::BOT_W; x++) sw_bot[y * sf2ui::BOT_W + x] = img[y * sf2ui::TOP_W + x * 5 / 4];
+  present_bottom_raw(sw_bot, 0, sf2ui::BOT_H);
+}
+static void present_bottom(const uint16_t* img, int y0, int y1) {   // img = the touch-screen picture
+  if (!swap_eff) { present_bottom_raw(img, y0, y1); return; }
+  for (int y = 0; y < sf2ui::TOP_H; y++)
+    for (int x = 0; x < sf2ui::TOP_W; x++)
+      sw_top[y * sf2ui::TOP_W + x] = (x >= 40 && x < 360) ? img[y * sf2ui::BOT_W + x - 40] : 0;
+  present_top_raw(sw_top);
+}
 void sf2ctr_log_buffered() {                    // once the background writer runs
   if (!log_lock_ready) { LightLock_Init(&log_lock); log_lock_ready = true; }
   LightLock_Lock(&log_lock); log_direct = false; LightLock_Unlock(&log_lock);
@@ -229,7 +249,11 @@ void sf2ctr_events() {
   u32 held = hidKeysHeld();
   u32 down = held & ~prev_held, up = prev_held & ~held;
   prev_held = held;
+  bool zl_swap = (down & KEY_ZL) != 0;
+  held &= ~KEY_ZL; down &= ~KEY_ZL; up &= ~KEY_ZL;       // ZL is the screen swap, not a game button
+  if (zl_swap) { swapped = !swapped; swap_force = true; }
   sf2ui::buttons(held, down, up);
+  if (swap_eff) held &= ~KEY_TOUCH;                      // the touch screen shows the dashboard while swapped
 
   static bool touching = false;
   static touchPosition last_t;
@@ -280,6 +304,12 @@ void sf2ctr_events() {
   if (owns_top && !was_owner) top_refresh = 15;
   if (!owns_top && was_owner) sf2_dosbox_redraw();   // e.g. manual closed over the title art
   sf2ui::Redraw rd = sf2ui::frame(ts, top_img, bot_img);
+  { bool eff = swapped && owns_top;
+    if (eff != swap_eff || swap_force) {            // layout changed: show both screens afresh
+      swap_eff = eff; swap_force = false;
+      if (owns_top) present_top(top_img);
+      present_bottom(bot_img, 0, sf2ui::BOT_H);
+    } }
   if (owns_top && (rd.top || top_refresh > 0)) present_top(top_img);
   if (top_refresh > 0) top_refresh--;
   if (rd.bottom) present_bottom(bot_img, rd.by0, rd.by1);

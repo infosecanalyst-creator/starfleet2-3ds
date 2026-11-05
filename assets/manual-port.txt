@@ -38,7 +38,9 @@ R            Tap mode: auto, steer or target
 D-Pad        Arrow keys (menus, target box)
 Circle Pad   Left/right: course -1 / +1 degree (hold to keep turning)
              Up/down: sublight speed +0.1 / -0.1
-ZL / ZR      Hyperspace speed -1 / +1
+ZL           Swap the screens (works any time the
+             game isn't showing its own graphics)
+C-Stick      Up/down: hyperspace speed +1 / -1
 C-Stick      Bridge: review earlier messages (left/right)
 START        Open this manual
 SELECT       Bridge: quick save (the game's Ctrl+Q)

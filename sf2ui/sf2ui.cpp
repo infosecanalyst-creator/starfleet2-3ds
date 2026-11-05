@@ -1330,8 +1330,8 @@ void buttons(uint32_t held, uint32_t pr, uint32_t rel) {
   if (repeat_due(B_CPAD_RIGHT, held, pr)) press((Key)(K_F1 + 5));  // heading +1
   if (repeat_due(B_CPAD_UP, held, pr)) press((Key)(K_F1 + 3));     // sublight +0.1
   if (repeat_due(B_CPAD_DOWN, held, pr)) press((Key)(K_F1 + 2));   // sublight -0.1
-  if (repeat_due(B_ZR, held, pr)) press((Key)(K_F1 + 1));          // hyperspeed +1
-  if (repeat_due(B_ZL, held, pr)) press(K_F1);                      // hyperspeed -1
+  if (repeat_due(B_CSTICK_UP, held, pr)) press((Key)(K_F1 + 1));   // hyperspeed +1 (ZL is the screen swap)
+  if (repeat_due(B_CSTICK_DOWN, held, pr)) press(K_F1);             // hyperspeed -1
   bool bridge = is_bridge(last);
   if (bridge) {
     if (repeat_due(B_CSTICK_LEFT, held, pr)) press(K_LEFT, M_CTRL);   // earlier messages
