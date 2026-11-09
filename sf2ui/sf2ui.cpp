@@ -29,7 +29,7 @@ static std::vector<Ev> queue;          // pending key events
 static uint32_t next_key_ms = 0;
 static const uint32_t KEY_GAP_MS = 35; // spacing between injected key events
 
-enum ActKind { A_NONE, A_KEY, A_MODE, A_MANUAL, A_KB, A_SECTION, A_CLOSE, A_TYPE, A_SIGNON, A_SAVE, A_VIEW, A_PAUSE, A_QUIT, A_QUIT_YES, A_SETTINGS };
+enum ActKind { A_NONE, A_KEY, A_MODE, A_MANUAL, A_KB, A_SECTION, A_CLOSE, A_TYPE, A_SIGNON, A_SAVE, A_VIEW, A_PAUSE, A_QUIT, A_QUIT_YES, A_SETTINGS, A_LEFTY };
 struct Act { ActKind kind; Key key; uint8_t mods; int arg; };
 enum { M_SHIFT = 1, M_CTRL = 2, M_ALT = 4 };
 
@@ -951,13 +951,15 @@ static void manual_top(Surf& s) {
 }
 static void manual_bottom(Surf& s) {
   s.fill(0, 0, BOT_W, BOT_H, BG);
-  const int rows = 8;  // section buttons visible (each 24px)
+  const int rows = 7;  // section buttons visible (each 24px); the Left hand button follows
   if (man_sel < man_list_top) man_list_top = man_sel;
   if (man_sel >= man_list_top + rows) man_list_top = man_sel - rows + 1;
   for (int i = 0; i < rows && man_list_top + i < (int)manual.size(); i++) {
     int k = man_list_top + i;
     add_btn(0, i * 24, BOT_W, i * 24 + 24, manual[k].title, &F8x16, kind_act(A_SECTION, k), -1, k == man_sel);
   }
+  if (!lefty_loaded) lefty_load();
+  add_btn(0, 168, BOT_W, 192, lefty_on ? "LEFT HAND: ON" : "LEFT HAND: OFF", &F8x16, kind_act(A_LEFTY), -1, lefty_on);
   s.fill(0, 192, BOT_W, 205, PROMPT_BG);
   fit_text(s, 4, 193, BOT_W - 4, "Sticks scroll \xb3 D-Pad, L/R sections \xb3 B close", F6x12, HINT, "manual hint");
   add_btn(0, 205, BOT_W, 240, "CLOSE MANUAL", &F8x16, kind_act(A_CLOSE));
@@ -1010,6 +1012,27 @@ void init(const Host* host) {
 
 bool modal() { return manual_open; }
 
+static bool lefty_on = false, lefty_loaded = false;
+static void lefty_load() {
+  lefty_loaded = true;
+  FILE* f = H && H->lefty_path ? fopen(H->lefty_path, "rb") : 0;
+  if (!f) return;
+  int c = fgetc(f); fclose(f);
+  lefty_on = (c == '1');
+}
+uint32_t lefty_remap(uint32_t m) {
+  static const uint32_t pr[4][2] = {{B_Y, B_DUP}, {B_A, B_DRIGHT}, {B_B, B_DDOWN}, {B_X, B_DLEFT}};
+  if (!lefty_loaded) lefty_load();
+  if (!lefty_on) return m;
+  uint32_t o = m;
+  for (int i = 0; i < 4; i++) {
+    o &= ~(pr[i][0] | pr[i][1]);
+    if (m & pr[i][0]) o |= pr[i][1];
+    if (m & pr[i][1]) o |= pr[i][0];
+  }
+  return o;
+}
+
 std::vector<std::string> fit_problems() { return fit_log; }
 void fit_clear() { fit_log.clear(); }
 void force_redraw() { dirty(); }
@@ -1052,6 +1075,14 @@ static void fire(const Act& a) {
       break;
     case A_SECTION: man_sel = a.arg; man_scroll = 0; break;
     case A_CLOSE: manual_open = false; break;
+    case A_LEFTY:
+      lefty_on = !lefty_on;
+      if (H && H->lefty_path) {
+        const char* v = lefty_on ? "1" : "0";
+        if (H->save) H->save(H->lefty_path, v, 1);
+        else if (FILE* f = fopen(H->lefty_path, "wb")) { fputs(v, f); fclose(f); }
+      }
+      break;
     default: break;
   }
   dirty();

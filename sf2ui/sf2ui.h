@@ -45,6 +45,7 @@ struct Host {
   const char* profile_path;           // remembered officer for one-tap sign-on
   void (*save)(const char* path, const char* data, unsigned n);   // write a small file (0: plain fopen)
   void (*quit)();                     // leave the app (START menu > EXIT GAME); 0: not offered
+  const char* lefty_path;             // remembered left-handed setting ("1" or "0")
 };
 
 // The game's text screen, as read from video memory.
@@ -72,6 +73,9 @@ void buttons(uint32_t held, uint32_t pressed, uint32_t released);
 
 // True while sf2ui wants the whole input stream (manual or keyboard open).
 bool modal();
+// Left-handed play: swaps the D-pad with the face buttons (Y<->Up, A<->Right, B<->Down, X<->Left).
+// The platform passes every button mask through this where it reads the pad.
+uint32_t lefty_remap(uint32_t m);
 
 }  // namespace sf2ui
 

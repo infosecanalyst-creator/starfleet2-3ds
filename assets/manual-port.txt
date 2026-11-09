@@ -52,3 +52,6 @@ D-Pad: move between the section buttons on the touch screen.
 L / R: previous / next section.
 Tap a section on the touch screen to open it.
 B or START: close the manual.
+
+# Left-handed play
+LEFT HAND (the button at the bottom of the manual's touch screen) swaps the D-Pad with the face buttons: Y and Up, A and Right, B and Down, X and Left. So the D-Pad becomes Enter, Esc, phasers and torpedoes, and the face buttons become the arrow keys. The setting is saved in /3ds/starfleet2/lefty.txt and also applies to this manual.

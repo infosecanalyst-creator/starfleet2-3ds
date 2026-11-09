@@ -119,7 +119,7 @@ static void key_logged(sf2ui::Key k, bool down) {
 static void save_bg(const char* path, const char* data, unsigned n) { sf2w_queue(path, (const uint8_t*)data, n); }
 static bool quit_req = false;                  // START menu > EXIT GAME
 static void quit_app() { sf2ctr_log("exit chosen in the START menu"); quit_req = true; }
-static sf2ui::Host host = {key_logged, click, ms, "sdmc:/3ds/starfleet2/manual.txt", "sdmc:/3ds/starfleet2/officer.txt", save_bg, quit_app};
+static sf2ui::Host host = {key_logged, click, ms, "sdmc:/3ds/starfleet2/manual.txt", "sdmc:/3ds/starfleet2/officer.txt", save_bg, quit_app, "sdmc:/3ds/starfleet2/lefty.txt"};
 
 static void init() {
   gfxSet3D(false);
@@ -246,7 +246,7 @@ void sf2ctr_events() {
   // SDL's event pump also calls hidScanInput(), so hidKeysDown()/hidKeysUp() miss presses:
   // derive presses and releases from the held state ourselves (same fix as the Ultima III port).
   static u32 prev_held = 0;
-  u32 held = hidKeysHeld();
+  u32 held = sf2ui::lefty_remap(hidKeysHeld());   // left-handed play swaps the D-pad and face buttons
   u32 down = held & ~prev_held, up = prev_held & ~held;
   prev_held = held;
   bool zl_swap = (down & KEY_ZL) != 0;
