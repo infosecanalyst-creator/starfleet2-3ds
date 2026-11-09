@@ -981,7 +981,8 @@ static void manual_bottom(Surf& s) {
   if (!lefty_loaded) lefty_load();
   add_btn(0, 168, BOT_W, 192, lefty_on ? "LEFT HAND: ON" : "LEFT HAND: OFF", &F8x16, kind_act(A_LEFTY), -1, lefty_on);
   s.fill(0, 192, BOT_W, 205, PROMPT_BG);
-  fit_text(s, 4, 193, BOT_W - 4, "Sticks scroll \xb3 D-Pad, L/R sections \xb3 B close", F6x12, HINT, "manual hint");
+  fit_text(s, 4, 193, BOT_W - 4, lefty_on ? "Sticks scroll \xb3 ABXY, L/R sections \xb3 D-Down close"
+                                          : "Sticks scroll \xb3 D-Pad, L/R sections \xb3 B close", F6x12, HINT, "manual hint");
   add_btn(0, 205, BOT_W, 240, "CLOSE MANUAL", &F8x16, kind_act(A_CLOSE));
 }
 
@@ -1015,7 +1016,7 @@ static void pause_bottom(Surf& s, const TextScreen& ts) {
     add_btn(40, 28 + i * 36, 280, 60 + i * 36, lab[i], &F8x16, act[i]);
     if ((i == 2 && !bridge) || (i == 3 && !menu) || (i == 4 && !(H && H->quit))) btns.back().off = true;
   }
-  const char* note = bridge ? "B or START: back to the game" :
+  const char* note = bridge ? (lefty_on ? "D-Down or START: back to the game" : "B or START: back to the game") :
                      menu ? "Quick save works on the bridge." : "Quick save: on the bridge. Settings: main menu.";
   fit_text(s, (BOT_W - text_width(note, F6x12)) / 2, 216, BOT_W, note, F6x12, HINT, "pause");
 }
