@@ -949,6 +949,26 @@ static void manual_top(Surf& s) {
     s.fill(in.x1 - 3, ty, in.x1 - 1, ty + th, BTN_EDGE);
   }
 }
+static bool lefty_on = false, lefty_loaded = false;
+static void lefty_load() {
+  lefty_loaded = true;
+  FILE* f = H && H->lefty_path ? fopen(H->lefty_path, "rb") : 0;
+  if (!f) return;
+  int c = fgetc(f); fclose(f);
+  lefty_on = (c == '1');
+}
+uint32_t lefty_remap(uint32_t m) {
+  static const uint32_t pr[4][2] = {{B_Y, B_DUP}, {B_A, B_DRIGHT}, {B_B, B_DDOWN}, {B_X, B_DLEFT}};
+  if (!lefty_loaded) lefty_load();
+  if (!lefty_on) return m;
+  uint32_t o = m;
+  for (int i = 0; i < 4; i++) {
+    o &= ~(pr[i][0] | pr[i][1]);
+    if (m & pr[i][0]) o |= pr[i][1];
+    if (m & pr[i][1]) o |= pr[i][0];
+  }
+  return o;
+}
 static void manual_bottom(Surf& s) {
   s.fill(0, 0, BOT_W, BOT_H, BG);
   const int rows = 7;  // section buttons visible (each 24px); the Left hand button follows
@@ -1012,26 +1032,6 @@ void init(const Host* host) {
 
 bool modal() { return manual_open; }
 
-static bool lefty_on = false, lefty_loaded = false;
-static void lefty_load() {
-  lefty_loaded = true;
-  FILE* f = H && H->lefty_path ? fopen(H->lefty_path, "rb") : 0;
-  if (!f) return;
-  int c = fgetc(f); fclose(f);
-  lefty_on = (c == '1');
-}
-uint32_t lefty_remap(uint32_t m) {
-  static const uint32_t pr[4][2] = {{B_Y, B_DUP}, {B_A, B_DRIGHT}, {B_B, B_DDOWN}, {B_X, B_DLEFT}};
-  if (!lefty_loaded) lefty_load();
-  if (!lefty_on) return m;
-  uint32_t o = m;
-  for (int i = 0; i < 4; i++) {
-    o &= ~(pr[i][0] | pr[i][1]);
-    if (m & pr[i][0]) o |= pr[i][1];
-    if (m & pr[i][1]) o |= pr[i][0];
-  }
-  return o;
-}
 
 std::vector<std::string> fit_problems() { return fit_log; }
 void fit_clear() { fit_log.clear(); }
