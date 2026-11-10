@@ -971,19 +971,20 @@ uint32_t lefty_remap(uint32_t m) {
 }
 static void manual_bottom(Surf& s) {
   s.fill(0, 0, BOT_W, BOT_H, BG);
-  const int rows = 7;  // section buttons visible (each 24px); the Left hand button follows
+  // UI rule 11: buttons 24 px tall, 4 px apart, 6 px from the edges
+  const int rows = 5;  // section buttons visible; the list scrolls with the highlight
   if (man_sel < man_list_top) man_list_top = man_sel;
   if (man_sel >= man_list_top + rows) man_list_top = man_sel - rows + 1;
   for (int i = 0; i < rows && man_list_top + i < (int)manual.size(); i++) {
     int k = man_list_top + i;
-    add_btn(0, i * 24, BOT_W, i * 24 + 24, manual[k].title, &F8x16, kind_act(A_SECTION, k), -1, k == man_sel);
+    add_btn(6, 6 + i * 28, BOT_W - 6, 30 + i * 28, manual[k].title, &F8x16, kind_act(A_SECTION, k), -1, k == man_sel);
   }
   if (!lefty_loaded) lefty_load();
-  add_btn(0, 168, BOT_W, 192, lefty_on ? "LEFT HAND: ON" : "LEFT HAND: OFF", &F8x16, kind_act(A_LEFTY), -1, lefty_on);
-  s.fill(0, 192, BOT_W, 205, PROMPT_BG);
-  fit_text(s, 4, 193, BOT_W - 4, lefty_on ? "Sticks scroll \xb3 ABXY, L/R sections \xb3 D-Down close"
+  add_btn(6, 146, BOT_W - 6, 170, lefty_on ? "LEFT HAND: ON" : "LEFT HAND: OFF", &F8x16, kind_act(A_LEFTY), -1, lefty_on);
+  s.fill(0, 174, BOT_W, 189, PROMPT_BG);
+  fit_text(s, 6, 175, BOT_W - 6, lefty_on ? "Sticks scroll \xb3 ABXY, L/R sections \xb3 D-Down close"
                                           : "Sticks scroll \xb3 D-Pad, L/R sections \xb3 B close", F6x12, HINT, "manual hint");
-  add_btn(0, 205, BOT_W, 240, "CLOSE MANUAL", &F8x16, kind_act(A_CLOSE));
+  add_btn(6, 194, BOT_W - 6, 228, "CLOSE MANUAL", &F8x16, kind_act(A_CLOSE));
 }
 
 // ------------------------------------------------------------------ graphics (title art) screens
@@ -992,8 +993,8 @@ static void graphics_bottom(Surf& s) {
   fit_text(s, (BOT_W - text_width("STAR FLEET II", F8x16)) / 2, 40, BOT_W, "STAR FLEET II", F8x16, TITLE, "title");
   fit_text(s, (BOT_W - text_width("Krellan Commander", F6x12)) / 2, 62, BOT_W, "Krellan Commander", F6x12, BTN_TXT, "title");
   add_btn(40, 100, 280, 150, "CONTINUE", &F8x16, key_act(K_ENTER));
-  add_btn(0, 194, 160, 217, "BACK", &F8x16, key_act(K_ESC));
-  add_btn(160, 194, 320, 217, "MANUAL", &F8x16, kind_act(A_MANUAL));
+  add_btn(6, 202, 156, 234, "BACK", &F8x16, key_act(K_ESC));             // UI rule 11: 6 px from the edges, 8 apart
+  add_btn(164, 202, 314, 234, "MANUAL", &F8x16, kind_act(A_MANUAL));
 }
 
 // ------------------------------------------------------------------ START menu
