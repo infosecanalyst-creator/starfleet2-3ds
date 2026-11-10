@@ -7,6 +7,8 @@
 // framebuffers. While the game shows graphics (title art), DOSBox draws the top screen
 // as usual and sf2ui only draws the touch screen.
 #ifdef SF2_3DS
+#include <algorithm>
+#include <cstdlib>
 #include <3ds.h>
 #include <string.h>
 #include <math.h>
@@ -199,9 +201,11 @@ void sf2ctr_log_flush(bool now) {
   if (now) sf2w_wait(0);
 }
 
-// ZL swaps the screens: the touch-screen picture goes to the top screen (centred, black bars) and the
-// dashboard goes to the touch screen squeezed from 400 to 320 columns. Only while sf2ui owns the top
-// screen (the game's own graphics are drawn by DOSBox on the top screen and cannot move).
+// ZL swaps the screens: the touch-screen picture fills the top screen (UI rule 8, stretched 1.25 across)
+// and the dashboard goes to the touch screen squeezed from 400 to 320 columns, where the touch screen
+// is a touchpad (UI rule 7): slide moves a pointer, a short tap presses where it points. Only while
+// sf2ui owns the top screen (the game's own graphics are drawn by DOSBox on the top screen and cannot move).
+static int ptr_x = 160, ptr_y = 120;   // the touchpad pointer, in touch-screen (320x240) pixels
 
 static uint16_t sw_top[sf2ui::TOP_W * sf2ui::TOP_H], sw_bot[sf2ui::BOT_W * sf2ui::BOT_H];
 static void present_top(const uint16_t* img) {            // img = the dashboard
@@ -214,7 +218,15 @@ static void present_bottom(const uint16_t* img, int y0, int y1) {   // img = the
   if (!swap_eff) { present_bottom_raw(img, y0, y1); return; }
   for (int y = 0; y < sf2ui::TOP_H; y++)
     for (int x = 0; x < sf2ui::TOP_W; x++)
-      sw_top[y * sf2ui::TOP_W + x] = (x >= 40 && x < 360) ? img[y * sf2ui::BOT_W + x - 40] : 0;
+      sw_top[y * sf2ui::TOP_W + x] = img[y * sf2ui::BOT_W + x * 4 / 5];
+  // the touchpad pointer: a small arrow, white with a black edge
+  for (int r = 0; r < 12; r++)
+    for (int c = 0; c <= r / 2 + 1 && c < 7; c++) {
+      const int x = ptr_x * 5 / 4 + c, y = ptr_y + r;
+      if (x < 0 || x >= sf2ui::TOP_W || y < 0 || y >= sf2ui::TOP_H) continue;
+      const bool edge = c == 0 || c == r / 2 + 1 || r == 11;
+      sw_top[y * sf2ui::TOP_W + x] = edge ? 0x0000 : 0xFFFF;
+    }
   present_top_raw(sw_top);
 }
 void sf2ctr_log_buffered() {                    // once the background writer runs
@@ -253,11 +265,27 @@ void sf2ctr_events() {
   held &= ~KEY_ZL; down &= ~KEY_ZL; up &= ~KEY_ZL;       // ZL is the screen swap, not a game button
   if (zl_swap) { swapped = !swapped; swap_force = true; }
   sf2ui::buttons(held, down, up);
-  if (swap_eff) held &= ~KEY_TOUCH;                      // the touch screen shows the dashboard while swapped
-
   static bool touching = false;
   static touchPosition last_t;
-  if (held & KEY_TOUCH) {
+  if (swap_eff) {
+    // touchpad: slide moves the pointer; a short tap is a press + release at the pointer
+    static bool on = false, moved = false; static int lx, ly, sx, sy; static u64 at; static int tap = 0;
+    if (touching) { sf2ui::touch(last_t.px, last_t.py, false); touching = false; }
+    if (tap) { sf2ui::touch(ptr_x, ptr_y, false); tap = 0; }
+    touchPosition t;
+    if (down & KEY_TOUCH) { hidTouchRead(&t); on = true; moved = false; lx = sx = t.px; ly = sy = t.py; at = osGetTime(); }
+    else if (on && (held & KEY_TOUCH)) {
+      hidTouchRead(&t);
+      if (abs(t.px - sx) + abs(t.py - sy) > 6) moved = true;
+      ptr_x = std::max(0, std::min(319, ptr_x + (t.px - lx)));
+      ptr_y = std::max(0, std::min(239, ptr_y + (t.py - ly)));
+      lx = t.px; ly = t.py;
+      swap_force = true;   // redraw so the pointer moves
+    } else if (on && !(held & KEY_TOUCH)) {
+      on = false;
+      if (!moved && osGetTime() - at < 350) { sf2ui::touch(ptr_x, ptr_y, true); tap = 1; }
+    }
+  } else if (held & KEY_TOUCH) {
     touchPosition t; hidTouchRead(&t);
     sf2ui::touch(t.px, t.py, true);
     touching = true; last_t = t;
