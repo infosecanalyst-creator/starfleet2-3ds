@@ -1,0 +1,1319 @@
+== toolchain: arm-none-eabi-gcc (devkitARM) 16.1.0
+== SDL: /opt/devkitpro/portlibs/3ds/lib/libSDL.a
+wrote sf2ui/fonts.h
+== building with 2 jobs
+make: Entering directory '/__w/starfleet2-3ds/starfleet2-3ds/dosbox'
+font.bgr
+ctr_bottom_kbd_low.bgr
+ctr_bottom_kbd_up.bgr
+ctr_bottom_kbd_sym.bgr
+ctr_bottom_kbd_sym_alt.bgr
+ctr_bottom_kbd_num.bgr
+ctr_bottom_mouse.bgr
+ctr_bottom_mapper.bgr
+ctr_bottom_mapper_joy.bgr
+ctr_bottom_system.bgr
+ctr_bottom_idle.bgr
+ctr_bottom_disable.bgr
+ctr_bottom_load.bgr
+btn_save.bgr
+btn_mapper.bgr
+key_key.bgr
+key_fkey.bgr
+key_alt.bgr
+key_lalt.bgr
+key_ralt.bgr
+key_ctrl.bgr
+key_lctrl.bgr
+key_rctrl.bgr
+key_enter_top.bgr
+key_enter_bot.bgr
+key_shift.bgr
+key_lshift.bgr
+key_rshift.bgr
+key_caps.bgr
+key_space.bgr
+key_tab.bgr
+dosbox.cpp
+callback.cpp
+/__w/starfleet2-3ds/starfleet2-3ds/dosbox/src/dosbox.cpp: In function 'void DOSBOX_Init()':
+/__w/starfleet2-3ds/starfleet2-3ds/dosbox/src/dosbox.cpp:387:24: warning: variable 'secline' set but not used [-Wunused-but-set-variable=]
+  387 |         Section_line * secline;
+      |                        ^~~~~~~
+core_dynrec.cpp
+In file included from /__w/starfleet2-3ds/starfleet2-3ds/dosbox/src/cpu/core_dynrec.cpp:138:
+/__w/starfleet2-3ds/starfleet2-3ds/dosbox/src/cpu/dyn_cache.h: In function 'void cache_init(bool)':
+/__w/starfleet2-3ds/starfleet2-3ds/dosbox/src/cpu/dyn_cache.h:636:35: warning: comparison of integer expressions of different signedness: 'Bits' {aka 'int'} and 'long unsigned int' [-Wsign-compare]
+  636 |                         for (i=0;i<CACHE_BLOCKS-1;i++) {
+      |                                  ~^~~~~~~~~~~~~~~
+In file included from /__w/starfleet2-3ds/starfleet2-3ds/dosbox/src/cpu/core_dynrec/decoder.h:23,
+                 from /__w/starfleet2-3ds/starfleet2-3ds/dosbox/src/cpu/core_dynrec.cpp:160:
+/__w/starfleet2-3ds/starfleet2-3ds/dosbox/src/cpu/core_dynrec/decoder_opcodes.h: In function 'void dyn_loop(LoopTypes)':
+/__w/starfleet2-3ds/starfleet2-3ds/dosbox/src/cpu/core_dynrec/decoder_opcodes.h:1144:16: warning: enumeration value 'LOOP_NONE' not handled in switch [-Wswitch]
+ 1144 |         switch (type) {
+      |                ^
+/__w/starfleet2-3ds/starfleet2-3ds/dosbox/src/cpu/core_dynrec/decoder_opcodes.h:1144:16: warning: enumeration value 'LOOP_JCXZ' not handled in switch [-Wswitch]
+In file included from /__w/starfleet2-3ds/starfleet2-3ds/dosbox/src/cpu/core_dynrec/dyn_fpu.h:52,
+                 from /__w/starfleet2-3ds/starfleet2-3ds/dosbox/src/cpu/core_dynrec/decoder.h:25:
+/__w/starfleet2-3ds/starfleet2-3ds/dosbox/src/cpu/core_dynrec/../../fpu/fpu_instructions.h: In function 'Real64 FPU_FLD80(PhysPt)':
+/__w/starfleet2-3ds/starfleet2-3ds/dosbox/src/cpu/core_dynrec/../../fpu/fpu_instructions.h:145:56: warning: comparison of integer expressions of different signedness: 'Bit32s' {aka 'int'} and 'unsigned int' [-Wsign-compare]
+  145 |         if(test.eind.l.lower == 0 && test.eind.l.upper == 0x80000000 && (test.begin&0x7fff) == 0x7fff) {
+      |                                      ~~~~~~~~~~~~~~~~~~^~~~~~~~~~~~~
+In file included from /__w/starfleet2-3ds/starfleet2-3ds/dosbox/src/cpu/core_dynrec/decoder.h:21:
+/__w/starfleet2-3ds/starfleet2-3ds/dosbox/src/cpu/core_dynrec/decoder_basic.h: At global scope:
+/__w/starfleet2-3ds/starfleet2-3ds/dosbox/src/cpu/core_dynrec/decoder_basic.h:812:13: warning: 'void dyn_lea_mem_mem(HostReg, void*, void*, Bitu, Bits)' defined but not used [-Wunused-function]
+  812 | static void dyn_lea_mem_mem(HostReg ea_reg,void* op1,void* op2,Bitu scale,Bits imm) {
+      |             ^~~~~~~~~~~~~~~
+In file included from /__w/starfleet2-3ds/starfleet2-3ds/dosbox/src/cpu/core_dynrec/risc_armv4le.h:30,
+                 from /__w/starfleet2-3ds/starfleet2-3ds/dosbox/src/cpu/core_dynrec.cpp:155:
+/__w/starfleet2-3ds/starfleet2-3ds/dosbox/src/cpu/core_dynrec/risc_armv4le-thumb-iw.h:794:13: warning: 'void gen_sub_direct_byte(void*, Bit8s)' defined but not used [-Wunused-function]
+  794 | static void gen_sub_direct_byte(void* dest,Bit8s imm) {
+      |             ^~~~~~~~~~~~~~~~~~~
+/__w/starfleet2-3ds/starfleet2-3ds/dosbox/src/cpu/core_dynrec/risc_armv4le-thumb-iw.h:749:13: warning: 'void gen_add_direct_byte(void*, Bit8s)' defined but not used [-Wunused-function]
+  749 | static void gen_add_direct_byte(void* dest,Bit8s imm) {
+      |             ^~~~~~~~~~~~~~~~~~~
+/__w/starfleet2-3ds/starfleet2-3ds/dosbox/src/cpu/core_dynrec/risc_armv4le-thumb-iw.h:622:13: warning: 'void gen_mov_byte_from_reg_low(HostReg, void*)' defined but not used [-Wunused-function]
+  622 | static void gen_mov_byte_from_reg_low(HostReg src_reg,void* dest) {
+      |             ^~~~~~~~~~~~~~~~~~~~~~~~~
+core_dyn_x86.cpp
+core_full.cpp
+In file included from /__w/starfleet2-3ds/starfleet2-3ds/dosbox/src/cpu/core_full/load.h:347,
+                 from /__w/starfleet2-3ds/starfleet2-3ds/dosbox/src/cpu/core_full.cpp:82:
+/__w/starfleet2-3ds/starfleet2-3ds/dosbox/src/cpu/core_full/string.h: In function 'Bits CPU_Core_Full_Run()':
+/__w/starfleet2-3ds/starfleet2-3ds/dosbox/src/cpu/core_full/string.h:248:22: warning: 'count_left' may be used uninitialized [-Wmaybe-uninitialized]
+  248 |                 count+=count_left;
+      |                 ~~~~~^~~~~~~~~~~~
+/__w/starfleet2-3ds/starfleet2-3ds/dosbox/src/cpu/core_full/string.h:23:23: note: 'count_left' was declared here
+   23 |         Bitu    count,count_left;
+      |                       ^~~~~~~~~~
+In file included from /__w/starfleet2-3ds/starfleet2-3ds/dosbox/src/cpu/core_full/load.h:39:
+/__w/starfleet2-3ds/starfleet2-3ds/dosbox/src/cpu/core_full/ea_lookup.h:253:37: warning: 'seg_base' may be used uninitialized [-Wmaybe-uninitialized]
+  253 |                 inst.rm_eaa=seg_base+off;
+      |                             ~~~~~~~~^~~~
+/__w/starfleet2-3ds/starfleet2-3ds/dosbox/src/cpu/core_full/ea_lookup.h:148:17: note: 'seg_base' was declared here
+  148 |         EAPoint seg_base;
+      |                 ^~~~~~~~
+/__w/starfleet2-3ds/starfleet2-3ds/dosbox/src/cpu/core_full/ea_lookup.h:249:20: warning: 'off' may be used uninitialized [-Wmaybe-uninitialized]
+  249 |         inst.rm_off=off;
+      |         ~~~~~~~~~~~^~~~
+/__w/starfleet2-3ds/starfleet2-3ds/dosbox/src/cpu/core_full/ea_lookup.h:149:16: note: 'off' was declared here
+  149 |         Bit32u off;
+      |                ^~~
+/__w/starfleet2-3ds/starfleet2-3ds/dosbox/src/cpu/core_full/ea_lookup.h:126:37: warning: 'seg_base' may be used uninitialized [-Wmaybe-uninitialized]
+  126 |                 inst.rm_eaa=seg_base+off;
+      |                             ~~~~~~~~^~~~
+/__w/starfleet2-3ds/starfleet2-3ds/dosbox/src/cpu/core_full/ea_lookup.h:20:17: note: 'seg_base' was declared here
+   20 |         EAPoint seg_base;
+      |                 ^~~~~~~~
+/__w/starfleet2-3ds/starfleet2-3ds/dosbox/src/cpu/core_full/ea_lookup.h:122:21: warning: 'off' may be used uninitialized [-Wmaybe-uninitialized]
+  122 |         inst.rm_off=off;
+      |                     ^~~
+/__w/starfleet2-3ds/starfleet2-3ds/dosbox/src/cpu/core_full/ea_lookup.h:21:16: note: 'off' was declared here
+   21 |         Bit16u off;
+      |                ^~~
+/__w/starfleet2-3ds/starfleet2-3ds/dosbox/src/cpu/core_dynrec/decoder_basic.h: In function 'void dyn_fill_ea(HostReg, bool)':
+/__w/starfleet2-3ds/starfleet2-3ds/dosbox/src/cpu/core_dynrec/decoder_basic.h:960:23: warning: 'base_reg' may be used uninitialized [-Wmaybe-uninitialized]
+  960 |                 Bit8u base_reg;
+      |                       ^~~~~~~~
+/__w/starfleet2-3ds/starfleet2-3ds/dosbox/src/cpu/core_dynrec/decoder_basic.h:948:25: warning: 'imm' may be used uninitialized [-Wmaybe-uninitialized]
+  948 |                         if (imm) gen_add_imm(ea_reg,(Bit32u)imm);
+      |                         ^~
+/__w/starfleet2-3ds/starfleet2-3ds/dosbox/src/cpu/core_dynrec/decoder_basic.h:906:22: note: 'imm' was declared here
+  906 |                 Bits imm;
+      |                      ^~~
+core_normal.cpp
+core_prefetch.cpp
+In file included from /__w/starfleet2-3ds/starfleet2-3ds/dosbox/src/cpu/core_normal.cpp:136:
+/__w/starfleet2-3ds/starfleet2-3ds/dosbox/src/cpu/core_normal/string.h: In function 'void DoString(STRING_OP)':
+/__w/starfleet2-3ds/starfleet2-3ds/dosbox/src/cpu/core_normal/string.h:253:22: warning: 'count_left' may be used uninitialized [-Wmaybe-uninitialized]
+  253 |                 count+=count_left;
+      |                 ~~~~~^~~~~~~~~~~~
+/__w/starfleet2-3ds/starfleet2-3ds/dosbox/src/cpu/core_normal/string.h:35:23: note: 'count_left' was declared here
+   35 |         Bitu    count,count_left;
+      |                       ^~~~~~~~~~
+In file included from /__w/starfleet2-3ds/starfleet2-3ds/dosbox/src/cpu/core_prefetch.cpp:206:
+/__w/starfleet2-3ds/starfleet2-3ds/dosbox/src/cpu/core_normal/string.h: In function 'void DoString(STRING_OP)':
+/__w/starfleet2-3ds/starfleet2-3ds/dosbox/src/cpu/core_normal/string.h:253:22: warning: 'count_left' may be used uninitialized [-Wmaybe-uninitialized]
+  253 |                 count+=count_left;
+      |                 ~~~~~^~~~~~~~~~~~
+/__w/starfleet2-3ds/starfleet2-3ds/dosbox/src/cpu/core_normal/string.h:35:23: note: 'count_left' was declared here
+   35 |         Bitu    count,count_left;
+      |                       ^~~~~~~~~~
+core_simple.cpp
+In file included from /__w/starfleet2-3ds/starfleet2-3ds/dosbox/src/cpu/core_simple.cpp:132:
+/__w/starfleet2-3ds/starfleet2-3ds/dosbox/src/cpu/core_normal/string.h: In function 'void DoString(STRING_OP)':
+/__w/starfleet2-3ds/starfleet2-3ds/dosbox/src/cpu/core_normal/string.h:253:22: warning: 'count_left' may be used uninitialized [-Wmaybe-uninitialized]
+  253 |                 count+=count_left;
+      |                 ~~~~~^~~~~~~~~~~~
+/__w/starfleet2-3ds/starfleet2-3ds/dosbox/src/cpu/core_normal/string.h:35:23: note: 'count_left' was declared here
+   35 |         Bitu    count,count_left;
+      |                       ^~~~~~~~~~
+cpu.cpp
+flags.cpp
+modrm.cpp
+paging.cpp
+cdrom_aspi_win32.cpp
+cdrom.cpp
+cdrom_image.cpp
+cdrom_ioctl_linux.cpp
+cdrom_ioctl_os2.cpp
+cdrom_ioctl_win32.cpp
+dos_classes.cpp
+dos.cpp
+/__w/starfleet2-3ds/starfleet2-3ds/dosbox/src/dos/dos_classes.cpp: In member function 'bool DOS_PSP::SetNumFiles(Bit16u)':
+/__w/starfleet2-3ds/starfleet2-3ds/dosbox/src/dos/dos_classes.cpp:405:42: warning: comparison of integer expressions of different signedness: 'int' and 'Bitu' {aka 'unsigned int'} [-Wsign-compare]
+  405 |         if (fileNum > 20 && ((fileNum+2) > sGet(sPSP,max_files))) {
+dos_devices.cpp
+dos_execute.cpp
+dos_files.cpp
+dos_ioctl.cpp
+dos_keyboard_layout.cpp
+/__w/starfleet2-3ds/starfleet2-3ds/dosbox/src/dos/dos_keyboard_layout.cpp: In member function 'Bitu keyboard_layout::read_codepage_file(const char*, Bit32s)':
+/__w/starfleet2-3ds/starfleet2-3ds/dosbox/src/dos/dos_keyboard_layout.cpp:897:48: warning: variable 'font_data_length' set but not used [-Wunused-but-set-variable=]
+  897 |                         Bit16u number_of_fonts,font_data_length;
+      |                                                ^~~~~~~~~~~~~~~~
+dos_memory.cpp
+In member function 'Bitu keyboard_layout::read_keyboard_file(const char*, Bit32s, Bit32s)',
+    inlined from 'void keyboard_layout::read_keyboard_file(Bit32s)' at /__w/starfleet2-3ds/starfleet2-3ds/dosbox/src/dos/dos_keyboard_layout.cpp:148:27:
+/__w/starfleet2-3ds/starfleet2-3ds/dosbox/src/dos/dos_keyboard_layout.cpp:262:40: warning: 'char* strcpy(char*, const char*)' source argument is the same as destination [-Wrestrict]
+  262 |         if (specific_layout==-1) strcpy(current_keyboard_file_name, keyboard_file_name);
+      |                                  ~~~~~~^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+In member function 'Bitu keyboard_layout::read_keyboard_file(const char*, Bit32s, Bit32s)',
+    inlined from 'void keyboard_layout::read_keyboard_file(Bit32s)' at /__w/starfleet2-3ds/starfleet2-3ds/dosbox/src/dos/dos_keyboard_layout.cpp:148:27,
+    inlined from 'bool keyboard_layout::map_key(Bitu, Bit16u, bool, bool)' at /__w/starfleet2-3ds/starfleet2-3ds/dosbox/src/dos/dos_keyboard_layout.cpp:568:28:
+/__w/starfleet2-3ds/starfleet2-3ds/dosbox/src/dos/dos_keyboard_layout.cpp:262:40: warning: 'char* strcpy(char*, const char*)' source argument is the same as destination [-Wrestrict]
+  262 |         if (specific_layout==-1) strcpy(current_keyboard_file_name, keyboard_file_name);
+      |                                  ~~~~~~^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+dos_misc.cpp
+dos_mscdex.cpp
+dos_programs.cpp
+dos_tables.cpp
+drive_cache.cpp
+drive_fat.cpp
+/__w/starfleet2-3ds/starfleet2-3ds/dosbox/src/dos/drive_fat.cpp: In constructor 'fatDrive::fatDrive(const char*, Bit32u, Bit32u, Bit32u, Bit32u, Bit32u)':
+/__w/starfleet2-3ds/starfleet2-3ds/dosbox/src/dos/drive_fat.cpp:734:75: warning: taking address of packed member of 'partTable' may result in an unaligned pointer value [-Waddress-of-packed-member]
+  734 |                                 mbrData.pentry[m].absSectStart = var_read(&mbrData.pentry[m].absSectStart);
+      |                                                                           ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+/__w/starfleet2-3ds/starfleet2-3ds/dosbox/src/dos/drive_fat.cpp:735:71: warning: taking address of packed member of 'partTable' may result in an unaligned pointer value [-Waddress-of-packed-member]
+  735 |                                 mbrData.pentry[m].partSize = var_read(&mbrData.pentry[m].partSize);
+      |                                                                       ^~~~~~~~~~~~~~~~~~~~~~~~~~~
+/__w/starfleet2-3ds/starfleet2-3ds/dosbox/src/dos/drive_fat.cpp:760:46: warning: taking address of packed member of 'bootstrap' may result in an unaligned pointer value [-Waddress-of-packed-member]
+  760 |         bootbuffer.bytespersector = var_read(&bootbuffer.bytespersector);
+      |                                              ^~~~~~~~~~~~~~~~~~~~~~~~~~
+/__w/starfleet2-3ds/starfleet2-3ds/dosbox/src/dos/drive_fat.cpp:761:47: warning: taking address of packed member of 'bootstrap' may result in an unaligned pointer value [-Waddress-of-packed-member]
+  761 |         bootbuffer.reservedsectors = var_read(&bootbuffer.reservedsectors);
+      |                                               ^~~~~~~~~~~~~~~~~~~~~~~~~~~
+/__w/starfleet2-3ds/starfleet2-3ds/dosbox/src/dos/drive_fat.cpp:762:46: warning: taking address of packed member of 'bootstrap' may result in an unaligned pointer value [-Waddress-of-packed-member]
+  762 |         bootbuffer.rootdirentries = var_read(&bootbuffer.rootdirentries);
+      |                                              ^~~~~~~~~~~~~~~~~~~~~~~~~~
+/__w/starfleet2-3ds/starfleet2-3ds/dosbox/src/dos/drive_fat.cpp:763:48: warning: taking address of packed member of 'bootstrap' may result in an unaligned pointer value [-Waddress-of-packed-member]
+  763 |         bootbuffer.totalsectorcount = var_read(&bootbuffer.totalsectorcount);
+      |                                                ^~~~~~~~~~~~~~~~~~~~~~~~~~~~
+/__w/starfleet2-3ds/starfleet2-3ds/dosbox/src/dos/drive_fat.cpp:764:45: warning: taking address of packed member of 'bootstrap' may result in an unaligned pointer value [-Waddress-of-packed-member]
+  764 |         bootbuffer.sectorsperfat = var_read(&bootbuffer.sectorsperfat);
+      |                                             ^~~~~~~~~~~~~~~~~~~~~~~~~
+/__w/starfleet2-3ds/starfleet2-3ds/dosbox/src/dos/drive_fat.cpp:765:47: warning: taking address of packed member of 'bootstrap' may result in an unaligned pointer value [-Waddress-of-packed-member]
+  765 |         bootbuffer.sectorspertrack = var_read(&bootbuffer.sectorspertrack);
+      |                                               ^~~~~~~~~~~~~~~~~~~~~~~~~~~
+/__w/starfleet2-3ds/starfleet2-3ds/dosbox/src/dos/drive_fat.cpp:766:41: warning: taking address of packed member of 'bootstrap' may result in an unaligned pointer value [-Waddress-of-packed-member]
+  766 |         bootbuffer.headcount = var_read(&bootbuffer.headcount);
+      |                                         ^~~~~~~~~~~~~~~~~~~~~
+/__w/starfleet2-3ds/starfleet2-3ds/dosbox/src/dos/drive_fat.cpp:767:49: warning: taking address of packed member of 'bootstrap' may result in an unaligned pointer value [-Waddress-of-packed-member]
+  767 |         bootbuffer.hiddensectorcount = var_read(&bootbuffer.hiddensectorcount);
+      |                                                 ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+/__w/starfleet2-3ds/starfleet2-3ds/dosbox/src/dos/drive_fat.cpp:768:45: warning: taking address of packed member of 'bootstrap' may result in an unaligned pointer value [-Waddress-of-packed-member]
+  768 |         bootbuffer.totalsecdword = var_read(&bootbuffer.totalsecdword);
+      |                                             ^~~~~~~~~~~~~~~~~~~~~~~~~
+/__w/starfleet2-3ds/starfleet2-3ds/dosbox/src/dos/drive_fat.cpp: In function 'void copyDirEntry(const direntry*, direntry*)':
+/__w/starfleet2-3ds/starfleet2-3ds/dosbox/src/dos/drive_fat.cpp:1075:19: warning: taking address of packed member of 'direntry' may result in an unaligned pointer value [-Waddress-of-packed-member]
+ 1075 |         var_write(&dst->crtTime, src->crtTime);
+      |                   ^~~~~~~~~~~~~
+/__w/starfleet2-3ds/starfleet2-3ds/dosbox/src/dos/drive_fat.cpp:1076:19: warning: taking address of packed member of 'direntry' may result in an unaligned pointer value [-Waddress-of-packed-member]
+ 1076 |         var_write(&dst->crtDate, src->crtDate);
+      |                   ^~~~~~~~~~~~~
+/__w/starfleet2-3ds/starfleet2-3ds/dosbox/src/dos/drive_fat.cpp:1077:19: warning: taking address of packed member of 'direntry' may result in an unaligned pointer value [-Waddress-of-packed-member]
+ 1077 |         var_write(&dst->accessDate, src->accessDate);
+      |                   ^~~~~~~~~~~~~~~~
+/__w/starfleet2-3ds/starfleet2-3ds/dosbox/src/dos/drive_fat.cpp:1078:19: warning: taking address of packed member of 'direntry' may result in an unaligned pointer value [-Waddress-of-packed-member]
+ 1078 |         var_write(&dst->hiFirstClust, src->hiFirstClust);
+      |                   ^~~~~~~~~~~~~~~~~~
+/__w/starfleet2-3ds/starfleet2-3ds/dosbox/src/dos/drive_fat.cpp:1079:19: warning: taking address of packed member of 'direntry' may result in an unaligned pointer value [-Waddress-of-packed-member]
+ 1079 |         var_write(&dst->modTime, src->modTime);
+      |                   ^~~~~~~~~~~~~
+/__w/starfleet2-3ds/starfleet2-3ds/dosbox/src/dos/drive_fat.cpp:1080:19: warning: taking address of packed member of 'direntry' may result in an unaligned pointer value [-Waddress-of-packed-member]
+ 1080 |         var_write(&dst->modDate, src->modDate);
+      |                   ^~~~~~~~~~~~~
+/__w/starfleet2-3ds/starfleet2-3ds/dosbox/src/dos/drive_fat.cpp:1081:19: warning: taking address of packed member of 'direntry' may result in an unaligned pointer value [-Waddress-of-packed-member]
+ 1081 |         var_write(&dst->loFirstClust, src->loFirstClust);
+      |                   ^~~~~~~~~~~~~~~~~~
+/__w/starfleet2-3ds/starfleet2-3ds/dosbox/src/dos/drive_fat.cpp:1082:19: warning: taking address of packed member of 'direntry' may result in an unaligned pointer value [-Waddress-of-packed-member]
+ 1082 |         var_write(&dst->entrysize, src->entrysize);
+      |                   ^~~~~~~~~~~~~~~
+In member function 'void DOS_Drive_Cache::SetBaseDir(const char*)',
+    inlined from 'void DOS_Drive_Cache::SetBaseDir(const char*)' at /__w/starfleet2-3ds/starfleet2-3ds/dosbox/src/dos/drive_cache.cpp:134:6,
+    inlined from 'void DOS_Drive_Cache::EmptyCache()' at /__w/starfleet2-3ds/starfleet2-3ds/dosbox/src/dos/drive_cache.cpp:106:34:
+/__w/starfleet2-3ds/starfleet2-3ds/dosbox/src/dos/drive_cache.cpp:138:15: warning: 'char* strcpy(char*, const char*)' source argument is the same as destination [-Wrestrict]
+  138 |         strcpy(basePath,baseDir);
+      |         ~~~~~~^~~~~~~~~~~~~~~~~~
+drive_iso.cpp
+drive_local.cpp
+drive_overlay.cpp
+/__w/starfleet2-3ds/starfleet2-3ds/dosbox/src/dos/drive_overlay.cpp: In member function 'virtual bool OverlayFile::Write(Bit8u*, Bit16u*)':
+/__w/starfleet2-3ds/starfleet2-3ds/dosbox/src/dos/drive_overlay.cpp:217:84: warning: format '%d' expects argument of type 'int', but argument 2 has type 'long unsigned int' [-Wformat=]
+  217 |                                 if (logoverlay) LOG_MSG("OPTIMISE: switching took %d",GetTicks() - a);
+      |                                                                                   ~^
+      |                                                                                    |
+      |                                                                                    int
+      |                                                                                   %ld
+/__w/starfleet2-3ds/starfleet2-3ds/dosbox/src/dos/drive_overlay.cpp: In member function 'void Overlay_Drive::update_cache(bool)':
+/__w/starfleet2-3ds/starfleet2-3ds/dosbox/src/dos/drive_overlay.cpp:722:63: warning: format '%d' expects argument of type 'int', but argument 2 has type 'long unsigned int' [-Wformat=]
+  722 |         if (logoverlay) LOG_MSG("OPTIMISE: update cache took %d",GetTicks()-a);
+      |                                                              ~^
+      |                                                               |
+      |                                                               int
+      |                                                              %ld
+/__w/starfleet2-3ds/starfleet2-3ds/dosbox/src/dos/drive_overlay.cpp: In member function 'virtual bool Overlay_Drive::FileUnlink(char*)':
+/__w/starfleet2-3ds/starfleet2-3ds/dosbox/src/dos/drive_overlay.cpp:908:65: warning: format '%d' expects argument of type 'int', but argument 2 has type 'long unsigned int' [-Wformat=]
+  908 |                 if (logoverlay) LOG_MSG("OPTIMISE: unlink took %d",GetTicks()-a);
+      |                                                                ~^
+      |                                                                 |
+      |                                                                 int
+      |                                                                %ld
+/__w/starfleet2-3ds/starfleet2-3ds/dosbox/src/dos/drive_overlay.cpp: In member function 'virtual bool Overlay_Drive::Rename(char*, char*)':
+/__w/starfleet2-3ds/starfleet2-3ds/dosbox/src/dos/drive_overlay.cpp:1148:82: warning: format '%d' expects argument of type 'int', but argument 2 has type 'long unsigned int' [-Wformat=]
+ 1148 |                 if (logoverlay) LOG_MSG("OPTIMISE: update rename with copy took %d",GetTicks()-aa);
+      |                                                                                 ~^
+      |                                                                                  |
+      |                                                                                  int
+      |                                                                                 %ld
+/__w/starfleet2-3ds/starfleet2-3ds/dosbox/src/dos/drive_overlay.cpp:1157:65: warning: format '%d' expects argument of type 'int', but argument 2 has type 'long unsigned int' [-Wformat=]
+ 1157 |                 if (logoverlay) LOG_MSG("OPTIMISE: rename took %d",GetTicks()-a);
+      |                                                                ~^
+      |                                                                 |
+      |                                                                 int
+      |                                                                %ld
+drives.cpp
+drive_virtual.cpp
+fpu.cpp
+In file included from /__w/starfleet2-3ds/starfleet2-3ds/dosbox/src/fpu/fpu.cpp:47:
+/__w/starfleet2-3ds/starfleet2-3ds/dosbox/src/fpu/fpu_instructions.h: In function 'Real64 FPU_FLD80(PhysPt)':
+/__w/starfleet2-3ds/starfleet2-3ds/dosbox/src/fpu/fpu_instructions.h:145:56: warning: comparison of integer expressions of different signedness: 'Bit32s' {aka 'int'} and 'unsigned int' [-Wsign-compare]
+  145 |         if(test.eind.l.lower == 0 && test.eind.l.upper == 0x80000000 && (test.begin&0x7fff) == 0x7fff) {
+      |                                      ~~~~~~~~~~~~~~~~~~^~~~~~~~~~~~~
+adlib.cpp
+cmos.cpp
+/__w/starfleet2-3ds/starfleet2-3ds/dosbox/src/hardware/adlib.cpp: In member function 'void Adlib::Capture::CloseFile()':
+/__w/starfleet2-3ds/starfleet2-3ds/dosbox/src/hardware/adlib.cpp:347:36: warning: taking address of packed member of 'Adlib::RawHeader' may result in an unaligned pointer value [-Waddress-of-packed-member]
+  347 |                         var_write( &header.versionHigh, header.versionHigh );
+      |                                    ^~~~~~~~~~~~~~~~~~~
+/__w/starfleet2-3ds/starfleet2-3ds/dosbox/src/hardware/adlib.cpp:348:36: warning: taking address of packed member of 'Adlib::RawHeader' may result in an unaligned pointer value [-Waddress-of-packed-member]
+  348 |                         var_write( &header.versionLow, header.versionLow );
+      |                                    ^~~~~~~~~~~~~~~~~~
+/__w/starfleet2-3ds/starfleet2-3ds/dosbox/src/hardware/adlib.cpp:349:36: warning: taking address of packed member of 'Adlib::RawHeader' may result in an unaligned pointer value [-Waddress-of-packed-member]
+  349 |                         var_write( &header.commands, header.commands );
+      |                                    ^~~~~~~~~~~~~~~~
+/__w/starfleet2-3ds/starfleet2-3ds/dosbox/src/hardware/adlib.cpp:350:36: warning: taking address of packed member of 'Adlib::RawHeader' may result in an unaligned pointer value [-Waddress-of-packed-member]
+  350 |                         var_write( &header.milliseconds, header.milliseconds );
+      |                                    ^~~~~~~~~~~~~~~~~~~~
+/__w/starfleet2-3ds/starfleet2-3ds/dosbox/src/hardware/adlib.cpp: In constructor 'Adlib::Module::Module(Section*)':
+/__w/starfleet2-3ds/starfleet2-3ds/dosbox/src/hardware/adlib.cpp:831:16: warning: enumeration value 'OPL_none' not handled in switch [-Wswitch]
+  831 |         switch ( oplmode ) {
+      |                ^
+/__w/starfleet2-3ds/starfleet2-3ds/dosbox/src/hardware/adlib.cpp:831:16: warning: enumeration value 'OPL_cms' not handled in switch [-Wswitch]
+In file included from /__w/starfleet2-3ds/starfleet2-3ds/dosbox/src/hardware/adlib.cpp:32:
+/__w/starfleet2-3ds/starfleet2-3ds/dosbox/src/hardware/mame/emu.h: At global scope:
+/__w/starfleet2-3ds/starfleet2-3ds/dosbox/src/hardware/mame/emu.h:132:13: warning: 'void auto_free(const device_t::machine_t&, void*)' defined but not used [-Wunused-function]
+  132 | static void auto_free(const device_t::machine_t& machine, void * buffer) {
+      |             ^~~~~~~~~
+In file included from /__w/starfleet2-3ds/starfleet2-3ds/dosbox/src/hardware/adlib.cpp:40:
+/__w/starfleet2-3ds/starfleet2-3ds/dosbox/src/hardware/opl.cpp: In function 'void OPL2::adlib_getsample(Bit16s*, Bits)':
+/__w/starfleet2-3ds/starfleet2-3ds/dosbox/src/hardware/opl.cpp:1101:63: warning: storing the address of local variable 'trem_lut' in 'OPL2::tremval4' [-Wdangling-pointer=]
+ 1101 |                                 if (cptr[9].tremolo) tremval4 = trem_lut;       // tremolo enabled, use table
+      |                                                      ~~~~~~~~~^~~~~~~~~~
+/__w/starfleet2-3ds/starfleet2-3ds/dosbox/src/hardware/opl.cpp:965:16: note: 'trem_lut' declared here
+  965 |         Bit32s trem_lut[BLOCKBUF_SIZE];
+      |                ^~~~~~~~
+/__w/starfleet2-3ds/starfleet2-3ds/dosbox/src/hardware/opl.cpp:53:49: note: 'OPL2::tremval4' declared here
+   53 | static Bit32s *tremval1, *tremval2, *tremval3, *tremval4;
+      |                                                 ^~~~~~~~
+/__w/starfleet2-3ds/starfleet2-3ds/dosbox/src/hardware/opl.cpp:1091:63: warning: storing the address of local variable 'trem_lut' in 'OPL2::tremval2' [-Wdangling-pointer=]
+ 1091 |                                 if (cptr[9].tremolo) tremval2 = trem_lut;       // tremolo enabled, use table
+      |                                                      ~~~~~~~~~^~~~~~~~~~
+/__w/starfleet2-3ds/starfleet2-3ds/dosbox/src/hardware/opl.cpp:965:16: note: 'trem_lut' declared here
+  965 |         Bit32s trem_lut[BLOCKBUF_SIZE];
+      |                ^~~~~~~~
+/__w/starfleet2-3ds/starfleet2-3ds/dosbox/src/hardware/opl.cpp:53:27: note: 'OPL2::tremval2' declared here
+   53 | static Bit32s *tremval1, *tremval2, *tremval3, *tremval4;
+      |                           ^~~~~~~~
+/__w/starfleet2-3ds/starfleet2-3ds/dosbox/src/hardware/opl.cpp:1089:63: warning: storing the address of local variable 'trem_lut' in 'OPL2::tremval1' [-Wdangling-pointer=]
+ 1089 |                                 if (cptr[0].tremolo) tremval1 = trem_lut;       // tremolo enabled, use table
+      |                                                      ~~~~~~~~~^~~~~~~~~~
+/__w/starfleet2-3ds/starfleet2-3ds/dosbox/src/hardware/opl.cpp:965:16: note: 'trem_lut' declared here
+  965 |         Bit32s trem_lut[BLOCKBUF_SIZE];
+      |                ^~~~~~~~
+/__w/starfleet2-3ds/starfleet2-3ds/dosbox/src/hardware/opl.cpp:53:16: note: 'OPL2::tremval1' declared here
+   53 | static Bit32s *tremval1, *tremval2, *tremval3, *tremval4;
+      |                ^~~~~~~~
+/__w/starfleet2-3ds/starfleet2-3ds/dosbox/src/hardware/opl.cpp:1061:63: warning: storing the address of local variable 'trem_lut' in 'OPL2::tremval3' [-Wdangling-pointer=]
+ 1061 |                                 if (cptr[0].tremolo) tremval3 = trem_lut;       // tremolo enabled, use table
+      |                                                      ~~~~~~~~~^~~~~~~~~~
+/__w/starfleet2-3ds/starfleet2-3ds/dosbox/src/hardware/opl.cpp:965:16: note: 'trem_lut' declared here
+  965 |         Bit32s trem_lut[BLOCKBUF_SIZE];
+      |                ^~~~~~~~
+/__w/starfleet2-3ds/starfleet2-3ds/dosbox/src/hardware/opl.cpp:53:38: note: 'OPL2::tremval3' declared here
+   53 | static Bit32s *tremval1, *tremval2, *tremval3, *tremval4;
+      |                                      ^~~~~~~~
+In file included from /__w/starfleet2-3ds/starfleet2-3ds/dosbox/src/hardware/adlib.cpp:69:
+/__w/starfleet2-3ds/starfleet2-3ds/dosbox/src/hardware/opl.cpp: In function 'void OPL3::adlib_getsample(Bit16s*, Bits)':
+/__w/starfleet2-3ds/starfleet2-3ds/dosbox/src/hardware/opl.cpp:1101:63: warning: storing the address of local variable 'trem_lut' in 'OPL3::tremval4' [-Wdangling-pointer=]
+ 1101 |                                 if (cptr[9].tremolo) tremval4 = trem_lut;       // tremolo enabled, use table
+      |                                                      ~~~~~~~~~^~~~~~~~~~
+/__w/starfleet2-3ds/starfleet2-3ds/dosbox/src/hardware/opl.cpp:965:16: note: 'trem_lut' declared here
+  965 |         Bit32s trem_lut[BLOCKBUF_SIZE];
+      |                ^~~~~~~~
+/__w/starfleet2-3ds/starfleet2-3ds/dosbox/src/hardware/opl.cpp:53:49: note: 'OPL3::tremval4' declared here
+   53 | static Bit32s *tremval1, *tremval2, *tremval3, *tremval4;
+      |                                                 ^~~~~~~~
+/__w/starfleet2-3ds/starfleet2-3ds/dosbox/src/hardware/opl.cpp:1091:63: warning: storing the address of local variable 'trem_lut' in 'OPL3::tremval2' [-Wdangling-pointer=]
+ 1091 |                                 if (cptr[9].tremolo) tremval2 = trem_lut;       // tremolo enabled, use table
+      |                                                      ~~~~~~~~~^~~~~~~~~~
+/__w/starfleet2-3ds/starfleet2-3ds/dosbox/src/hardware/opl.cpp:965:16: note: 'trem_lut' declared here
+  965 |         Bit32s trem_lut[BLOCKBUF_SIZE];
+      |                ^~~~~~~~
+/__w/starfleet2-3ds/starfleet2-3ds/dosbox/src/hardware/opl.cpp:53:27: note: 'OPL3::tremval2' declared here
+   53 | static Bit32s *tremval1, *tremval2, *tremval3, *tremval4;
+      |                           ^~~~~~~~
+/__w/starfleet2-3ds/starfleet2-3ds/dosbox/src/hardware/opl.cpp:1089:63: warning: storing the address of local variable 'trem_lut' in 'OPL3::tremval1' [-Wdangling-pointer=]
+ 1089 |                                 if (cptr[0].tremolo) tremval1 = trem_lut;       // tremolo enabled, use table
+      |                                                      ~~~~~~~~~^~~~~~~~~~
+/__w/starfleet2-3ds/starfleet2-3ds/dosbox/src/hardware/opl.cpp:965:16: note: 'trem_lut' declared here
+  965 |         Bit32s trem_lut[BLOCKBUF_SIZE];
+      |                ^~~~~~~~
+/__w/starfleet2-3ds/starfleet2-3ds/dosbox/src/hardware/opl.cpp:53:16: note: 'OPL3::tremval1' declared here
+   53 | static Bit32s *tremval1, *tremval2, *tremval3, *tremval4;
+      |                ^~~~~~~~
+/__w/starfleet2-3ds/starfleet2-3ds/dosbox/src/hardware/opl.cpp:1061:63: warning: storing the address of local variable 'trem_lut' in 'OPL3::tremval3' [-Wdangling-pointer=]
+ 1061 |                                 if (cptr[0].tremolo) tremval3 = trem_lut;       // tremolo enabled, use table
+      |                                                      ~~~~~~~~~^~~~~~~~~~
+/__w/starfleet2-3ds/starfleet2-3ds/dosbox/src/hardware/opl.cpp:965:16: note: 'trem_lut' declared here
+  965 |         Bit32s trem_lut[BLOCKBUF_SIZE];
+      |                ^~~~~~~~
+/__w/starfleet2-3ds/starfleet2-3ds/dosbox/src/hardware/opl.cpp:53:38: note: 'OPL3::tremval3' declared here
+   53 | static Bit32s *tremval1, *tremval2, *tremval3, *tremval4;
+      |                                      ^~~~~~~~
+dbopl.cpp
+/__w/starfleet2-3ds/starfleet2-3ds/dosbox/src/hardware/dbopl.cpp: In instantiation of 'DBOPL::Channel* DBOPL::Channel::BlockTemplate(DBOPL::Chip*, Bit32u, Bit32s*) [with DBOPL::SynthMode mode = DBOPL::sm3Percussion; Bit32u = unsigned int; Bit32s = int]':
+/__w/starfleet2-3ds/starfleet2-3ds/dosbox/src/hardware/dbopl.cpp:1035:28:   required from here
+ 1035 |                                 chan[6].synthHandler = &Channel::BlockTemplate< sm3Percussion >;
+/__w/starfleet2-3ds/starfleet2-3ds/dosbox/src/hardware/dbopl.cpp:848:9: warning: enumeration value 'sm3Percussion' not handled in switch [-Wswitch]
+  848 |         switch( mode ) {
+      |         ^~~~~~
+/__w/starfleet2-3ds/starfleet2-3ds/dosbox/src/hardware/dbopl.cpp:938:17: warning: enumeration value 'sm3Percussion' not handled in switch [-Wswitch]
+  938 |                 switch( mode ) {
+      |                 ^~~~~~
+/__w/starfleet2-3ds/starfleet2-3ds/dosbox/src/hardware/dbopl.cpp: In instantiation of 'DBOPL::Channel* DBOPL::Channel::BlockTemplate(DBOPL::Chip*, Bit32u, Bit32s*) [with DBOPL::SynthMode mode = DBOPL::sm2Percussion; Bit32u = unsigned int; Bit32s = int]':
+/__w/starfleet2-3ds/starfleet2-3ds/dosbox/src/hardware/dbopl.cpp:1037:28:   required from here
+ 1037 |                                 chan[6].synthHandler = &Channel::BlockTemplate< sm2Percussion >;
+/__w/starfleet2-3ds/starfleet2-3ds/dosbox/src/hardware/dbopl.cpp:848:9: warning: enumeration value 'sm2Percussion' not handled in switch [-Wswitch]
+  848 |         switch( mode ) {
+      |         ^~~~~~
+/__w/starfleet2-3ds/starfleet2-3ds/dosbox/src/hardware/dbopl.cpp:938:17: warning: enumeration value 'sm2Percussion' not handled in switch [-Wswitch]
+  938 |                 switch( mode ) {
+      |                 ^~~~~~
+/__w/starfleet2-3ds/starfleet2-3ds/dosbox/src/hardware/opl.cpp: In function 'void OPL2::adlib_write(Bitu, Bit8u)':
+/__w/starfleet2-3ds/starfleet2-3ds/dosbox/src/hardware/opl.cpp:682:77: warning: array subscript 22 is above array bounds of 'const Bit8u [22]' {aka 'const unsigned char [22]'} [-Warray-bounds=]
+  682 |                         Bitu modop = regbase2modop[second_set?(base+22):base];
+      |                                      ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^
+/__w/starfleet2-3ds/starfleet2-3ds/dosbox/src/hardware/opl.cpp:89:20: note: while referencing 'OPL2::regbase2modop'
+   89 | static const Bit8u regbase2modop[22] = {
+      |                    ^~~~~~~~~~~~~
+/__w/starfleet2-3ds/starfleet2-3ds/dosbox/src/hardware/opl.cpp:652:77: warning: array subscript 22 is above array bounds of 'const Bit8u [22]' {aka 'const unsigned char [22]'} [-Warray-bounds=]
+  652 |                         Bitu modop = regbase2modop[second_set?(base+22):base];
+      |                                      ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^
+/__w/starfleet2-3ds/starfleet2-3ds/dosbox/src/hardware/opl.cpp:89:20: note: while referencing 'OPL2::regbase2modop'
+   89 | static const Bit8u regbase2modop[22] = {
+      |                    ^~~~~~~~~~~~~
+disney.cpp
+dma.cpp
+gameblaster.cpp
+gus.cpp
+In file included from /__w/starfleet2-3ds/starfleet2-3ds/dosbox/src/hardware/gameblaster.cpp:30:
+/__w/starfleet2-3ds/starfleet2-3ds/dosbox/src/hardware/mame/emu.h:132:13: warning: 'void auto_free(const device_t::machine_t&, void*)' defined but not used [-Wunused-function]
+  132 | static void auto_free(const device_t::machine_t& machine, void * buffer) {
+      |             ^~~~~~~~~
+hardware.cpp
+iohandler.cpp
+ipx.cpp
+/__w/starfleet2-3ds/starfleet2-3ds/dosbox/src/hardware/ipx.cpp: In function 'void pingAck(IPaddress)':
+/__w/starfleet2-3ds/starfleet2-3ds/dosbox/src/hardware/ipx.cpp:512:14: warning: variable 'result' set but not used [-Wunused-but-set-variable=]
+  512 |         Bits result;
+      |              ^~~~~~
+ipxserver.cpp
+/__w/starfleet2-3ds/starfleet2-3ds/dosbox/src/hardware/ipxserver.cpp: In function 'void ackClient(IPaddress)':
+/__w/starfleet2-3ds/starfleet2-3ds/dosbox/src/hardware/ipxserver.cpp:128:14: warning: variable 'result' set but not used [-Wunused-but-set-variable=]
+  128 |         Bits result;
+      |              ^~~~~~
+/__w/starfleet2-3ds/starfleet2-3ds/dosbox/src/hardware/ipxserver.cpp: In function 'void IPX_ServerLoop()':
+/__w/starfleet2-3ds/starfleet2-3ds/dosbox/src/hardware/ipxserver.cpp:192:93: warning: format '%d' expects argument of type 'int', but argument 2 has type 'long unsigned int' [-Wformat=]
+  192 |                                                         LOG_MSG("IPXSERVER: Reconnect from %d.%d.%d.%d", CONVIP(tmpAddr.host));
+      |                                                                                            ~^
+      |                                                                                             |
+      |                                                                                             int
+      |                                                                                            %ld
+/__w/starfleet2-3ds/starfleet2-3ds/dosbox/src/hardware/ipxserver.cpp:192:96: warning: format '%d' expects argument of type 'int', but argument 3 has type 'long unsigned int' [-Wformat=]
+  192 |                                                         LOG_MSG("IPXSERVER: Reconnect from %d.%d.%d.%d", CONVIP(tmpAddr.host));
+      |                                                                                               ~^
+      |                                                                                                |
+      |                                                                                                int
+      |                                                                                               %ld
+/__w/starfleet2-3ds/starfleet2-3ds/dosbox/src/hardware/ipxserver.cpp:192:99: warning: format '%d' expects argument of type 'int', but argument 4 has type 'long unsigned int' [-Wformat=]
+  192 |                                                         LOG_MSG("IPXSERVER: Reconnect from %d.%d.%d.%d", CONVIP(tmpAddr.host));
+      |                                                                                                  ~^
+      |                                                                                                   |
+      |                                                                                                   int
+      |                                                                                                  %ld
+/__w/starfleet2-3ds/starfleet2-3ds/dosbox/src/hardware/ipxserver.cpp:192:102: warning: format '%d' expects argument of type 'int', but argument 5 has type 'long unsigned int' [-Wformat=]
+  192 |                                                         LOG_MSG("IPXSERVER: Reconnect from %d.%d.%d.%d", CONVIP(tmpAddr.host));
+      |                                                                                                     ~^
+      |                                                                                                      |
+      |                                                                                                      int
+      |                                                                                                     %ld
+joystick.cpp
+keyboard.cpp
+memory.cpp
+mixer.cpp
+/__w/starfleet2-3ds/starfleet2-3ds/dosbox/src/hardware/memory.cpp: In function 'bool mem_unalignedwritew_checked(PhysPt, Bit16u)':
+/__w/starfleet2-3ds/starfleet2-3ds/dosbox/src/hardware/memory.cpp:482:9: warning: this 'if' clause does not guard... [-Wmisleading-indentation]
+  482 |         if (mem_writeb_checked(address,(Bit8u)(val & 0xff))) return true;val>>=8;
+      |         ^~
+/__w/starfleet2-3ds/starfleet2-3ds/dosbox/src/hardware/memory.cpp:482:74: note: ...this statement, but the latter is misleadingly indented as if it were guarded by the 'if'
+  482 |         if (mem_writeb_checked(address,(Bit8u)(val & 0xff))) return true;val>>=8;
+      |                                                                          ^~~
+/__w/starfleet2-3ds/starfleet2-3ds/dosbox/src/hardware/memory.cpp: In function 'bool mem_unalignedwrited_checked(PhysPt, Bit32u)':
+/__w/starfleet2-3ds/starfleet2-3ds/dosbox/src/hardware/memory.cpp:488:9: warning: this 'if' clause does not guard... [-Wmisleading-indentation]
+  488 |         if (mem_writeb_checked(address,(Bit8u)(val & 0xff))) return true;val>>=8;
+      |         ^~
+/__w/starfleet2-3ds/starfleet2-3ds/dosbox/src/hardware/memory.cpp:488:74: note: ...this statement, but the latter is misleadingly indented as if it were guarded by the 'if'
+  488 |         if (mem_writeb_checked(address,(Bit8u)(val & 0xff))) return true;val>>=8;
+      |                                                                          ^~~
+/__w/starfleet2-3ds/starfleet2-3ds/dosbox/src/hardware/memory.cpp:489:9: warning: this 'if' clause does not guard... [-Wmisleading-indentation]
+  489 |         if (mem_writeb_checked(address+1,(Bit8u)(val & 0xff))) return true;val>>=8;
+      |         ^~
+/__w/starfleet2-3ds/starfleet2-3ds/dosbox/src/hardware/memory.cpp:489:76: note: ...this statement, but the latter is misleadingly indented as if it were guarded by the 'if'
+  489 |         if (mem_writeb_checked(address+1,(Bit8u)(val & 0xff))) return true;val>>=8;
+      |                                                                            ^~~
+/__w/starfleet2-3ds/starfleet2-3ds/dosbox/src/hardware/memory.cpp:490:9: warning: this 'if' clause does not guard... [-Wmisleading-indentation]
+  490 |         if (mem_writeb_checked(address+2,(Bit8u)(val & 0xff))) return true;val>>=8;
+      |         ^~
+/__w/starfleet2-3ds/starfleet2-3ds/dosbox/src/hardware/memory.cpp:490:76: note: ...this statement, but the latter is misleadingly indented as if it were guarded by the 'if'
+  490 |         if (mem_writeb_checked(address+2,(Bit8u)(val & 0xff))) return true;val>>=8;
+      |                                                                            ^~~
+mpu401.cpp
+opl.cpp
+/__w/starfleet2-3ds/starfleet2-3ds/dosbox/src/hardware/opl.cpp: In function 'void adlib_getsample(Bit16s*, Bits)':
+/__w/starfleet2-3ds/starfleet2-3ds/dosbox/src/hardware/opl.cpp:1101:63: warning: storing the address of local variable 'trem_lut' in 'tremval4' [-Wdangling-pointer=]
+ 1101 |                                 if (cptr[9].tremolo) tremval4 = trem_lut;       // tremolo enabled, use table
+      |                                                      ~~~~~~~~~^~~~~~~~~~
+/__w/starfleet2-3ds/starfleet2-3ds/dosbox/src/hardware/opl.cpp:965:16: note: 'trem_lut' declared here
+  965 |         Bit32s trem_lut[BLOCKBUF_SIZE];
+      |                ^~~~~~~~
+/__w/starfleet2-3ds/starfleet2-3ds/dosbox/src/hardware/opl.cpp:53:49: note: 'tremval4' declared here
+   53 | static Bit32s *tremval1, *tremval2, *tremval3, *tremval4;
+      |                                                 ^~~~~~~~
+/__w/starfleet2-3ds/starfleet2-3ds/dosbox/src/hardware/opl.cpp:1091:63: warning: storing the address of local variable 'trem_lut' in 'tremval2' [-Wdangling-pointer=]
+ 1091 |                                 if (cptr[9].tremolo) tremval2 = trem_lut;       // tremolo enabled, use table
+      |                                                      ~~~~~~~~~^~~~~~~~~~
+/__w/starfleet2-3ds/starfleet2-3ds/dosbox/src/hardware/opl.cpp:965:16: note: 'trem_lut' declared here
+  965 |         Bit32s trem_lut[BLOCKBUF_SIZE];
+      |                ^~~~~~~~
+/__w/starfleet2-3ds/starfleet2-3ds/dosbox/src/hardware/opl.cpp:53:27: note: 'tremval2' declared here
+   53 | static Bit32s *tremval1, *tremval2, *tremval3, *tremval4;
+      |                           ^~~~~~~~
+/__w/starfleet2-3ds/starfleet2-3ds/dosbox/src/hardware/opl.cpp:1089:63: warning: storing the address of local variable 'trem_lut' in 'tremval1' [-Wdangling-pointer=]
+ 1089 |                                 if (cptr[0].tremolo) tremval1 = trem_lut;       // tremolo enabled, use table
+      |                                                      ~~~~~~~~~^~~~~~~~~~
+/__w/starfleet2-3ds/starfleet2-3ds/dosbox/src/hardware/opl.cpp:965:16: note: 'trem_lut' declared here
+  965 |         Bit32s trem_lut[BLOCKBUF_SIZE];
+      |                ^~~~~~~~
+/__w/starfleet2-3ds/starfleet2-3ds/dosbox/src/hardware/opl.cpp:53:16: note: 'tremval1' declared here
+   53 | static Bit32s *tremval1, *tremval2, *tremval3, *tremval4;
+      |                ^~~~~~~~
+/__w/starfleet2-3ds/starfleet2-3ds/dosbox/src/hardware/opl.cpp:1061:63: warning: storing the address of local variable 'trem_lut' in 'tremval3' [-Wdangling-pointer=]
+ 1061 |                                 if (cptr[0].tremolo) tremval3 = trem_lut;       // tremolo enabled, use table
+      |                                                      ~~~~~~~~~^~~~~~~~~~
+/__w/starfleet2-3ds/starfleet2-3ds/dosbox/src/hardware/opl.cpp:965:16: note: 'trem_lut' declared here
+  965 |         Bit32s trem_lut[BLOCKBUF_SIZE];
+      |                ^~~~~~~~
+/__w/starfleet2-3ds/starfleet2-3ds/dosbox/src/hardware/opl.cpp:53:38: note: 'tremval3' declared here
+   53 | static Bit32s *tremval1, *tremval2, *tremval3, *tremval4;
+      |                                      ^~~~~~~~
+/__w/starfleet2-3ds/starfleet2-3ds/dosbox/src/hardware/opl.cpp: In function 'void adlib_write(Bitu, Bit8u)':
+/__w/starfleet2-3ds/starfleet2-3ds/dosbox/src/hardware/opl.cpp:682:77: warning: array subscript 22 is above array bounds of 'const Bit8u [22]' {aka 'const unsigned char [22]'} [-Warray-bounds=]
+  682 |                         Bitu modop = regbase2modop[second_set?(base+22):base];
+      |                                      ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^
+/__w/starfleet2-3ds/starfleet2-3ds/dosbox/src/hardware/opl.cpp:89:20: note: while referencing 'regbase2modop'
+   89 | static const Bit8u regbase2modop[22] = {
+      |                    ^~~~~~~~~~~~~
+/__w/starfleet2-3ds/starfleet2-3ds/dosbox/src/hardware/opl.cpp:652:77: warning: array subscript 22 is above array bounds of 'const Bit8u [22]' {aka 'const unsigned char [22]'} [-Warray-bounds=]
+  652 |                         Bitu modop = regbase2modop[second_set?(base+22):base];
+      |                                      ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^
+/__w/starfleet2-3ds/starfleet2-3ds/dosbox/src/hardware/opl.cpp:89:20: note: while referencing 'regbase2modop'
+   89 | static const Bit8u regbase2modop[22] = {
+      |                    ^~~~~~~~~~~~~
+pci_bus.cpp
+pcspeaker.cpp
+pic.cpp
+sblaster.cpp
+tandy_sound.cpp
+In file included from /__w/starfleet2-3ds/starfleet2-3ds/dosbox/src/hardware/tandy_sound.cpp:33:
+/__w/starfleet2-3ds/starfleet2-3ds/dosbox/src/hardware/mame/emu.h:132:13: warning: 'void auto_free(const device_t::machine_t&, void*)' defined but not used [-Wunused-function]
+  132 | static void auto_free(const device_t::machine_t& machine, void * buffer) {
+      |             ^~~~~~~~~
+timer.cpp
+vga_attr.cpp
+vga.cpp
+vga_crtc.cpp
+vga_dac.cpp
+vga_draw.cpp
+vga_gfx.cpp
+vga_memory.cpp
+vga_misc.cpp
+vga_other.cpp
+vga_paradise.cpp
+/__w/starfleet2-3ds/starfleet2-3ds/dosbox/src/hardware/vga_paradise.cpp:26:16: warning: anonymous non-C-compatible type given name for linkage purposes by 'typedef' declaration [-Wnon-c-typedef-for-linkage]
+   26 | typedef struct {
+      |                ^
+      |                SVGA_PVGA1A_DATA
+/__w/starfleet2-3ds/starfleet2-3ds/dosbox/src/hardware/vga_paradise.cpp:35:21: note: type is not C-compatible because it contains 'bool SVGA_PVGA1A_DATA::locked()' declaration
+   35 |         inline bool locked() { return (PR5&7)!=5; }
+      |                     ^~~~~~
+vga_s3.cpp
+vga_seq.cpp
+vga_tseng.cpp
+vga_xga.cpp
+/__w/starfleet2-3ds/starfleet2-3ds/dosbox/src/hardware/vga_xga.cpp: In function 'void XGA_SetDualReg(Bit32u&, Bitu)':
+/__w/starfleet2-3ds/starfleet2-3ds/dosbox/src/hardware/vga_xga.cpp:973:15: warning: enumeration value 'M_CGA2' not handled in switch [-Wswitch]
+  973 |         switch(XGA_COLOR_MODE) {
+      |               ^
+/__w/starfleet2-3ds/starfleet2-3ds/dosbox/src/hardware/vga_xga.cpp:973:15: warning: enumeration value 'M_CGA4' not handled in switch [-Wswitch]
+/__w/starfleet2-3ds/starfleet2-3ds/dosbox/src/hardware/vga_xga.cpp:973:15: warning: enumeration value 'M_EGA' not handled in switch [-Wswitch]
+/__w/starfleet2-3ds/starfleet2-3ds/dosbox/src/hardware/vga_xga.cpp:973:15: warning: enumeration value 'M_VGA' not handled in switch [-Wswitch]
+/__w/starfleet2-3ds/starfleet2-3ds/dosbox/src/hardware/vga_xga.cpp:973:15: warning: enumeration value 'M_LIN4' not handled in switch [-Wswitch]
+/__w/starfleet2-3ds/starfleet2-3ds/dosbox/src/hardware/vga_xga.cpp:973:15: warning: enumeration value 'M_TEXT' not handled in switch [-Wswitch]
+/__w/starfleet2-3ds/starfleet2-3ds/dosbox/src/hardware/vga_xga.cpp:973:15: warning: enumeration value 'M_HERC_GFX' not handled in switch [-Wswitch]
+/__w/starfleet2-3ds/starfleet2-3ds/dosbox/src/hardware/vga_xga.cpp:973:15: warning: enumeration value 'M_HERC_TEXT' not handled in switch [-Wswitch]
+/__w/starfleet2-3ds/starfleet2-3ds/dosbox/src/hardware/vga_xga.cpp:973:15: warning: enumeration value 'M_CGA16' not handled in switch [-Wswitch]
+/__w/starfleet2-3ds/starfleet2-3ds/dosbox/src/hardware/vga_xga.cpp:973:15: warning: enumeration value 'M_TANDY2' not handled in switch [-Wswitch]
+/__w/starfleet2-3ds/starfleet2-3ds/dosbox/src/hardware/vga_xga.cpp:973:15: warning: enumeration value 'M_TANDY4' not handled in switch [-Wswitch]
+/__w/starfleet2-3ds/starfleet2-3ds/dosbox/src/hardware/vga_xga.cpp:973:15: warning: enumeration value 'M_TANDY16' not handled in switch [-Wswitch]
+/__w/starfleet2-3ds/starfleet2-3ds/dosbox/src/hardware/vga_xga.cpp:973:15: warning: enumeration value 'M_TANDY_TEXT' not handled in switch [-Wswitch]
+/__w/starfleet2-3ds/starfleet2-3ds/dosbox/src/hardware/vga_xga.cpp:973:15: warning: enumeration value 'M_ERROR' not handled in switch [-Wswitch]
+/__w/starfleet2-3ds/starfleet2-3ds/dosbox/src/hardware/vga_xga.cpp: In function 'Bitu XGA_GetDualReg(Bit32u)':
+/__w/starfleet2-3ds/starfleet2-3ds/dosbox/src/hardware/vga_xga.cpp:992:15: warning: enumeration value 'M_CGA2' not handled in switch [-Wswitch]
+  992 |         switch(XGA_COLOR_MODE) {
+      |               ^
+/__w/starfleet2-3ds/starfleet2-3ds/dosbox/src/hardware/vga_xga.cpp:992:15: warning: enumeration value 'M_CGA4' not handled in switch [-Wswitch]
+/__w/starfleet2-3ds/starfleet2-3ds/dosbox/src/hardware/vga_xga.cpp:992:15: warning: enumeration value 'M_EGA' not handled in switch [-Wswitch]
+/__w/starfleet2-3ds/starfleet2-3ds/dosbox/src/hardware/vga_xga.cpp:992:15: warning: enumeration value 'M_VGA' not handled in switch [-Wswitch]
+/__w/starfleet2-3ds/starfleet2-3ds/dosbox/src/hardware/vga_xga.cpp:992:15: warning: enumeration value 'M_LIN4' not handled in switch [-Wswitch]
+/__w/starfleet2-3ds/starfleet2-3ds/dosbox/src/hardware/vga_xga.cpp:992:15: warning: enumeration value 'M_TEXT' not handled in switch [-Wswitch]
+/__w/starfleet2-3ds/starfleet2-3ds/dosbox/src/hardware/vga_xga.cpp:992:15: warning: enumeration value 'M_HERC_GFX' not handled in switch [-Wswitch]
+/__w/starfleet2-3ds/starfleet2-3ds/dosbox/src/hardware/vga_xga.cpp:992:15: warning: enumeration value 'M_HERC_TEXT' not handled in switch [-Wswitch]
+/__w/starfleet2-3ds/starfleet2-3ds/dosbox/src/hardware/vga_xga.cpp:992:15: warning: enumeration value 'M_CGA16' not handled in switch [-Wswitch]
+/__w/starfleet2-3ds/starfleet2-3ds/dosbox/src/hardware/vga_xga.cpp:992:15: warning: enumeration value 'M_TANDY2' not handled in switch [-Wswitch]
+/__w/starfleet2-3ds/starfleet2-3ds/dosbox/src/hardware/vga_xga.cpp:992:15: warning: enumeration value 'M_TANDY4' not handled in switch [-Wswitch]
+/__w/starfleet2-3ds/starfleet2-3ds/dosbox/src/hardware/vga_xga.cpp:992:15: warning: enumeration value 'M_TANDY16' not handled in switch [-Wswitch]
+/__w/starfleet2-3ds/starfleet2-3ds/dosbox/src/hardware/vga_xga.cpp:992:15: warning: enumeration value 'M_TANDY_TEXT' not handled in switch [-Wswitch]
+/__w/starfleet2-3ds/starfleet2-3ds/dosbox/src/hardware/vga_xga.cpp:992:15: warning: enumeration value 'M_ERROR' not handled in switch [-Wswitch]
+In function 'Bitu XGA_GetMixResult(Bitu, Bitu, Bitu)',
+    inlined from 'void XGA_DrawLineVector(Bitu)' at /__w/starfleet2-3ds/starfleet2-3ds/dosbox/src/hardware/vga_xga.cpp:323:31:
+/__w/starfleet2-3ds/starfleet2-3ds/dosbox/src/hardware/vga_xga.cpp:236:44: warning: 'srcval' may be used uninitialized [-Wmaybe-uninitialized]
+  236 |                         destval = ~(srcval | dstdata);
+      |                                    ~~~~~~~~^~~~~~~~~~
+/__w/starfleet2-3ds/starfleet2-3ds/dosbox/src/hardware/vga_xga.cpp: In function 'void XGA_DrawLineVector(Bitu)':
+/__w/starfleet2-3ds/starfleet2-3ds/dosbox/src/hardware/vga_xga.cpp:247:14: note: 'srcval' was declared here
+  247 |         Bitu srcval;
+      |              ^~~~~~
+/__w/starfleet2-3ds/starfleet2-3ds/dosbox/src/hardware/vga_xga.cpp: In function 'void XGA_DrawLineBresenham(Bitu)':
+/__w/starfleet2-3ds/starfleet2-3ds/dosbox/src/hardware/vga_xga.cpp:422:67: warning: 'srcval' may be used uninitialized [-Wmaybe-uninitialized]
+  422 |                                         destval = XGA_GetMixResult(mixmode, srcval, dstdata);
+      |                                                   ~~~~~~~~~~~~~~~~^~~~~~~~~~~~~~~~~~~~~~~~~~
+/__w/starfleet2-3ds/starfleet2-3ds/dosbox/src/hardware/vga_xga.cpp:341:14: note: 'srcval' was declared here
+  341 |         Bitu srcval;
+      |              ^~~~~~
+In function 'Bitu XGA_GetMixResult(Bitu, Bitu, Bitu)',
+    inlined from 'void XGA_DrawRectangle(Bitu)' at /__w/starfleet2-3ds/starfleet2-3ds/dosbox/src/hardware/vga_xga.cpp:499:32:
+/__w/starfleet2-3ds/starfleet2-3ds/dosbox/src/hardware/vga_xga.cpp:236:44: warning: 'srcval' may be used uninitialized [-Wmaybe-uninitialized]
+  236 |                         destval = ~(srcval | dstdata);
+      |                                    ~~~~~~~~^~~~~~~~~~
+/__w/starfleet2-3ds/starfleet2-3ds/dosbox/src/hardware/vga_xga.cpp: In function 'void XGA_DrawRectangle(Bitu)':
+/__w/starfleet2-3ds/starfleet2-3ds/dosbox/src/hardware/vga_xga.cpp:457:14: note: 'srcval' was declared here
+  457 |         Bitu srcval;
+      |              ^~~~~~
+In function 'Bitu XGA_GetMixResult(Bitu, Bitu, Bitu)',
+    inlined from 'void XGA_BlitRect(Bitu)' at /__w/starfleet2-3ds/starfleet2-3ds/dosbox/src/hardware/vga_xga.cpp:799:30:
+/__w/starfleet2-3ds/starfleet2-3ds/dosbox/src/hardware/vga_xga.cpp:236:44: warning: 'srcval' may be used uninitialized [-Wmaybe-uninitialized]
+  236 |                         destval = ~(srcval | dstdata);
+      |                                    ~~~~~~~~^~~~~~~~~~
+/__w/starfleet2-3ds/starfleet2-3ds/dosbox/src/hardware/vga_xga.cpp: In function 'void XGA_BlitRect(Bitu)':
+/__w/starfleet2-3ds/starfleet2-3ds/dosbox/src/hardware/vga_xga.cpp:724:14: note: 'srcval' was declared here
+  724 |         Bitu srcval;
+      |              ^~~~~~
+fmopl.cpp
+In function 'Bitu XGA_GetMixResult(Bitu, Bitu, Bitu)',
+    inlined from 'void XGA_DrawPattern(Bitu)' at /__w/starfleet2-3ds/starfleet2-3ds/dosbox/src/hardware/vga_xga.cpp:883:30:
+/__w/starfleet2-3ds/starfleet2-3ds/dosbox/src/hardware/vga_xga.cpp:236:44: warning: 'srcval' may be used uninitialized [-Wmaybe-uninitialized]
+  236 |                         destval = ~(srcval | dstdata);
+      |                                    ~~~~~~~~^~~~~~~~~~
+/__w/starfleet2-3ds/starfleet2-3ds/dosbox/src/hardware/vga_xga.cpp: In function 'void XGA_DrawPattern(Bitu)':
+/__w/starfleet2-3ds/starfleet2-3ds/dosbox/src/hardware/vga_xga.cpp:816:14: note: 'srcval' was declared here
+  816 |         Bitu srcval;
+      |              ^~~~~~
+/__w/starfleet2-3ds/starfleet2-3ds/dosbox/src/hardware/mame/fmopl.cpp: In member function 'void {anonymous}::FM_OPL::WriteReg(int, int)':
+/__w/starfleet2-3ds/starfleet2-3ds/dosbox/src/hardware/mame/fmopl.cpp:1700:35: warning: comparison of integer expressions of different signedness: 'uint32_t' {aka 'long unsigned int'} and 'int' [-Wsign-compare]
+ 1700 |                 if(CH->block_fnum != block_fnum)
+      |                    ~~~~~~~~~~~~~~~^~~~~~~~~~~~~
+/__w/starfleet2-3ds/starfleet2-3ds/dosbox/src/hardware/mame/fmopl.cpp:1735:64: warning: invalid conversion from 'int*' to 'int32_t*' {aka 'long int*'} [-fpermissive]
+ 1735 |                 CH->SLOT[SLOT1].connect1 = CH->SLOT[SLOT1].CON ? &output[0] : &phase_modulation;
+      |                                            ~~~~~~~~~~~~~~~~~~~~^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+      |                                                                |
+      |                                                                int*
+/__w/starfleet2-3ds/starfleet2-3ds/dosbox/src/hardware/mame/fmopl.cpp: In member function 'void {anonymous}::FM_OPL::ResetChip()':
+/__w/starfleet2-3ds/starfleet2-3ds/dosbox/src/hardware/mame/fmopl.cpp:1770:28: warning: comparison of integer expressions of different signedness: 'int' and 'unsigned int' [-Wsign-compare]
+ 1770 |         for(int ch = 0; ch < sizeof( P_CH )/ sizeof(P_CH[0]); ch++)
+      |                         ~~~^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+/__w/starfleet2-3ds/starfleet2-3ds/dosbox/src/hardware/mame/fmopl.cpp:1774:40: warning: comparison of integer expressions of different signedness: 'int' and 'unsigned int' [-Wsign-compare]
+ 1774 |                 for(int slot = 0; slot < sizeof( CH.SLOT ) / sizeof( CH.SLOT[0]); slot++)
+      |                                   ~~~~~^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+/__w/starfleet2-3ds/starfleet2-3ds/dosbox/src/hardware/mame/fmopl.cpp: In member function 'void {anonymous}::FM_OPL::postload()':
+/__w/starfleet2-3ds/starfleet2-3ds/dosbox/src/hardware/mame/fmopl.cpp:1801:28: warning: comparison of integer expressions of different signedness: 'int' and 'unsigned int' [-Wsign-compare]
+ 1801 |         for(int ch = 0; ch < sizeof( P_CH )/ sizeof(P_CH[0]); ch++)
+      |                         ~~~^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+/__w/starfleet2-3ds/starfleet2-3ds/dosbox/src/hardware/mame/fmopl.cpp:1809:40: warning: comparison of integer expressions of different signedness: 'int' and 'unsigned int' [-Wsign-compare]
+ 1809 |                 for(int slot = 0; slot < sizeof( CH.SLOT ) / sizeof( CH.SLOT[0]); slot++)
+      |                                   ~~~~~^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+/__w/starfleet2-3ds/starfleet2-3ds/dosbox/src/hardware/mame/fmopl.cpp:1838:50: warning: invalid conversion from 'int*' to 'int32_t*' {aka 'long int*'} [-fpermissive]
+ 1838 |                         SLOT.connect1 = SLOT.CON ? &output[0] : &phase_modulation;
+      |                                         ~~~~~~~~~^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+      |                                                  |
+      |                                                  int*
+/__w/starfleet2-3ds/starfleet2-3ds/dosbox/src/hardware/mame/fmopl.cpp: At global scope:
+/__w/starfleet2-3ds/starfleet2-3ds/dosbox/src/hardware/mame/fmopl.cpp:1799:6: warning: 'void {anonymous}::FM_OPL::postload()' defined but not used [-Wunused-function]
+ 1799 | void FM_OPL::postload()
+      |      ^~~~~~
+saa1099.cpp
+In file included from /__w/starfleet2-3ds/starfleet2-3ds/dosbox/src/hardware/mame/saa1099.cpp:71:
+/__w/starfleet2-3ds/starfleet2-3ds/dosbox/src/hardware/mame/saa1099.h: In constructor 'saa1099_device::saa1099_device(const machine_config&, const char*, device_t*, uint32_t)':
+/__w/starfleet2-3ds/starfleet2-3ds/dosbox/src/hardware/mame/saa1099.h:116:16: warning: 'saa1099_device::m_sample_rate' will be initialized after [-Wreorder]
+  116 |         double m_sample_rate;
+      |                ^~~~~~~~~~~~~
+/__w/starfleet2-3ds/starfleet2-3ds/dosbox/src/hardware/mame/saa1099.h:56:18: warning:   'uint32_t saa1099_device::sample_rate' [-Wreorder]
+   56 |         uint32_t sample_rate;
+      |                  ^~~~~~~~~~~
+/__w/starfleet2-3ds/starfleet2-3ds/dosbox/src/hardware/mame/saa1099.cpp:141:1: warning:   when initialized here [-Wreorder]
+  141 | saa1099_device::saa1099_device(const machine_config &mconfig, const char *tag, device_t *owner, uint32_t clock)
+      | ^~~~~~~~~~~~~~
+In file included from /__w/starfleet2-3ds/starfleet2-3ds/dosbox/src/hardware/mame/saa1099.cpp:70:
+/__w/starfleet2-3ds/starfleet2-3ds/dosbox/src/hardware/mame/emu.h: At global scope:
+/__w/starfleet2-3ds/starfleet2-3ds/dosbox/src/hardware/mame/emu.h:132:13: warning: 'void auto_free(const device_t::machine_t&, void*)' defined but not used [-Wunused-function]
+  132 | static void auto_free(const device_t::machine_t& machine, void * buffer) {
+      |             ^~~~~~~~~
+sn76496.cpp
+/__w/starfleet2-3ds/starfleet2-3ds/dosbox/src/hardware/mame/sn76496.cpp: In member function 'virtual void sn76496_base_device::sound_stream_update(device_sound_interface::sound_stream&, stream_sample_t**, stream_sample_t**, int)':
+/__w/starfleet2-3ds/starfleet2-3ds/dosbox/src/hardware/mame/sn76496.cpp:430:102: warning: comparison of integer expressions of different signedness: 'long unsigned int' and 'long int' [-Wsign-compare]
+  430 |                                 if (((m_RNG & m_whitenoise_tap1)!=0) != (((m_RNG & m_whitenoise_tap2)!=(m_ncr_style_psg?m_whitenoise_tap2:0)) && in_noise_mode()))
+      |                                                                           ~~~~~~~~~~~~~~~~~~~~~~~~~~~^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+In file included from /__w/starfleet2-3ds/starfleet2-3ds/dosbox/src/hardware/mame/sn76496.cpp:139:
+/__w/starfleet2-3ds/starfleet2-3ds/dosbox/src/hardware/mame/emu.h: At global scope:
+/__w/starfleet2-3ds/starfleet2-3ds/dosbox/src/hardware/mame/emu.h:132:13: warning: 'void auto_free(const device_t::machine_t&, void*)' defined but not used [-Wunused-function]
+  132 | static void auto_free(const device_t::machine_t& machine, void * buffer) {
+      |             ^~~~~~~~~
+ymdeltat.cpp
+In file included from /__w/starfleet2-3ds/starfleet2-3ds/dosbox/src/hardware/mame/ymdeltat.cpp:67:
+/__w/starfleet2-3ds/starfleet2-3ds/dosbox/src/hardware/mame/emu.h:132:13: warning: 'void auto_free(const device_t::machine_t&, void*)' defined but not used [-Wunused-function]
+  132 | static void auto_free(const device_t::machine_t& machine, void * buffer) {
+      |             ^~~~~~~~~
+ymf262.cpp
+/__w/starfleet2-3ds/starfleet2-3ds/dosbox/src/hardware/mame/ymf262.cpp: In function 'void OPL3_SLOT_CONNECT({anonymous}::OPL3*, {anonymous}::OPL3_SLOT*)':
+/__w/starfleet2-3ds/starfleet2-3ds/dosbox/src/hardware/mame/ymf262.cpp:633:33: warning: invalid conversion from 'int*' to 'int32_t*' {aka 'long int*'} [-fpermissive]
+  633 |                 slot->connect = &chip->chanout[slot->conn_enum];
+      |                                 ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+      |                                 |
+      |                                 int*
+/__w/starfleet2-3ds/starfleet2-3ds/dosbox/src/hardware/mame/ymf262.cpp:635:33: warning: invalid conversion from 'int*' to 'int32_t*' {aka 'long int*'} [-fpermissive]
+  635 |                 slot->connect = &chip->phase_modulation;
+      |                                 ^~~~~~~~~~~~~~~~~~~~~~~
+      |                                 |
+      |                                 int*
+/__w/starfleet2-3ds/starfleet2-3ds/dosbox/src/hardware/mame/ymf262.cpp:637:33: warning: invalid conversion from 'int*' to 'int32_t*' {aka 'long int*'} [-fpermissive]
+  637 |                 slot->connect = &chip->phase_modulation2;
+      |                                 ^~~~~~~~~~~~~~~~~~~~~~~~
+      |                                 |
+      |                                 int*
+/__w/starfleet2-3ds/starfleet2-3ds/dosbox/src/hardware/mame/ymf262.cpp: In function 'void advance({anonymous}::OPL3*)':
+/__w/starfleet2-3ds/starfleet2-3ds/dosbox/src/hardware/mame/ymf262.cpp:760:57: warning: comparison of integer expressions of different signedness: 'int32_t' {aka 'long int'} and 'uint32_t' {aka 'long unsigned int'} [-Wsign-compare]
+  760 |                                         if ( op->volume >= op->sl )
+      |                                              ~~~~~~~~~~~^~~~~~~~~
+/__w/starfleet2-3ds/starfleet2-3ds/dosbox/src/hardware/mame/ymf262.cpp: In function 'void OPL3WriteReg({anonymous}::OPL3*, int, int)':
+/__w/starfleet2-3ds/starfleet2-3ds/dosbox/src/hardware/mame/ymf262.cpp:1977:35: warning: comparison of integer expressions of different signedness: 'uint32_t' {aka 'long unsigned int'} and 'int' [-Wsign-compare]
+ 1977 |                 if(CH->block_fnum != block_fnum)
+      |                    ~~~~~~~~~~~~~~~^~~~~~~~~~~~~
+directserial.cpp
+libserial.cpp
+misc_util.cpp
+/__w/starfleet2-3ds/starfleet2-3ds/dosbox/src/hardware/serialport/misc_util.cpp: In member function 'bool TCPClientSocket::SendArray(Bit8u*, Bitu)':
+/__w/starfleet2-3ds/starfleet2-3ds/dosbox/src/hardware/serialport/misc_util.cpp:230:50: warning: comparison of integer expressions of different signedness: 'int' and 'Bitu' {aka 'unsigned int'} [-Wsign-compare]
+  230 |         if(SDLNet_TCP_Send(mysock, data, bufsize)!=bufsize) {
+      |            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^~~~~~~~~
+/__w/starfleet2-3ds/starfleet2-3ds/dosbox/src/hardware/serialport/misc_util.cpp: In member function 'bool TCPClientSocket::SendByteBuffered(Bit8u)':
+/__w/starfleet2-3ds/starfleet2-3ds/dosbox/src/hardware/serialport/misc_util.cpp:244:71: warning: comparison of integer expressions of different signedness: 'int' and 'Bitu' {aka 'unsigned int'} [-Wsign-compare]
+  244 |                 if(SDLNet_TCP_Send(mysock, sendbuffer, sendbuffersize)!=sendbuffersize) {
+      |                    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^~~~~~~~~~~~~~~~
+/__w/starfleet2-3ds/starfleet2-3ds/dosbox/src/hardware/serialport/misc_util.cpp: In member function 'void TCPClientSocket::FlushBuffer()':
+/__w/starfleet2-3ds/starfleet2-3ds/dosbox/src/hardware/serialport/misc_util.cpp:276:41: warning: comparison of integer expressions of different signedness: 'int' and 'Bitu' {aka 'unsigned int'} [-Wsign-compare]
+  275 |                 if(SDLNet_TCP_Send(mysock, sendbuffer,
+      |                    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+  276 |                         sendbufferindex)!=sendbufferindex) {
+      |                         ~~~~~~~~~~~~~~~~^~~~~~~~~~~~~~~~~
+nullmodem.cpp
+serialdummy.cpp
+serialport.cpp
+softmodem.cpp
+/__w/starfleet2-3ds/starfleet2-3ds/dosbox/src/hardware/serialport/softmodem.cpp: In member function 'void CSerialModem::SendRes(ResTypes)':
+/__w/starfleet2-3ds/starfleet2-3ds/dosbox/src/hardware/serialport/softmodem.cpp:148:16: warning: enumeration value 'ResBUSY' not handled in switch [-Wswitch]
+  148 |         switch (response)
+      |                ^
+/__w/starfleet2-3ds/starfleet2-3ds/dosbox/src/hardware/serialport/softmodem.cpp: In member function 'void CSerialModem::Timer2()':
+/__w/starfleet2-3ds/starfleet2-3ds/dosbox/src/hardware/serialport/softmodem.cpp:669:23: warning: unused variable 'args' [-Wunused-variable]
+  669 |         unsigned long args = 1;
+      |                       ^~~~
+/__w/starfleet2-3ds/starfleet2-3ds/dosbox/src/hardware/serialport/softmodem.cpp: In member function 'void CSerialModem::SendRes(ResTypes)':
+/__w/starfleet2-3ds/starfleet2-3ds/dosbox/src/hardware/serialport/softmodem.cpp:163:30: warning: 'string' may be used uninitialized [-Wmaybe-uninitialized]
+  163 |                 else SendLine(string);
+      |                      ~~~~~~~~^~~~~~~~
+/__w/starfleet2-3ds/starfleet2-3ds/dosbox/src/hardware/serialport/softmodem.cpp:147:22: note: 'string' was declared here
+  147 |         char const * string;Bitu code;
+      |                      ^~~~~~
+/__w/starfleet2-3ds/starfleet2-3ds/dosbox/src/hardware/serialport/softmodem.cpp:162:47: warning: 'code' may be used uninitialized [-Wmaybe-uninitialized]
+  162 |                 if(numericresponse) SendNumber(code);
+      |                                     ~~~~~~~~~~^~~~~~
+/__w/starfleet2-3ds/starfleet2-3ds/dosbox/src/hardware/serialport/softmodem.cpp:147:34: note: 'code' was declared here
+  147 |         char const * string;Bitu code;
+      |                                  ^~~~
+bios.cpp
+bios_disk.cpp
+bios_keyboard.cpp
+ems.cpp
+/__w/starfleet2-3ds/starfleet2-3ds/dosbox/src/ints/ems.cpp: In function 'Bit8u EMM_RestoreMappingTable()':
+/__w/starfleet2-3ds/starfleet2-3ds/dosbox/src/ints/ems.cpp:439:15: warning: variable 'result' set but not used [-Wunused-but-set-variable=]
+  439 |         Bit8u result;
+      |               ^~~~~~
+int10_char.cpp
+/__w/starfleet2-3ds/starfleet2-3ds/dosbox/src/ints/int10_char.cpp: In function 'void INT10_WriteChar(Bit8u, Bit8u, Bit8u, Bit16u, bool)':
+/__w/starfleet2-3ds/starfleet2-3ds/dosbox/src/ints/int10_char.cpp:598:24: warning: enumeration value 'MCH_HERC' not handled in switch [-Wswitch]
+  598 |                 switch (machine) {
+      |                        ^
+/__w/starfleet2-3ds/starfleet2-3ds/dosbox/src/ints/int10_char.cpp:598:24: warning: enumeration value 'MCH_TANDY' not handled in switch [-Wswitch]
+int10.cpp
+int10_memory.cpp
+/__w/starfleet2-3ds/starfleet2-3ds/dosbox/src/ints/int10_memory.cpp: In function 'void INT10_SetupRomMemory()':
+/__w/starfleet2-3ds/starfleet2-3ds/dosbox/src/ints/int10_memory.cpp:143:31: warning: enumeration value 'SVGA_None' not handled in switch [-Wswitch]
+  143 |                         switch(svgaCard) {
+      |                               ^
+int10_misc.cpp
+int10_modes.cpp
+/__w/starfleet2-3ds/starfleet2-3ds/dosbox/src/ints/int10_modes.cpp: In function 'void FinishSetMode(bool)':
+/__w/starfleet2-3ds/starfleet2-3ds/dosbox/src/ints/int10_modes.cpp:447:24: warning: enumeration value 'M_HERC_GFX' not handled in switch [-Wswitch]
+  447 |                 switch (CurMode->type) {
+      |                        ^
+/__w/starfleet2-3ds/starfleet2-3ds/dosbox/src/ints/int10_modes.cpp:447:24: warning: enumeration value 'M_HERC_TEXT' not handled in switch [-Wswitch]
+/__w/starfleet2-3ds/starfleet2-3ds/dosbox/src/ints/int10_modes.cpp:447:24: warning: enumeration value 'M_CGA16' not handled in switch [-Wswitch]
+/__w/starfleet2-3ds/starfleet2-3ds/dosbox/src/ints/int10_modes.cpp:447:24: warning: enumeration value 'M_TANDY2' not handled in switch [-Wswitch]
+/__w/starfleet2-3ds/starfleet2-3ds/dosbox/src/ints/int10_modes.cpp:447:24: warning: enumeration value 'M_TANDY4' not handled in switch [-Wswitch]
+/__w/starfleet2-3ds/starfleet2-3ds/dosbox/src/ints/int10_modes.cpp:447:24: warning: enumeration value 'M_TANDY_TEXT' not handled in switch [-Wswitch]
+/__w/starfleet2-3ds/starfleet2-3ds/dosbox/src/ints/int10_modes.cpp:447:24: warning: enumeration value 'M_ERROR' not handled in switch [-Wswitch]
+/__w/starfleet2-3ds/starfleet2-3ds/dosbox/src/ints/int10_modes.cpp: In function 'bool INT10_SetVideoMode_OTHER(Bit16u, bool)':
+/__w/starfleet2-3ds/starfleet2-3ds/dosbox/src/ints/int10_modes.cpp:519:16: warning: enumeration value 'MCH_EGA' not handled in switch [-Wswitch]
+  519 |         switch (machine) {
+      |                ^
+/__w/starfleet2-3ds/starfleet2-3ds/dosbox/src/ints/int10_modes.cpp:519:16: warning: enumeration value 'MCH_VGA' not handled in switch [-Wswitch]
+/__w/starfleet2-3ds/starfleet2-3ds/dosbox/src/ints/int10_modes.cpp:566:15: warning: enumeration value 'M_EGA' not handled in switch [-Wswitch]
+  566 |         switch(CurMode->type) {
+      |               ^
+/__w/starfleet2-3ds/starfleet2-3ds/dosbox/src/ints/int10_modes.cpp:566:15: warning: enumeration value 'M_VGA' not handled in switch [-Wswitch]
+/__w/starfleet2-3ds/starfleet2-3ds/dosbox/src/ints/int10_modes.cpp:566:15: warning: enumeration value 'M_LIN4' not handled in switch [-Wswitch]
+/__w/starfleet2-3ds/starfleet2-3ds/dosbox/src/ints/int10_modes.cpp:566:15: warning: enumeration value 'M_LIN8' not handled in switch [-Wswitch]
+/__w/starfleet2-3ds/starfleet2-3ds/dosbox/src/ints/int10_modes.cpp:566:15: warning: enumeration value 'M_LIN15' not handled in switch [-Wswitch]
+/__w/starfleet2-3ds/starfleet2-3ds/dosbox/src/ints/int10_modes.cpp:566:15: warning: enumeration value 'M_LIN16' not handled in switch [-Wswitch]
+/__w/starfleet2-3ds/starfleet2-3ds/dosbox/src/ints/int10_modes.cpp:566:15: warning: enumeration value 'M_LIN32' not handled in switch [-Wswitch]
+/__w/starfleet2-3ds/starfleet2-3ds/dosbox/src/ints/int10_modes.cpp:566:15: warning: enumeration value 'M_HERC_GFX' not handled in switch [-Wswitch]
+/__w/starfleet2-3ds/starfleet2-3ds/dosbox/src/ints/int10_modes.cpp:566:15: warning: enumeration value 'M_HERC_TEXT' not handled in switch [-Wswitch]
+/__w/starfleet2-3ds/starfleet2-3ds/dosbox/src/ints/int10_modes.cpp:566:15: warning: enumeration value 'M_CGA16' not handled in switch [-Wswitch]
+/__w/starfleet2-3ds/starfleet2-3ds/dosbox/src/ints/int10_modes.cpp:566:15: warning: enumeration value 'M_TANDY2' not handled in switch [-Wswitch]
+/__w/starfleet2-3ds/starfleet2-3ds/dosbox/src/ints/int10_modes.cpp:566:15: warning: enumeration value 'M_TANDY4' not handled in switch [-Wswitch]
+/__w/starfleet2-3ds/starfleet2-3ds/dosbox/src/ints/int10_modes.cpp:566:15: warning: enumeration value 'M_TANDY_TEXT' not handled in switch [-Wswitch]
+/__w/starfleet2-3ds/starfleet2-3ds/dosbox/src/ints/int10_modes.cpp:566:15: warning: enumeration value 'M_ERROR' not handled in switch [-Wswitch]
+/__w/starfleet2-3ds/starfleet2-3ds/dosbox/src/ints/int10_modes.cpp:600:16: warning: enumeration value 'MCH_EGA' not handled in switch [-Wswitch]
+  600 |         switch (machine) {
+      |                ^
+/__w/starfleet2-3ds/starfleet2-3ds/dosbox/src/ints/int10_modes.cpp:600:16: warning: enumeration value 'MCH_VGA' not handled in switch [-Wswitch]
+/__w/starfleet2-3ds/starfleet2-3ds/dosbox/src/ints/int10_modes.cpp: In function 'bool INT10_SetVideoMode(Bit16u)':
+/__w/starfleet2-3ds/starfleet2-3ds/dosbox/src/ints/int10_modes.cpp:805:16: warning: enumeration value 'M_HERC_GFX' not handled in switch [-Wswitch]
+  805 |         switch (CurMode->type) {
+      |                ^
+/__w/starfleet2-3ds/starfleet2-3ds/dosbox/src/ints/int10_modes.cpp:805:16: warning: enumeration value 'M_HERC_TEXT' not handled in switch [-Wswitch]
+/__w/starfleet2-3ds/starfleet2-3ds/dosbox/src/ints/int10_modes.cpp:805:16: warning: enumeration value 'M_CGA16' not handled in switch [-Wswitch]
+/__w/starfleet2-3ds/starfleet2-3ds/dosbox/src/ints/int10_modes.cpp:805:16: warning: enumeration value 'M_TANDY2' not handled in switch [-Wswitch]
+/__w/starfleet2-3ds/starfleet2-3ds/dosbox/src/ints/int10_modes.cpp:805:16: warning: enumeration value 'M_TANDY4' not handled in switch [-Wswitch]
+/__w/starfleet2-3ds/starfleet2-3ds/dosbox/src/ints/int10_modes.cpp:805:16: warning: enumeration value 'M_TANDY16' not handled in switch [-Wswitch]
+/__w/starfleet2-3ds/starfleet2-3ds/dosbox/src/ints/int10_modes.cpp:805:16: warning: enumeration value 'M_TANDY_TEXT' not handled in switch [-Wswitch]
+/__w/starfleet2-3ds/starfleet2-3ds/dosbox/src/ints/int10_modes.cpp:805:16: warning: enumeration value 'M_ERROR' not handled in switch [-Wswitch]
+/__w/starfleet2-3ds/starfleet2-3ds/dosbox/src/ints/int10_modes.cpp:1031:16: warning: enumeration value 'M_HERC_GFX' not handled in switch [-Wswitch]
+ 1031 |         switch (CurMode->type) {
+      |                ^
+/__w/starfleet2-3ds/starfleet2-3ds/dosbox/src/ints/int10_modes.cpp:1031:16: warning: enumeration value 'M_HERC_TEXT' not handled in switch [-Wswitch]
+/__w/starfleet2-3ds/starfleet2-3ds/dosbox/src/ints/int10_modes.cpp:1031:16: warning: enumeration value 'M_CGA16' not handled in switch [-Wswitch]
+/__w/starfleet2-3ds/starfleet2-3ds/dosbox/src/ints/int10_modes.cpp:1031:16: warning: enumeration value 'M_TANDY2' not handled in switch [-Wswitch]
+/__w/starfleet2-3ds/starfleet2-3ds/dosbox/src/ints/int10_modes.cpp:1031:16: warning: enumeration value 'M_TANDY4' not handled in switch [-Wswitch]
+/__w/starfleet2-3ds/starfleet2-3ds/dosbox/src/ints/int10_modes.cpp:1031:16: warning: enumeration value 'M_TANDY16' not handled in switch [-Wswitch]
+/__w/starfleet2-3ds/starfleet2-3ds/dosbox/src/ints/int10_modes.cpp:1031:16: warning: enumeration value 'M_TANDY_TEXT' not handled in switch [-Wswitch]
+/__w/starfleet2-3ds/starfleet2-3ds/dosbox/src/ints/int10_modes.cpp:1031:16: warning: enumeration value 'M_ERROR' not handled in switch [-Wswitch]
+/__w/starfleet2-3ds/starfleet2-3ds/dosbox/src/ints/int10_modes.cpp:1106:16: warning: enumeration value 'M_HERC_GFX' not handled in switch [-Wswitch]
+ 1106 |         switch (CurMode->type) {
+      |                ^
+/__w/starfleet2-3ds/starfleet2-3ds/dosbox/src/ints/int10_modes.cpp:1106:16: warning: enumeration value 'M_HERC_TEXT' not handled in switch [-Wswitch]
+/__w/starfleet2-3ds/starfleet2-3ds/dosbox/src/ints/int10_modes.cpp:1106:16: warning: enumeration value 'M_CGA16' not handled in switch [-Wswitch]
+/__w/starfleet2-3ds/starfleet2-3ds/dosbox/src/ints/int10_modes.cpp:1106:16: warning: enumeration value 'M_TANDY2' not handled in switch [-Wswitch]
+/__w/starfleet2-3ds/starfleet2-3ds/dosbox/src/ints/int10_modes.cpp:1106:16: warning: enumeration value 'M_TANDY4' not handled in switch [-Wswitch]
+/__w/starfleet2-3ds/starfleet2-3ds/dosbox/src/ints/int10_modes.cpp:1106:16: warning: enumeration value 'M_TANDY16' not handled in switch [-Wswitch]
+/__w/starfleet2-3ds/starfleet2-3ds/dosbox/src/ints/int10_modes.cpp:1106:16: warning: enumeration value 'M_TANDY_TEXT' not handled in switch [-Wswitch]
+/__w/starfleet2-3ds/starfleet2-3ds/dosbox/src/ints/int10_modes.cpp:1106:16: warning: enumeration value 'M_ERROR' not handled in switch [-Wswitch]
+/__w/starfleet2-3ds/starfleet2-3ds/dosbox/src/ints/int10_modes.cpp:1146:16: warning: enumeration value 'M_HERC_GFX' not handled in switch [-Wswitch]
+ 1146 |         switch (CurMode->type) {
+      |                ^
+/__w/starfleet2-3ds/starfleet2-3ds/dosbox/src/ints/int10_modes.cpp:1146:16: warning: enumeration value 'M_HERC_TEXT' not handled in switch [-Wswitch]
+/__w/starfleet2-3ds/starfleet2-3ds/dosbox/src/ints/int10_modes.cpp:1146:16: warning: enumeration value 'M_CGA16' not handled in switch [-Wswitch]
+/__w/starfleet2-3ds/starfleet2-3ds/dosbox/src/ints/int10_modes.cpp:1146:16: warning: enumeration value 'M_TANDY2' not handled in switch [-Wswitch]
+/__w/starfleet2-3ds/starfleet2-3ds/dosbox/src/ints/int10_modes.cpp:1146:16: warning: enumeration value 'M_TANDY4' not handled in switch [-Wswitch]
+/__w/starfleet2-3ds/starfleet2-3ds/dosbox/src/ints/int10_modes.cpp:1146:16: warning: enumeration value 'M_TANDY_TEXT' not handled in switch [-Wswitch]
+/__w/starfleet2-3ds/starfleet2-3ds/dosbox/src/ints/int10_modes.cpp:1146:16: warning: enumeration value 'M_ERROR' not handled in switch [-Wswitch]
+/__w/starfleet2-3ds/starfleet2-3ds/dosbox/src/ints/int10_modes.cpp:1247:24: warning: enumeration value 'M_HERC_GFX' not handled in switch [-Wswitch]
+ 1247 |                 switch (CurMode->type) {
+      |                        ^
+/__w/starfleet2-3ds/starfleet2-3ds/dosbox/src/ints/int10_modes.cpp:1247:24: warning: enumeration value 'M_HERC_TEXT' not handled in switch [-Wswitch]
+/__w/starfleet2-3ds/starfleet2-3ds/dosbox/src/ints/int10_modes.cpp:1247:24: warning: enumeration value 'M_CGA16' not handled in switch [-Wswitch]
+/__w/starfleet2-3ds/starfleet2-3ds/dosbox/src/ints/int10_modes.cpp:1247:24: warning: enumeration value 'M_TANDY2' not handled in switch [-Wswitch]
+/__w/starfleet2-3ds/starfleet2-3ds/dosbox/src/ints/int10_modes.cpp:1247:24: warning: enumeration value 'M_TANDY4' not handled in switch [-Wswitch]
+/__w/starfleet2-3ds/starfleet2-3ds/dosbox/src/ints/int10_modes.cpp:1247:24: warning: enumeration value 'M_TANDY_TEXT' not handled in switch [-Wswitch]
+/__w/starfleet2-3ds/starfleet2-3ds/dosbox/src/ints/int10_modes.cpp:1247:24: warning: enumeration value 'M_ERROR' not handled in switch [-Wswitch]
+/__w/starfleet2-3ds/starfleet2-3ds/dosbox/src/ints/int10_modes.cpp:1339:16: warning: enumeration value 'M_EGA' not handled in switch [-Wswitch]
+ 1339 |         switch (CurMode->type) {
+      |                ^
+/__w/starfleet2-3ds/starfleet2-3ds/dosbox/src/ints/int10_modes.cpp:1339:16: warning: enumeration value 'M_VGA' not handled in switch [-Wswitch]
+/__w/starfleet2-3ds/starfleet2-3ds/dosbox/src/ints/int10_modes.cpp:1339:16: warning: enumeration value 'M_LIN4' not handled in switch [-Wswitch]
+/__w/starfleet2-3ds/starfleet2-3ds/dosbox/src/ints/int10_modes.cpp:1339:16: warning: enumeration value 'M_LIN8' not handled in switch [-Wswitch]
+/__w/starfleet2-3ds/starfleet2-3ds/dosbox/src/ints/int10_modes.cpp:1339:16: warning: enumeration value 'M_LIN15' not handled in switch [-Wswitch]
+/__w/starfleet2-3ds/starfleet2-3ds/dosbox/src/ints/int10_modes.cpp:1339:16: warning: enumeration value 'M_LIN16' not handled in switch [-Wswitch]
+/__w/starfleet2-3ds/starfleet2-3ds/dosbox/src/ints/int10_modes.cpp:1339:16: warning: enumeration value 'M_LIN32' not handled in switch [-Wswitch]
+/__w/starfleet2-3ds/starfleet2-3ds/dosbox/src/ints/int10_modes.cpp:1339:16: warning: enumeration value 'M_HERC_GFX' not handled in switch [-Wswitch]
+/__w/starfleet2-3ds/starfleet2-3ds/dosbox/src/ints/int10_modes.cpp:1339:16: warning: enumeration value 'M_HERC_TEXT' not handled in switch [-Wswitch]
+/__w/starfleet2-3ds/starfleet2-3ds/dosbox/src/ints/int10_modes.cpp:1339:16: warning: enumeration value 'M_CGA16' not handled in switch [-Wswitch]
+/__w/starfleet2-3ds/starfleet2-3ds/dosbox/src/ints/int10_modes.cpp:1339:16: warning: enumeration value 'M_TANDY2' not handled in switch [-Wswitch]
+/__w/starfleet2-3ds/starfleet2-3ds/dosbox/src/ints/int10_modes.cpp:1339:16: warning: enumeration value 'M_TANDY4' not handled in switch [-Wswitch]
+/__w/starfleet2-3ds/starfleet2-3ds/dosbox/src/ints/int10_modes.cpp:1339:16: warning: enumeration value 'M_TANDY16' not handled in switch [-Wswitch]
+/__w/starfleet2-3ds/starfleet2-3ds/dosbox/src/ints/int10_modes.cpp:1339:16: warning: enumeration value 'M_TANDY_TEXT' not handled in switch [-Wswitch]
+/__w/starfleet2-3ds/starfleet2-3ds/dosbox/src/ints/int10_modes.cpp:1339:16: warning: enumeration value 'M_ERROR' not handled in switch [-Wswitch]
+/__w/starfleet2-3ds/starfleet2-3ds/dosbox/src/ints/int10_modes.cpp: In function 'Bitu VideoModeMemSize(Bitu)':
+/__w/starfleet2-3ds/starfleet2-3ds/dosbox/src/ints/int10_modes.cpp:1490:15: warning: enumeration value 'M_CGA2' not handled in switch [-Wswitch]
+ 1490 |         switch(vmodeBlock->type) {
+      |               ^
+/__w/starfleet2-3ds/starfleet2-3ds/dosbox/src/ints/int10_modes.cpp:1490:15: warning: enumeration value 'M_CGA4' not handled in switch [-Wswitch]
+/__w/starfleet2-3ds/starfleet2-3ds/dosbox/src/ints/int10_modes.cpp:1490:15: warning: enumeration value 'M_EGA' not handled in switch [-Wswitch]
+/__w/starfleet2-3ds/starfleet2-3ds/dosbox/src/ints/int10_modes.cpp:1490:15: warning: enumeration value 'M_VGA' not handled in switch [-Wswitch]
+/__w/starfleet2-3ds/starfleet2-3ds/dosbox/src/ints/int10_modes.cpp:1490:15: warning: enumeration value 'M_HERC_GFX' not handled in switch [-Wswitch]
+/__w/starfleet2-3ds/starfleet2-3ds/dosbox/src/ints/int10_modes.cpp:1490:15: warning: enumeration value 'M_HERC_TEXT' not handled in switch [-Wswitch]
+/__w/starfleet2-3ds/starfleet2-3ds/dosbox/src/ints/int10_modes.cpp:1490:15: warning: enumeration value 'M_CGA16' not handled in switch [-Wswitch]
+/__w/starfleet2-3ds/starfleet2-3ds/dosbox/src/ints/int10_modes.cpp:1490:15: warning: enumeration value 'M_TANDY2' not handled in switch [-Wswitch]
+/__w/starfleet2-3ds/starfleet2-3ds/dosbox/src/ints/int10_modes.cpp:1490:15: warning: enumeration value 'M_TANDY4' not handled in switch [-Wswitch]
+/__w/starfleet2-3ds/starfleet2-3ds/dosbox/src/ints/int10_modes.cpp:1490:15: warning: enumeration value 'M_TANDY16' not handled in switch [-Wswitch]
+/__w/starfleet2-3ds/starfleet2-3ds/dosbox/src/ints/int10_modes.cpp:1490:15: warning: enumeration value 'M_TANDY_TEXT' not handled in switch [-Wswitch]
+/__w/starfleet2-3ds/starfleet2-3ds/dosbox/src/ints/int10_modes.cpp:1490:15: warning: enumeration value 'M_ERROR' not handled in switch [-Wswitch]
+int10_pal.cpp
+/__w/starfleet2-3ds/starfleet2-3ds/dosbox/src/ints/int10_pal.cpp: In function 'void INT10_SetSinglePaletteRegister(Bit8u, Bit8u)':
+/__w/starfleet2-3ds/starfleet2-3ds/dosbox/src/ints/int10_pal.cpp:37:16: warning: enumeration value 'MCH_HERC' not handled in switch [-Wswitch]
+   37 |         switch (machine) {
+      |                ^
+/__w/starfleet2-3ds/starfleet2-3ds/dosbox/src/ints/int10_pal.cpp:37:16: warning: enumeration value 'MCH_CGA' not handled in switch [-Wswitch]
+/__w/starfleet2-3ds/starfleet2-3ds/dosbox/src/ints/int10_pal.cpp: In function 'void INT10_SetOverscanBorderColor(Bit8u)':
+/__w/starfleet2-3ds/starfleet2-3ds/dosbox/src/ints/int10_pal.cpp:91:16: warning: enumeration value 'MCH_HERC' not handled in switch [-Wswitch]
+   91 |         switch (machine) {
+      |                ^
+/__w/starfleet2-3ds/starfleet2-3ds/dosbox/src/ints/int10_pal.cpp:91:16: warning: enumeration value 'MCH_CGA' not handled in switch [-Wswitch]
+/__w/starfleet2-3ds/starfleet2-3ds/dosbox/src/ints/int10_pal.cpp: In function 'void INT10_SetAllPaletteRegisters(PhysPt)':
+/__w/starfleet2-3ds/starfleet2-3ds/dosbox/src/ints/int10_pal.cpp:107:16: warning: enumeration value 'MCH_HERC' not handled in switch [-Wswitch]
+  107 |         switch (machine) {
+      |                ^
+/__w/starfleet2-3ds/starfleet2-3ds/dosbox/src/ints/int10_pal.cpp:107:16: warning: enumeration value 'MCH_CGA' not handled in switch [-Wswitch]
+/__w/starfleet2-3ds/starfleet2-3ds/dosbox/src/ints/int10_pal.cpp: In function 'void INT10_SetBackgroundBorder(Bit8u)':
+/__w/starfleet2-3ds/starfleet2-3ds/dosbox/src/ints/int10_pal.cpp:313:16: warning: enumeration value 'MCH_HERC' not handled in switch [-Wswitch]
+  313 |         switch (machine) {
+      |                ^
+int10_put_pixel.cpp
+int10_vesa.cpp
+int10_video_state.cpp
+/__w/starfleet2-3ds/starfleet2-3ds/dosbox/src/ints/int10_vesa.cpp: In function 'Bit8u VESA_GetSVGAModeInformation(Bit16u, Bit16u, Bit16u)':
+/__w/starfleet2-3ds/starfleet2-3ds/dosbox/src/ints/int10_vesa.cpp:152:27: warning: taking address of packed member of 'MODE_INFO' may result in an unaligned pointer value [-Waddress-of-packed-member]
+  152 |                 var_write(&minfo.BytesPerScanLine,mblock->swidth/8);
+      |                           ^~~~~~~~~~~~~~~~~~~~~~~
+/__w/starfleet2-3ds/starfleet2-3ds/dosbox/src/ints/int10_vesa.cpp:160:27: warning: taking address of packed member of 'MODE_INFO' may result in an unaligned pointer value [-Waddress-of-packed-member]
+  160 |                 var_write(&minfo.BytesPerScanLine,mblock->swidth);
+      |                           ^~~~~~~~~~~~~~~~~~~~~~~
+/__w/starfleet2-3ds/starfleet2-3ds/dosbox/src/ints/int10_vesa.cpp:169:27: warning: taking address of packed member of 'MODE_INFO' may result in an unaligned pointer value [-Waddress-of-packed-member]
+  169 |                 var_write(&minfo.BytesPerScanLine,mblock->swidth*2);
+      |                           ^~~~~~~~~~~~~~~~~~~~~~~
+/__w/starfleet2-3ds/starfleet2-3ds/dosbox/src/ints/int10_vesa.cpp:186:27: warning: taking address of packed member of 'MODE_INFO' may result in an unaligned pointer value [-Waddress-of-packed-member]
+  186 |                 var_write(&minfo.BytesPerScanLine,mblock->swidth*2);
+      |                           ^~~~~~~~~~~~~~~~~~~~~~~
+/__w/starfleet2-3ds/starfleet2-3ds/dosbox/src/ints/int10_vesa.cpp:201:27: warning: taking address of packed member of 'MODE_INFO' may result in an unaligned pointer value [-Waddress-of-packed-member]
+  201 |                 var_write(&minfo.BytesPerScanLine,mblock->swidth*4);
+      |                           ^~~~~~~~~~~~~~~~~~~~~~~
+/__w/starfleet2-3ds/starfleet2-3ds/dosbox/src/ints/int10_vesa.cpp:218:27: warning: taking address of packed member of 'MODE_INFO' may result in an unaligned pointer value [-Waddress-of-packed-member]
+  218 |                 var_write(&minfo.BytesPerScanLine, mblock->twidth * 2);
+      |                           ^~~~~~~~~~~~~~~~~~~~~~~
+/__w/starfleet2-3ds/starfleet2-3ds/dosbox/src/ints/int10_vesa.cpp:241:19: warning: taking address of packed member of 'MODE_INFO' may result in an unaligned pointer value [-Waddress-of-packed-member]
+  241 |         var_write(&minfo.ModeAttributes, modeAttributes);
+      |                   ^~~~~~~~~~~~~~~~~~~~~
+/__w/starfleet2-3ds/starfleet2-3ds/dosbox/src/ints/int10_vesa.cpp:245:27: warning: taking address of packed member of 'MODE_INFO' may result in an unaligned pointer value [-Waddress-of-packed-member]
+  245 |                 var_write(&minfo.WinGranularity,32);
+      |                           ^~~~~~~~~~~~~~~~~~~~~
+/__w/starfleet2-3ds/starfleet2-3ds/dosbox/src/ints/int10_vesa.cpp:246:27: warning: taking address of packed member of 'MODE_INFO' may result in an unaligned pointer value [-Waddress-of-packed-member]
+  246 |                 var_write(&minfo.WinSize,32);
+      |                           ^~~~~~~~~~~~~~
+/__w/starfleet2-3ds/starfleet2-3ds/dosbox/src/ints/int10_vesa.cpp:247:27: warning: taking address of packed member of 'MODE_INFO' may result in an unaligned pointer value [-Waddress-of-packed-member]
+  247 |                 var_write(&minfo.WinASegment,0xb800);
+      |                           ^~~~~~~~~~~~~~~~~~
+/__w/starfleet2-3ds/starfleet2-3ds/dosbox/src/ints/int10_vesa.cpp:248:27: warning: taking address of packed member of 'MODE_INFO' may result in an unaligned pointer value [-Waddress-of-packed-member]
+  248 |                 var_write(&minfo.XResolution,mblock->twidth);
+      |                           ^~~~~~~~~~~~~~~~~~
+/__w/starfleet2-3ds/starfleet2-3ds/dosbox/src/ints/int10_vesa.cpp:249:27: warning: taking address of packed member of 'MODE_INFO' may result in an unaligned pointer value [-Waddress-of-packed-member]
+  249 |                 var_write(&minfo.YResolution,mblock->theight);
+      |                           ^~~~~~~~~~~~~~~~~~
+/__w/starfleet2-3ds/starfleet2-3ds/dosbox/src/ints/int10_vesa.cpp:251:27: warning: taking address of packed member of 'MODE_INFO' may result in an unaligned pointer value [-Waddress-of-packed-member]
+  251 |                 var_write(&minfo.WinGranularity,64);
+      |                           ^~~~~~~~~~~~~~~~~~~~~
+/__w/starfleet2-3ds/starfleet2-3ds/dosbox/src/ints/int10_vesa.cpp:252:27: warning: taking address of packed member of 'MODE_INFO' may result in an unaligned pointer value [-Waddress-of-packed-member]
+  252 |                 var_write(&minfo.WinSize,64);
+      |                           ^~~~~~~~~~~~~~
+/__w/starfleet2-3ds/starfleet2-3ds/dosbox/src/ints/int10_vesa.cpp:253:27: warning: taking address of packed member of 'MODE_INFO' may result in an unaligned pointer value [-Waddress-of-packed-member]
+  253 |                 var_write(&minfo.WinASegment,0xa000);
+      |                           ^~~~~~~~~~~~~~~~~~
+/__w/starfleet2-3ds/starfleet2-3ds/dosbox/src/ints/int10_vesa.cpp:254:27: warning: taking address of packed member of 'MODE_INFO' may result in an unaligned pointer value [-Waddress-of-packed-member]
+  254 |                 var_write(&minfo.XResolution,mblock->swidth);
+      |                           ^~~~~~~~~~~~~~~~~~
+/__w/starfleet2-3ds/starfleet2-3ds/dosbox/src/ints/int10_vesa.cpp:255:27: warning: taking address of packed member of 'MODE_INFO' may result in an unaligned pointer value [-Waddress-of-packed-member]
+  255 |                 var_write(&minfo.YResolution,mblock->sheight);
+      |                           ^~~~~~~~~~~~~~~~~~
+/__w/starfleet2-3ds/starfleet2-3ds/dosbox/src/ints/int10_vesa.cpp:257:19: warning: taking address of packed member of 'MODE_INFO' may result in an unaligned pointer value [-Waddress-of-packed-member]
+  257 |         var_write(&minfo.WinFuncPtr,int10.rom.set_window);
+      |                   ^~~~~~~~~~~~~~~~~
+/__w/starfleet2-3ds/starfleet2-3ds/dosbox/src/ints/int10_vesa.cpp:262:42: warning: taking address of packed member of 'MODE_INFO' may result in an unaligned pointer value [-Waddress-of-packed-member]
+  262 |         if (!int10.vesa_nolfb) var_write(&minfo.PhysBasePtr,S3_LFB_BASE);
+      |                                          ^~~~~~~~~~~~~~~~~~
+/__w/starfleet2-3ds/starfleet2-3ds/dosbox/src/ints/int10_vesa.cpp: In function 'void INT10_SetupVESA()':
+/__w/starfleet2-3ds/starfleet2-3ds/dosbox/src/ints/int10_vesa.cpp:581:16: warning: enumeration value 'SVGA_None' not handled in switch [-Wswitch]
+  581 |         switch (svgaCard) {
+      |                ^
+/__w/starfleet2-3ds/starfleet2-3ds/dosbox/src/ints/int10_vesa.cpp:581:16: warning: enumeration value 'SVGA_TsengET4K' not handled in switch [-Wswitch]
+/__w/starfleet2-3ds/starfleet2-3ds/dosbox/src/ints/int10_vesa.cpp:581:16: warning: enumeration value 'SVGA_TsengET3K' not handled in switch [-Wswitch]
+/__w/starfleet2-3ds/starfleet2-3ds/dosbox/src/ints/int10_vesa.cpp:581:16: warning: enumeration value 'SVGA_ParadisePVGA1A' not handled in switch [-Wswitch]
+int10_vptable.cpp
+mouse.cpp
+xms.cpp
+cross.cpp
+messages.cpp
+programs.cpp
+setup.cpp
+support.cpp
+midi.cpp
+render.cpp
+render_scalers.cpp
+/__w/starfleet2-3ds/starfleet2-3ds/dosbox/src/gui/render_templates.h:302:33: warning: 'void NormalDh_9_8_L(const void*)' defined but not used [-Wunused-function]
+  302 | #define SCALERNAME              NormalDh
+      |                                 ^~~~~~~~
+/__w/starfleet2-3ds/starfleet2-3ds/dosbox/src/gui/render_scalers.cpp:48:31: note: in definition of macro '_conc7'
+   48 | #define _conc7(A,B,C,D,E,F,G) A ## B ## C ## D ## E ## F ## G
+      |                               ^
+/__w/starfleet2-3ds/starfleet2-3ds/dosbox/src/gui/render_simple.h:28:13: note: in expansion of macro 'conc4d'
+   28 | static void conc4d(SCALERNAME,SBPP,DBPP,L)(const void *s) {
+      |             ^~~~~~
+/__w/starfleet2-3ds/starfleet2-3ds/dosbox/src/gui/render_simple.h:28:20: note: in expansion of macro 'SCALERNAME'
+   28 | static void conc4d(SCALERNAME,SBPP,DBPP,L)(const void *s) {
+      |                    ^~~~~~~~~~
+/__w/starfleet2-3ds/starfleet2-3ds/dosbox/src/gui/render_templates.h:302:33: warning: 'void NormalDh_9_8_R(const void*)' defined but not used [-Wunused-function]
+  302 | #define SCALERNAME              NormalDh
+      |                                 ^~~~~~~~
+/__w/starfleet2-3ds/starfleet2-3ds/dosbox/src/gui/render_scalers.cpp:48:31: note: in definition of macro '_conc7'
+   48 | #define _conc7(A,B,C,D,E,F,G) A ## B ## C ## D ## E ## F ## G
+      |                               ^
+/__w/starfleet2-3ds/starfleet2-3ds/dosbox/src/gui/render_simple.h:30:13: note: in expansion of macro 'conc4d'
+   30 | static void conc4d(SCALERNAME,SBPP,DBPP,R)(const void *s) {
+      |             ^~~~~~
+/__w/starfleet2-3ds/starfleet2-3ds/dosbox/src/gui/render_simple.h:30:20: note: in expansion of macro 'SCALERNAME'
+   30 | static void conc4d(SCALERNAME,SBPP,DBPP,R)(const void *s) {
+      |                    ^~~~~~~~~~
+/__w/starfleet2-3ds/starfleet2-3ds/dosbox/src/gui/render_templates.h:290:33: warning: 'void NormalDw_9_8_L(const void*)' defined but not used [-Wunused-function]
+  290 | #define SCALERNAME              NormalDw
+      |                                 ^~~~~~~~
+/__w/starfleet2-3ds/starfleet2-3ds/dosbox/src/gui/render_scalers.cpp:48:31: note: in definition of macro '_conc7'
+   48 | #define _conc7(A,B,C,D,E,F,G) A ## B ## C ## D ## E ## F ## G
+      |                               ^
+/__w/starfleet2-3ds/starfleet2-3ds/dosbox/src/gui/render_simple.h:28:13: note: in expansion of macro 'conc4d'
+   28 | static void conc4d(SCALERNAME,SBPP,DBPP,L)(const void *s) {
+      |             ^~~~~~
+/__w/starfleet2-3ds/starfleet2-3ds/dosbox/src/gui/render_simple.h:28:20: note: in expansion of macro 'SCALERNAME'
+   28 | static void conc4d(SCALERNAME,SBPP,DBPP,L)(const void *s) {
+      |                    ^~~~~~~~~~
+/__w/starfleet2-3ds/starfleet2-3ds/dosbox/src/gui/render_templates.h:290:33: warning: 'void NormalDw_9_8_R(const void*)' defined but not used [-Wunused-function]
+  290 | #define SCALERNAME              NormalDw
+      |                                 ^~~~~~~~
+/__w/starfleet2-3ds/starfleet2-3ds/dosbox/src/gui/render_scalers.cpp:48:31: note: in definition of macro '_conc7'
+   48 | #define _conc7(A,B,C,D,E,F,G) A ## B ## C ## D ## E ## F ## G
+      |                               ^
+/__w/starfleet2-3ds/starfleet2-3ds/dosbox/src/gui/render_simple.h:30:13: note: in expansion of macro 'conc4d'
+   30 | static void conc4d(SCALERNAME,SBPP,DBPP,R)(const void *s) {
+      |             ^~~~~~
+/__w/starfleet2-3ds/starfleet2-3ds/dosbox/src/gui/render_simple.h:30:20: note: in expansion of macro 'SCALERNAME'
+   30 | static void conc4d(SCALERNAME,SBPP,DBPP,R)(const void *s) {
+      |                    ^~~~~~~~~~
+/__w/starfleet2-3ds/starfleet2-3ds/dosbox/src/gui/render_templates.h:271:33: warning: 'void Normal3x_9_8_L(const void*)' defined but not used [-Wunused-function]
+  271 | #define SCALERNAME              Normal3x
+      |                                 ^~~~~~~~
+/__w/starfleet2-3ds/starfleet2-3ds/dosbox/src/gui/render_scalers.cpp:48:31: note: in definition of macro '_conc7'
+   48 | #define _conc7(A,B,C,D,E,F,G) A ## B ## C ## D ## E ## F ## G
+      |                               ^
+/__w/starfleet2-3ds/starfleet2-3ds/dosbox/src/gui/render_simple.h:28:13: note: in expansion of macro 'conc4d'
+   28 | static void conc4d(SCALERNAME,SBPP,DBPP,L)(const void *s) {
+      |             ^~~~~~
+/__w/starfleet2-3ds/starfleet2-3ds/dosbox/src/gui/render_simple.h:28:20: note: in expansion of macro 'SCALERNAME'
+   28 | static void conc4d(SCALERNAME,SBPP,DBPP,L)(const void *s) {
+      |                    ^~~~~~~~~~
+/__w/starfleet2-3ds/starfleet2-3ds/dosbox/src/gui/render_templates.h:271:33: warning: 'void Normal3x_9_8_R(const void*)' defined but not used [-Wunused-function]
+  271 | #define SCALERNAME              Normal3x
+      |                                 ^~~~~~~~
+/__w/starfleet2-3ds/starfleet2-3ds/dosbox/src/gui/render_scalers.cpp:48:31: note: in definition of macro '_conc7'
+   48 | #define _conc7(A,B,C,D,E,F,G) A ## B ## C ## D ## E ## F ## G
+      |                               ^
+/__w/starfleet2-3ds/starfleet2-3ds/dosbox/src/gui/render_simple.h:30:13: note: in expansion of macro 'conc4d'
+   30 | static void conc4d(SCALERNAME,SBPP,DBPP,R)(const void *s) {
+      |             ^~~~~~
+/__w/starfleet2-3ds/starfleet2-3ds/dosbox/src/gui/render_simple.h:30:20: note: in expansion of macro 'SCALERNAME'
+   30 | static void conc4d(SCALERNAME,SBPP,DBPP,R)(const void *s) {
+      |                    ^~~~~~~~~~
+/__w/starfleet2-3ds/starfleet2-3ds/dosbox/src/gui/render_templates.h:257:33: warning: 'void Normal2x_9_8_L(const void*)' defined but not used [-Wunused-function]
+  257 | #define SCALERNAME              Normal2x
+      |                                 ^~~~~~~~
+/__w/starfleet2-3ds/starfleet2-3ds/dosbox/src/gui/render_scalers.cpp:48:31: note: in definition of macro '_conc7'
+   48 | #define _conc7(A,B,C,D,E,F,G) A ## B ## C ## D ## E ## F ## G
+      |                               ^
+/__w/starfleet2-3ds/starfleet2-3ds/dosbox/src/gui/render_simple.h:28:13: note: in expansion of macro 'conc4d'
+   28 | static void conc4d(SCALERNAME,SBPP,DBPP,L)(const void *s) {
+      |             ^~~~~~
+/__w/starfleet2-3ds/starfleet2-3ds/dosbox/src/gui/render_simple.h:28:20: note: in expansion of macro 'SCALERNAME'
+   28 | static void conc4d(SCALERNAME,SBPP,DBPP,L)(const void *s) {
+      |                    ^~~~~~~~~~
+/__w/starfleet2-3ds/starfleet2-3ds/dosbox/src/gui/render_templates.h:257:33: warning: 'void Normal2x_9_8_R(const void*)' defined but not used [-Wunused-function]
+  257 | #define SCALERNAME              Normal2x
+      |                                 ^~~~~~~~
+/__w/starfleet2-3ds/starfleet2-3ds/dosbox/src/gui/render_scalers.cpp:48:31: note: in definition of macro '_conc7'
+   48 | #define _conc7(A,B,C,D,E,F,G) A ## B ## C ## D ## E ## F ## G
+      |                               ^
+/__w/starfleet2-3ds/starfleet2-3ds/dosbox/src/gui/render_simple.h:30:13: note: in expansion of macro 'conc4d'
+   30 | static void conc4d(SCALERNAME,SBPP,DBPP,R)(const void *s) {
+      |             ^~~~~~
+/__w/starfleet2-3ds/starfleet2-3ds/dosbox/src/gui/render_simple.h:30:20: note: in expansion of macro 'SCALERNAME'
+   30 | static void conc4d(SCALERNAME,SBPP,DBPP,R)(const void *s) {
+      |                    ^~~~~~~~~~
+/__w/starfleet2-3ds/starfleet2-3ds/dosbox/src/gui/render_templates.h:246:33: warning: 'void Normal1x_9_8_L(const void*)' defined but not used [-Wunused-function]
+  246 | #define SCALERNAME              Normal1x
+      |                                 ^~~~~~~~
+/__w/starfleet2-3ds/starfleet2-3ds/dosbox/src/gui/render_scalers.cpp:48:31: note: in definition of macro '_conc7'
+   48 | #define _conc7(A,B,C,D,E,F,G) A ## B ## C ## D ## E ## F ## G
+      |                               ^
+/__w/starfleet2-3ds/starfleet2-3ds/dosbox/src/gui/render_simple.h:28:13: note: in expansion of macro 'conc4d'
+   28 | static void conc4d(SCALERNAME,SBPP,DBPP,L)(const void *s) {
+      |             ^~~~~~
+/__w/starfleet2-3ds/starfleet2-3ds/dosbox/src/gui/render_simple.h:28:20: note: in expansion of macro 'SCALERNAME'
+   28 | static void conc4d(SCALERNAME,SBPP,DBPP,L)(const void *s) {
+      |                    ^~~~~~~~~~
+/__w/starfleet2-3ds/starfleet2-3ds/dosbox/src/gui/render_templates.h:246:33: warning: 'void Normal1x_9_8_R(const void*)' defined but not used [-Wunused-function]
+  246 | #define SCALERNAME              Normal1x
+      |                                 ^~~~~~~~
+/__w/starfleet2-3ds/starfleet2-3ds/dosbox/src/gui/render_scalers.cpp:48:31: note: in definition of macro '_conc7'
+   48 | #define _conc7(A,B,C,D,E,F,G) A ## B ## C ## D ## E ## F ## G
+      |                               ^
+/__w/starfleet2-3ds/starfleet2-3ds/dosbox/src/gui/render_simple.h:30:13: note: in expansion of macro 'conc4d'
+   30 | static void conc4d(SCALERNAME,SBPP,DBPP,R)(const void *s) {
+      |             ^~~~~~
+/__w/starfleet2-3ds/starfleet2-3ds/dosbox/src/gui/render_simple.h:30:20: note: in expansion of macro 'SCALERNAME'
+   30 | static void conc4d(SCALERNAME,SBPP,DBPP,R)(const void *s) {
+      |                    ^~~~~~~~~~
+/__w/starfleet2-3ds/starfleet2-3ds/dosbox/src/gui/render_templates.h:186:20: warning: 'void Cache_9_8(const void*)' defined but not used [-Wunused-function]
+  186 | static void conc3d(Cache,SBPP,DBPP) (const void * s) {
+      |                    ^~~~~
+/__w/starfleet2-3ds/starfleet2-3ds/dosbox/src/gui/render_scalers.cpp:47:27: note: in definition of macro '_conc5'
+   47 | #define _conc5(A,B,C,D,E) A ## B ## C ## D ## E
+      |                           ^
+/__w/starfleet2-3ds/starfleet2-3ds/dosbox/src/gui/render_templates.h:186:13: note: in expansion of macro 'conc3d'
+  186 | static void conc3d(Cache,SBPP,DBPP) (const void * s) {
+      |             ^~~~~~
+sdl_gui.cpp
+sdl_mapper.cpp
+In file included from /__w/starfleet2-3ds/starfleet2-3ds/dosbox/src/gui/sdl_mapper.cpp:36:
+In constructor 'CEvent::CEvent(const char*)',
+    inlined from 'CTriggeredEvent::CTriggeredEvent(const char*)' at /__w/starfleet2-3ds/starfleet2-3ds/dosbox/src/gui/sdl_mapper.cpp:131:60,
+    inlined from 'CJButtonEvent::CJButtonEvent(const char*, Bitu, Bitu)' at /__w/starfleet2-3ds/starfleet2-3ds/dosbox/src/gui/sdl_mapper.cpp:1533:92,
+    inlined from 'void AddJButtonButton_hidden(Bitu, Bitu)' at /__w/starfleet2-3ds/starfleet2-3ds/dosbox/src/gui/sdl_mapper.cpp:1734:36:
+/__w/starfleet2-3ds/starfleet2-3ds/dosbox/include/support.h:35:41: warning: 'char* strncpy(char*, const char*, size_t)' output may be truncated copying 15 bytes from a string of length 63 [-Wstringop-truncation]
+   35 | #define safe_strncpy(a,b,n) do { strncpy((a),(b),(n)-1); (a)[(n)-1] = 0; } while (0)
+      |                                  ~~~~~~~^~~~~~~~~~~~~~~
+/__w/starfleet2-3ds/starfleet2-3ds/dosbox/src/gui/sdl_mapper.cpp:101:17: note: in expansion of macro 'safe_strncpy'
+  101 |                 safe_strncpy(entry,_entry,16);
+      |                 ^~~~~~~~~~~~
+In constructor 'CEvent::CEvent(const char*)',
+    inlined from 'CContinuousEvent::CContinuousEvent(const char*)' at /__w/starfleet2-3ds/starfleet2-3ds/dosbox/src/gui/sdl_mapper.cpp:157:61,
+    inlined from 'CJAxisEvent::CJAxisEvent(const char*, Bitu, Bitu, bool, CJAxisEvent*)' at /__w/starfleet2-3ds/starfleet2-3ds/dosbox/src/gui/sdl_mapper.cpp:1503:133,
+    inlined from 'CJAxisEvent* AddJAxisButton_hidden(Bitu, Bitu, bool, CJAxisEvent*)' at /__w/starfleet2-3ds/starfleet2-3ds/dosbox/src/gui/sdl_mapper.cpp:1722:62:
+/__w/starfleet2-3ds/starfleet2-3ds/dosbox/include/support.h:35:41: warning: 'char* strncpy(char*, const char*, size_t)' output may be truncated copying 15 bytes from a string of length 63 [-Wstringop-truncation]
+   35 | #define safe_strncpy(a,b,n) do { strncpy((a),(b),(n)-1); (a)[(n)-1] = 0; } while (0)
+      |                                  ~~~~~~~^~~~~~~~~~~~~~~
+/__w/starfleet2-3ds/starfleet2-3ds/dosbox/src/gui/sdl_mapper.cpp:101:17: note: in expansion of macro 'safe_strncpy'
+  101 |                 safe_strncpy(entry,_entry,16);
+      |                 ^~~~~~~~~~~~
+In constructor 'CEvent::CEvent(const char*)',
+    inlined from 'CContinuousEvent::CContinuousEvent(const char*)' at /__w/starfleet2-3ds/starfleet2-3ds/dosbox/src/gui/sdl_mapper.cpp:157:61,
+    inlined from 'CJAxisEvent::CJAxisEvent(const char*, Bitu, Bitu, bool, CJAxisEvent*)' at /__w/starfleet2-3ds/starfleet2-3ds/dosbox/src/gui/sdl_mapper.cpp:1503:133,
+    inlined from 'CJAxisEvent* AddJAxisButton_hidden(Bitu, Bitu, bool, CJAxisEvent*)' at /__w/starfleet2-3ds/starfleet2-3ds/dosbox/src/gui/sdl_mapper.cpp:1722:62:
+/__w/starfleet2-3ds/starfleet2-3ds/dosbox/include/support.h:35:41: warning: 'char* strncpy(char*, const char*, size_t)' output may be truncated copying 15 bytes from a string of length 63 [-Wstringop-truncation]
+   35 | #define safe_strncpy(a,b,n) do { strncpy((a),(b),(n)-1); (a)[(n)-1] = 0; } while (0)
+      |                                  ~~~~~~~^~~~~~~~~~~~~~~
+/__w/starfleet2-3ds/starfleet2-3ds/dosbox/src/gui/sdl_mapper.cpp:101:17: note: in expansion of macro 'safe_strncpy'
+  101 |                 safe_strncpy(entry,_entry,16);
+      |                 ^~~~~~~~~~~~
+In constructor 'CEvent::CEvent(const char*)',
+    inlined from 'CTriggeredEvent::CTriggeredEvent(const char*)' at /__w/starfleet2-3ds/starfleet2-3ds/dosbox/src/gui/sdl_mapper.cpp:131:60,
+    inlined from 'CModEvent::CModEvent(const char*, Bitu)' at /__w/starfleet2-3ds/starfleet2-3ds/dosbox/src/gui/sdl_mapper.cpp:1561:74,
+    inlined from 'void AddModButton(Bitu, Bitu, Bitu, Bitu, const char*, Bitu)' at /__w/starfleet2-3ds/starfleet2-3ds/dosbox/src/gui/sdl_mapper.cpp:1747:42:
+/__w/starfleet2-3ds/starfleet2-3ds/dosbox/include/support.h:35:41: warning: 'char* strncpy(char*, const char*, size_t)' output may be truncated copying 15 bytes from a string of length 63 [-Wstringop-truncation]
+   35 | #define safe_strncpy(a,b,n) do { strncpy((a),(b),(n)-1); (a)[(n)-1] = 0; } while (0)
+      |                                  ~~~~~~~^~~~~~~~~~~~~~~
+/__w/starfleet2-3ds/starfleet2-3ds/dosbox/src/gui/sdl_mapper.cpp:101:17: note: in expansion of macro 'safe_strncpy'
+  101 |                 safe_strncpy(entry,_entry,16);
+      |                 ^~~~~~~~~~~~
+In constructor 'CEvent::CEvent(const char*)',
+    inlined from 'CTriggeredEvent::CTriggeredEvent(const char*)' at /__w/starfleet2-3ds/starfleet2-3ds/dosbox/src/gui/sdl_mapper.cpp:131:60,
+    inlined from 'CJButtonEvent::CJButtonEvent(const char*, Bitu, Bitu)' at /__w/starfleet2-3ds/starfleet2-3ds/dosbox/src/gui/sdl_mapper.cpp:1533:92,
+    inlined from 'void AddJButtonButton(Bitu, Bitu, Bitu, Bitu, const char*, Bitu, Bitu)' at /__w/starfleet2-3ds/starfleet2-3ds/dosbox/src/gui/sdl_mapper.cpp:1728:58:
+/__w/starfleet2-3ds/starfleet2-3ds/dosbox/include/support.h:35:41: warning: 'char* strncpy(char*, const char*, size_t)' output may be truncated copying 15 bytes from a string of length 63 [-Wstringop-truncation]
+   35 | #define safe_strncpy(a,b,n) do { strncpy((a),(b),(n)-1); (a)[(n)-1] = 0; } while (0)
+      |                                  ~~~~~~~^~~~~~~~~~~~~~~
+/__w/starfleet2-3ds/starfleet2-3ds/dosbox/src/gui/sdl_mapper.cpp:101:17: note: in expansion of macro 'safe_strncpy'
+  101 |                 safe_strncpy(entry,_entry,16);
+      |                 ^~~~~~~~~~~~
+In constructor 'CEvent::CEvent(const char*)',
+    inlined from 'CTriggeredEvent::CTriggeredEvent(const char*)' at /__w/starfleet2-3ds/starfleet2-3ds/dosbox/src/gui/sdl_mapper.cpp:131:60,
+    inlined from 'CJHatEvent::CJHatEvent(const char*, Bitu, Bitu, Bitu)' at /__w/starfleet2-3ds/starfleet2-3ds/dosbox/src/gui/sdl_mapper.cpp:1546:96,
+    inlined from 'void AddJHatButton(Bitu, Bitu, Bitu, Bitu, const char*, Bitu, Bitu, Bitu)' at /__w/starfleet2-3ds/starfleet2-3ds/dosbox/src/gui/sdl_mapper.cpp:1740:56:
+/__w/starfleet2-3ds/starfleet2-3ds/dosbox/include/support.h:35:41: warning: 'char* strncpy(char*, const char*, size_t)' output may be truncated copying 15 bytes from a string of length 63 [-Wstringop-truncation]
+   35 | #define safe_strncpy(a,b,n) do { strncpy((a),(b),(n)-1); (a)[(n)-1] = 0; } while (0)
+      |                                  ~~~~~~~^~~~~~~~~~~~~~~
+/__w/starfleet2-3ds/starfleet2-3ds/dosbox/src/gui/sdl_mapper.cpp:101:17: note: in expansion of macro 'safe_strncpy'
+  101 |                 safe_strncpy(entry,_entry,16);
+      |                 ^~~~~~~~~~~~
+In constructor 'CEvent::CEvent(const char*)',
+    inlined from 'CContinuousEvent::CContinuousEvent(const char*)' at /__w/starfleet2-3ds/starfleet2-3ds/dosbox/src/gui/sdl_mapper.cpp:157:61,
+    inlined from 'CJAxisEvent::CJAxisEvent(const char*, Bitu, Bitu, bool, CJAxisEvent*)' at /__w/starfleet2-3ds/starfleet2-3ds/dosbox/src/gui/sdl_mapper.cpp:1503:133,
+    inlined from 'CJAxisEvent* AddJAxisButton(Bitu, Bitu, Bitu, Bitu, const char*, Bitu, Bitu, bool, CJAxisEvent*)' at /__w/starfleet2-3ds/starfleet2-3ds/dosbox/src/gui/sdl_mapper.cpp:1715:75:
+/__w/starfleet2-3ds/starfleet2-3ds/dosbox/include/support.h:35:41: warning: 'char* strncpy(char*, const char*, size_t)' output may be truncated copying 15 bytes from a string of length 63 [-Wstringop-truncation]
+   35 | #define safe_strncpy(a,b,n) do { strncpy((a),(b),(n)-1); (a)[(n)-1] = 0; } while (0)
+      |                                  ~~~~~~~^~~~~~~~~~~~~~~
+/__w/starfleet2-3ds/starfleet2-3ds/dosbox/src/gui/sdl_mapper.cpp:101:17: note: in expansion of macro 'safe_strncpy'
+  101 |                 safe_strncpy(entry,_entry,16);
+      |                 ^~~~~~~~~~~~
+In constructor 'CEvent::CEvent(const char*)',
+    inlined from 'CContinuousEvent::CContinuousEvent(const char*)' at /__w/starfleet2-3ds/starfleet2-3ds/dosbox/src/gui/sdl_mapper.cpp:157:61,
+    inlined from 'CJAxisEvent::CJAxisEvent(const char*, Bitu, Bitu, bool, CJAxisEvent*)' at /__w/starfleet2-3ds/starfleet2-3ds/dosbox/src/gui/sdl_mapper.cpp:1503:133,
+    inlined from 'CJAxisEvent* AddJAxisButton(Bitu, Bitu, Bitu, Bitu, const char*, Bitu, Bitu, bool, CJAxisEvent*)' at /__w/starfleet2-3ds/starfleet2-3ds/dosbox/src/gui/sdl_mapper.cpp:1715:75:
+/__w/starfleet2-3ds/starfleet2-3ds/dosbox/include/support.h:35:41: warning: 'char* strncpy(char*, const char*, size_t)' output may be truncated copying 15 bytes from a string of length 63 [-Wstringop-truncation]
+   35 | #define safe_strncpy(a,b,n) do { strncpy((a),(b),(n)-1); (a)[(n)-1] = 0; } while (0)
+      |                                  ~~~~~~~^~~~~~~~~~~~~~~
+/__w/starfleet2-3ds/starfleet2-3ds/dosbox/src/gui/sdl_mapper.cpp:101:17: note: in expansion of macro 'safe_strncpy'
+  101 |                 safe_strncpy(entry,_entry,16);
+      |                 ^~~~~~~~~~~~
+shell_batch.cpp
+shell_cmds.cpp
+shell.cpp
+shell_misc.cpp
+ctr_gfx.cpp
+ctr_input.cpp
+ctr_main.cpp
+/__w/starfleet2-3ds/starfleet2-3ds/dosbox/src/platform/ctr/ctr_main.cpp: In function 'void GUI_StartUp(Section*)':
+/__w/starfleet2-3ds/starfleet2-3ds/dosbox/src/platform/ctr/ctr_main.cpp:442:24: warning: unused variable 'section' [-Wunused-variable]
+  442 |         Section_prop * section=static_cast<Section_prop *>(sec);
+      |                        ^~~~~~~
+ctr_misc.cpp
+ctr_system.cpp
+draw.cpp
+sf2ui.cpp
+/__w/starfleet2-3ds/starfleet2-3ds/dosbox/../sf2ui/sf2ui.cpp:1285:13: warning: 'char sf2ui::hotkey_at(const TextScreen&, int, int)' defined but not used [-Wunused-function]
+ 1285 | static char hotkey_at(const TextScreen& ts, int col, int row) {
+      |             ^~~~~~~~~
+/__w/starfleet2-3ds/starfleet2-3ds/dosbox/../sf2ui/sf2ui.cpp:873:13: warning: 'bool sf2ui::frame_changes(const TextScreen&, const TextScreen&)' defined but not used [-Wunused-function]
+  873 | static bool frame_changes(const TextScreen& ts, const TextScreen& before) {
+      |             ^~~~~~~~~~~~~
+/__w/starfleet2-3ds/starfleet2-3ds/dosbox/../sf2ui/sf2ui.cpp:856:13: warning: 'void sf2ui::frame_content(const TextScreen&)' defined but not used [-Wunused-function]
+  856 | static void frame_content(const TextScreen& ts) {
+      |             ^~~~~~~~~~~~~
+/__w/starfleet2-3ds/starfleet2-3ds/dosbox/../sf2ui/sf2ui.cpp:850:17: warning: 'sf2ui::user_pan_ms' defined but not used [-Wunused-variable]
+  850 | static uint32_t user_pan_ms = 0;
+      |                 ^~~~~~~~~~~
+/__w/starfleet2-3ds/starfleet2-3ds/dosbox/../sf2ui/sf2ui.cpp:676:13: warning: 'void sf2ui::clamp_loupe()' defined but not used [-Wunused-function]
+  676 | static void clamp_loupe() {
+      |             ^~~~~~~~~~~
+/__w/starfleet2-3ds/starfleet2-3ds/dosbox/../sf2ui/sf2ui.cpp:60:76: warning: 'sf2ui::drag_moved' defined but not used [-Wunused-variable]
+   60 | static bool dragging = false; static int drag_x, drag_y, drag_lx, drag_ly, drag_moved;
+      |                                                                            ^~~~~~~~~~
+/__w/starfleet2-3ds/starfleet2-3ds/dosbox/../sf2ui/sf2ui.cpp:60:67: warning: 'sf2ui::drag_ly' defined but not used [-Wunused-variable]
+   60 | static bool dragging = false; static int drag_x, drag_y, drag_lx, drag_ly, drag_moved;
+      |                                                                   ^~~~~~~
+/__w/starfleet2-3ds/starfleet2-3ds/dosbox/../sf2ui/sf2ui.cpp:60:58: warning: 'sf2ui::drag_lx' defined but not used [-Wunused-variable]
+   60 | static bool dragging = false; static int drag_x, drag_y, drag_lx, drag_ly, drag_moved;
+      |                                                          ^~~~~~~
+/__w/starfleet2-3ds/starfleet2-3ds/dosbox/../sf2ui/sf2ui.cpp:60:50: warning: 'sf2ui::drag_y' defined but not used [-Wunused-variable]
+   60 | static bool dragging = false; static int drag_x, drag_y, drag_lx, drag_ly, drag_moved;
+      |                                                  ^~~~~~
+/__w/starfleet2-3ds/starfleet2-3ds/dosbox/../sf2ui/sf2ui.cpp:60:42: warning: 'sf2ui::drag_x' defined but not used [-Wunused-variable]
+   60 | static bool dragging = false; static int drag_x, drag_y, drag_lx, drag_ly, drag_moved;
+      |                                          ^~~~~~
+/__w/starfleet2-3ds/starfleet2-3ds/dosbox/../sf2ui/sf2ui.cpp:60:13: warning: 'sf2ui::dragging' defined but not used [-Wunused-variable]
+   60 | static bool dragging = false; static int drag_x, drag_y, drag_lx, drag_ly, drag_moved;
+      |             ^~~~~~~~
+/__w/starfleet2-3ds/starfleet2-3ds/dosbox/../sf2ui/sf2ui.cpp:59:41: warning: 'sf2ui::follow' defined but not used [-Wunused-variable]
+   59 | static int lx = 13, ly = 5; static bool follow = true;
+      |                                         ^~~~~~
+sf2_ctr.cpp
+sf2_dosbox.cpp
+sf2_writer.cpp
+ctr_memory.c
+font2.c
+font.c
+text.c
+SDLnet.c
+SDLnetselect.c
+SDLnetTCP.c
+SDLnetUDP.c
+ctr_cache.s
+linking starfleet2.elf
+built ... starfleet2.3dsx
+make: Leaving directory '/__w/starfleet2-3ds/starfleet2-3ds/dosbox'
+-rw-r--r-- 1 root root 3565588 Nov 11 01:29 sd/3ds/starfleet2/starfleet2.3dsx
+== BUILD OK
