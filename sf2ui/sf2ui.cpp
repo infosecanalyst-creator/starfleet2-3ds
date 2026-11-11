@@ -303,6 +303,17 @@ static void split(int total, int n, int i, int& a, int& b) {
   a = i * base + (i < extra ? i : extra);
   b = a + base + (i < extra ? 1 : 0);
 }
+// Rule 11 (buttons >= 24 px, 4 px apart, 6 px from the screen edges): the touch screen is laid out as
+//   upper area 0..UP_H (game text, maps, keyboard, the bridge's tactical display)
+//   prompt strip UP_H..UP_H+12, menu row ROW1 (24 px), views row ROW2 (24 px, ends 6 px above the edge)
+static const int UP_H = 168, ROW1_Y0 = 182, ROW1_Y1 = 206, ROW2_Y0 = 210, ROW2_Y1 = 234;
+// n buttons side by side between x0 and x1 with 4-px gaps: button i spans a..b
+static void split_gap(int x0, int x1, int n, int i, int& a, int& b) {
+  int w = x1 - x0 - 4 * (n - 1);
+  int base = w / n, extra = w % n;
+  a = x0 + i * (base + 4) + (i < extra ? i : extra);
+  b = a + base + (i < extra ? 1 : 0);
+}
 
 // ------------------------------------------------------------------ shared bottom rows
 struct MenuItem { std::string label; int hot; bool sel; char key; uint8_t mods; };
@@ -404,15 +415,20 @@ static bool window_hints(const TextScreen& ts) {     // a window with its own ke
 }
 
 static bool cursor_question(const TextScreen& ts);
-// Prompt strip (y 180..194): the game's question, a toast, or the line being typed; scrolls when long.
+// Prompt strip (y UP_H..UP_H+12): the game's question, a toast, or the line being typed; scrolls when long.
+// On the bridge it stops at x 236 (the action buttons run down to y 170 beside it).
+static int strip_x1 = BOT_W;
 static void prompt_strip(Surf& s, const TextScreen& ts, const std::string& prompt) {
-  s.fill(0, 180, BOT_W, 194, PROMPT_BG);
+  strip_x1 = is_bridge(ts) ? 236 : BOT_W;
+  const int SY = UP_H;
+  s.fill(0, SY, strip_x1, SY + 12, PROMPT_BG);
+  s.fill(0, SY + 12, BOT_W, ROW1_Y0, BG);
   if (busy_now) {                                // moving bar: the game is still working on the press
-    draw_text(s, 4, 181, "Working...", F6x12, LOUPE);
-    int x0 = 74, x1 = BOT_W - 6, w = 40, span = x1 - x0 - w;
+    draw_text(s, 4, SY, "Working...", F6x12, LOUPE);
+    int x0 = 74, x1 = strip_x1 - 6, w = 40, span = x1 - x0 - w;
     int pos = (int)((now() / 12) % (uint32_t)(2 * span)); if (pos > span) pos = 2 * span - pos;
-    s.fill(x0, 185, x1, 189, BTN);
-    s.fill(x0 + pos, 184, x0 + pos + w, 190, LOUPE);
+    s.fill(x0, SY + 4, x1, SY + 8, BTN);
+    s.fill(x0 + pos, SY + 3, x0 + pos + w, SY + 9, LOUPE);
     marquee = false;
     return;
   }
@@ -421,26 +437,26 @@ static void prompt_strip(Surf& s, const TextScreen& ts, const std::string& promp
   if (!showing_toast && kb_open && ts.cursor_y >= 0 && ts.cursor_y < 25) line = trim(row_str(ts, ts.cursor_y, 0, 80));
   uint16_t pc = showing_toast ? LOUPE : READ_FG[ts.at[24][0] & 15 ? ts.at[24][0] & 15 : 14];
   int lw = text_width(line.c_str(), F6x12);
-  if (lw <= BOT_W - 8) {
-    draw_text(s, 4, 181, line.c_str(), F6x12, pc);
+  if (lw <= strip_x1 - 8) {
+    draw_text(s, 4, UP_H, line.c_str(), F6x12, pc);
     marquee = false;
   } else {
     // scroll: pause at the start, glide to the end, pause, repeat
-    int travel = lw - (BOT_W - 8), pause_ms = 1200, glide_ms = travel * 25;
+    int travel = lw - (strip_x1 - 8), pause_ms = 1200, glide_ms = travel * 25;
     int cycle = (int)(now() % (uint32_t)(2 * pause_ms + glide_ms)), off;
     off = cycle < pause_ms ? 0 : cycle < pause_ms + glide_ms ? (cycle - pause_ms) / 25 : travel;
     Surf clip = s; (void)clip;
     for (size_t k = 0; k < line.size(); k++) {
       int cx = 4 - off + (int)k * 6;
-      if (cx < 0 || cx + 6 > BOT_W - 4) continue;   // whole characters only
+      if (cx < 0 || cx + 6 > strip_x1 - 4) continue;   // whole characters only
       char one[2] = {line[k], 0};
-      draw_text(s, cx, 181, one, F6x12, pc);
+      draw_text(s, cx, UP_H, one, F6x12, pc);
     }
     marquee = true;
   }
 }
 static void bottom_rows(Surf& s, const TextScreen& ts) {
-  // prompt strip (y 180..194), menu row (194..217), views row (217..240)
+  // prompt strip (UP_H..UP_H+12), menu row (ROW1), views row (ROW2)
   std::string prompt;
   std::vector<MenuItem> items = parse_menu(ts, prompt);
   prompt_strip(s, ts, prompt);
@@ -468,32 +484,34 @@ static void bottom_rows(Surf& s, const TextScreen& ts) {
   if (!items.empty()) {
     int n = (int)items.size();
     for (int i = 0; i < n; i++) {
-      int a, b; split(BOT_W, n, i, a, b);
+      int a, b; split_gap(6, BOT_W - 6, n, i, a, b);
       Key k = items[i].key == 27 ? K_ESC : items[i].key == 13 ? K_ENTER : key_for_char(items[i].key);
-      add_btn(a, 194, b, 217, items[i].label, &F8x16, key_act(k, items[i].mods), items[i].hot, items[i].sel);
+      add_btn(a, ROW1_Y0, b, ROW1_Y1, items[i].label, &F8x16, key_act(k, items[i].mods), items[i].hot, items[i].sel);
     }
   } else if (yesno) {
-    add_btn(0, 194, 160, 217, "YES", &F8x16, key_act(K_Y), 0);
-    add_btn(160, 194, 320, 217, "NO", &F8x16, key_act(K_N), 0);
+    add_btn(6, ROW1_Y0, 158, ROW1_Y1, "YES", &F8x16, key_act(K_Y), 0);
+    add_btn(162, ROW1_Y0, 314, ROW1_Y1, "NO", &F8x16, key_act(K_N), 0);
   } else if (kb_open && at_name_prompt(ts) && !off_name.empty() && autologin == 0) {
     std::string up = off_name;
     for (auto& ch2 : up) if (ch2 >= 'a' && ch2 <= 'z') ch2 -= 32;
     std::string lab = "SIGN ON AS " + up;
-    if (text_width(lab.c_str(), F8x16) > 213 - 4) lab = "SIGN ON";
-    add_btn(0, 194, 213, 217, lab, &F8x16, kind_act(A_SIGNON), -1, true);
-    add_btn(213, 194, 320, 217, "HIDE KEYS", &F8x16, kind_act(A_KB));
+    if (text_width(lab.c_str(), F8x16) > 206 - 4) lab = "SIGN ON";
+    add_btn(6, ROW1_Y0, 206, ROW1_Y1, lab, &F8x16, kind_act(A_SIGNON), -1, true);
+    add_btn(210, ROW1_Y0, 314, ROW1_Y1, "HIDE KEYS", &F8x16, kind_act(A_KB));
   } else {
-    add_btn(0, 194, 107, 217, anykey ? "CONTINUE" : "ENTER", &F8x16, key_act(K_ENTER));
-    add_btn(107, 194, 213, 217, "BACK", &F8x16, key_act(K_ESC));
-    add_btn(213, 194, 320, 217, kb_open ? "HIDE KEYS" : "KEYBOARD", &F8x16, kind_act(A_KB));
+    int a, b;
+    split_gap(6, BOT_W - 6, 3, 0, a, b); add_btn(a, ROW1_Y0, b, ROW1_Y1, anykey ? "CONTINUE" : "ENTER", &F8x16, key_act(K_ENTER));
+    split_gap(6, BOT_W - 6, 3, 1, a, b); add_btn(a, ROW1_Y0, b, ROW1_Y1, "BACK", &F8x16, key_act(K_ESC));
+    split_gap(6, BOT_W - 6, 3, 2, a, b); add_btn(a, ROW1_Y0, b, ROW1_Y1, kb_open ? "HIDE KEYS" : "KEYBOARD", &F8x16, kind_act(A_KB));
   }
-  static const char* views[8] = {"STARS", "SYSTEM", "WAR", "COMBAT", "FLEET", "ORDERS", "LOG", "MANUAL"};
+  // Seven views (MANUAL moved to the START menu: eight 6-letter buttons can't be 4 px apart in 308 px)
+  static const char* views[7] = {"STARS", "SYSTEM", "WAR", "COMBAT", "FLEET", "ORDERS", "LOG"};
   // The views only exist during a mission (the status lights are on the top row then).
   bool in_mission = row_str(ts, 0, 0, 80).find("LOW PWR") != std::string::npos;
-  for (int i = 0; i < 8; i++) {
-    int a, b; split(BOT_W, 8, i, a, b);
-    add_btn(a, 217, b, 240, views[i], &F6x12, i == 7 ? kind_act(A_MANUAL) : kind_act(A_VIEW, i));
-    if (i < 7 && !in_mission) btns.back().off = true;
+  for (int i = 0; i < 7; i++) {
+    int a, b; split_gap(6, BOT_W - 6, 7, i, a, b);
+    add_btn(a, ROW2_Y0, b, ROW2_Y1, views[i], &F6x12, kind_act(A_VIEW, i));
+    if (!in_mission) btns.back().off = true;
   }
 }
 
@@ -513,21 +531,23 @@ static bool wants_text(const TextScreen& ts) {
 }
 static void keyboard(Surf& s) {
   static const char* rows[4] = {"1234567890", "QWERTYUIOP", "ASDFGHJKL-", "ZXCVBNM,./"};
-  s.fill(0, 0, BOT_W, 180, BG);
+  // 5 rows of 28-px keys, 4 px apart, y 6..162 (rule 11)
+  s.fill(0, 0, BOT_W, UP_H, BG);
   for (int r = 0; r < 4; r++)
     for (int k = 0; k < 10; k++) {
-      int a, b; split(BOT_W, 10, k, a, b);
+      int a, b; split_gap(6, BOT_W - 6, 10, k, a, b);
       std::string lab(1, rows[r][k]);
       Act ka = key_act(key_for_char(rows[r][k])); ka.kind = A_TYPE; ka.arg = rows[r][k];
-      add_btn(a, r * 36, b, r * 36 + 36, lab, &F8x16, ka);
+      add_btn(a, 6 + r * 32, b, 6 + r * 32 + 28, lab, &F8x16, ka);
     }
-  add_btn(0, 144, 64, 180, "ESC", &F8x16, key_act(K_ESC));
+  const int ky0 = 6 + 4 * 32, ky1 = ky0 + 28;
+  add_btn(6, ky0, 66, ky1, "ESC", &F8x16, key_act(K_ESC));
   Act sp = key_act(K_SPACE); sp.kind = A_TYPE; sp.arg = ' ';
   Act del = key_act(K_BACKSPACE); del.kind = A_TYPE; del.arg = 8;
   Act ent = key_act(K_ENTER); ent.kind = A_TYPE; ent.arg = 13;
-  add_btn(64, 144, 192, 180, "SPACE", &F8x16, sp);
-  add_btn(192, 144, 256, 180, "DEL", &F8x16, del);
-  add_btn(256, 144, 320, 180, "ENTER", &F8x16, ent);
+  add_btn(70, ky0, 186, ky1, "SPACE", &F8x16, sp);
+  add_btn(190, ky0, 250, ky1, "DEL", &F8x16, del);
+  add_btn(254, ky0, 314, ky1, "ENTER", &F8x16, ent);
 }
 
 // ------------------------------------------------------------------ bridge layout
@@ -586,8 +606,9 @@ static void bridge_top(Surf& s, const TextScreen& ts) {
   cells_in(s, ts, 7, 1, 10, 1, F6x12, in.x0, in.y0 + 16, in.x1, in.y1);
 }
 
-// tactical geometry on the touch screen: cells 28..49 x 2..13 at 8x14 inside tile (0,0)-(180,180)
-static const int TAC_X = 2, TAC_Y = 10, TAC_CW = 8, TAC_LH = 14;
+// tactical geometry on the touch screen: cells 28..49 x 2..13 at 8x13 inside tile (0,0)-(180,168)
+// (13-px rows, down from 14, leave room for the prompt strip and two 24-px button rows under it)
+static const int TAC_X = 2, TAC_Y = 10, TAC_CW = 8, TAC_LH = 13;
 
 static void bridge_bottom(Surf& s, const TextScreen& ts) {
   std::string t1 = row_str(ts, 1, 29, 50), title;
@@ -597,23 +618,27 @@ static void bridge_bottom(Surf& s, const TextScreen& ts) {
   for (char c : trim(title)) { if (c == ' ') { if (!sp) tt += c; sp = true; } else { tt += c; sp = false; } }
   std::string port = trim(row_str(ts, 7, 26, 29)), stbd = trim(row_str(ts, 7, 51, 53));
   std::string full = port + "\xf8 " + tt + " " + stbd + "\xf8";
-  Box in = tile(s, 0, 0, 180, 180, full.c_str());
+  Box in = tile(s, 0, 0, 180, UP_H, full.c_str());
   TextScreen t2 = ts;
   t2.ch[7][28] = ' '; t2.at[7][28] = 0;     // last digit of the port heading, not an axis label
   if (22 * TAC_CW > in.x1 - in.x0 || 12 * TAC_LH > in.y1 - in.y0) fit_problem("tactical display is bigger than its tile");
   cells(s, t2, 28, 2, 49, 13, F8x14, in.x0, in.y0, TAC_CW, TAC_LH);
   int tc, tr;
   (void)tc; (void)tr;
-  in = tile(s, 180, 0, 236, 156, "NAV");
+  in = tile(s, 180, 0, 236, UP_H, "NAV");
   cells_in(s, ts, 18, 2, 25, 13, F6x12, in.x0, in.y0, in.x1, in.y1);
-  add_btn(180, 156, 236, 180, TAP_LABEL[tap_mode], &F8x16, kind_act(A_MODE), 0, true);
-  static const char* acts[7] = {"PHASERS", "TORPS", "SHLD +", "SHLD -", "SPEED +", "SPEED -", "FREEZE"};
-  static const Key akeys[7] = {K_INSERT, K_DELETE, (Key)(K_F1 + 7), (Key)(K_F1 + 6), (Key)(K_F1 + 3), (Key)(K_F1 + 2), K_F};
-  static const uint8_t amods[7] = {0, 0, 0, 0, 0, 0, M_CTRL};
-  for (int i = 0; i < 7; i++) {
-    int a, b; split(180, 7, i, a, b);
-    add_btn(236, a, 320, b, acts[i], &F8x16, key_act(akeys[i], amods[i]));
-  }
+  // the action column, x 240..314: six rows of 24 px, 4 px apart, y 6..170 (rule 11); shields and
+  // speed are +/- pairs of 35-px buttons so the tap mode and FREEZE still fit
+  const int AX0 = 240, AX1 = 314, AXM = 275;   // halves: 240..275 and 279..314
+  auto ry = [](int r) { return 6 + r * 28; };
+  add_btn(AX0, ry(0), AX1, ry(0) + 24, "PHASERS", &F8x16, key_act(K_INSERT));
+  add_btn(AX0, ry(1), AX1, ry(1) + 24, "TORPS", &F8x16, key_act(K_DELETE));
+  add_btn(AX0, ry(2), AXM, ry(2) + 24, "SHLD+", &F6x12, key_act((Key)(K_F1 + 7)));
+  add_btn(AXM + 4, ry(2), AX1, ry(2) + 24, "SHLD-", &F6x12, key_act((Key)(K_F1 + 6)));
+  add_btn(AX0, ry(3), AXM, ry(3) + 24, "SPD+", &F6x12, key_act((Key)(K_F1 + 3)));
+  add_btn(AXM + 4, ry(3), AX1, ry(3) + 24, "SPD-", &F6x12, key_act((Key)(K_F1 + 2)));
+  add_btn(AX0, ry(4), AX1, ry(4) + 24, TAP_LABEL[tap_mode], &F8x16, kind_act(A_MODE), 0, true);
+  add_btn(AX0, ry(5), AX1, ry(5) + 24, "FREEZE", &F8x16, key_act(K_F, M_CTRL));
 }
 
 // heading under the ship ("TACTICAL  n DISPLAY") and the course setting ("set: n")
@@ -730,12 +755,12 @@ static bool tr_corner(uint8_t c) { return c == 0xBF || c == 0xBB || c == 0xB8 ||
 static bool bl_corner(uint8_t c) { return c == 0xC0 || c == 0xC8 || c == 0xD4 || c == 0xD3; }
 static bool fit_map(GLayout& g, int r0, int c0, int r1, int c1) {
   int cols = c1 - c0 + 1, rows = r1 - r0 + 1;
-  int cw = std::min(8, BOT_W / cols), lh = std::min(14, 180 / rows);
+  int cw = std::min(8, BOT_W / cols), lh = std::min(14, UP_H / rows);
   if (cw < 4 || lh < 8) return false;                    // too big for the touch screen
   g.f = (cw >= 8 && lh >= 14) ? &F8x14 : (cw >= 6 && lh >= 12) ? &F6x12 : &F5x9;
   g.cw = cw; g.lh = lh;                                  // (5x9 in 4-px cells: its spacing column is dropped)
   g.r0 = r0; g.r1 = r1; g.c0 = c0; g.c1 = c1;
-  g.ox = (BOT_W - cols * cw) / 2; g.oy = (180 - rows * lh) / 2;
+  g.ox = (BOT_W - cols * cw) / 2; g.oy = (UP_H - rows * lh) / 2;
   g.kind = G_MAP;
   return true;
 }
@@ -861,7 +886,7 @@ static bool frame_changes(const TextScreen& ts, const TextScreen& before) {
   return true;
 }
 static void generic_bottom(Surf& s, const TextScreen& ts) {
-  s.fill(0, 0, BOT_W, 180, BG);
+  s.fill(0, 0, BOT_W, UP_H, BG);
   if (glay.kind == G_MENU) {
     int n = (int)glay.items.size();
     int cols = n > 6 ? 2 : 1, rows = (n + cols - 1) / cols;
@@ -875,8 +900,8 @@ static void generic_bottom(Surf& s, const TextScreen& ts) {
     for (int i = 0; i < n; i++) {
       int col = i / rows, row = i % rows;
       int x0, x1, y0, y1;
-      split(BOT_W, cols, col, x0, x1);
-      split(180, rows, row, y0, y1);
+      split_gap(6, BOT_W - 6, cols, col, x0, x1);
+      split_gap(6, UP_H - 4, rows, row, y0, y1);   // (split_gap works for rows too)
       const GLine& l = glay.items[i];
       int hot = -1;
       for (size_t k = 0; k < l.label.size(); k++)
@@ -894,7 +919,7 @@ static void generic_bottom(Surf& s, const TextScreen& ts) {
     for (int i = 0; i < 9; i++) {
       if (keys[i] == K_NONE) continue;
       int x0, x1, y0, y1;
-      split(BOT_W, 3, i % 3, x0, x1); split(180, 3, i / 3, y0, y1);
+      split_gap(6, BOT_W - 6, 3, i % 3, x0, x1); split_gap(6, UP_H - 4, 3, i / 3, y0, y1);
       add_btn(x0, y0, x1, y1, labs[i], &F8x16, key_act(keys[i]));
     }
   }
@@ -1177,7 +1202,7 @@ Redraw frame(const TextScreen& ts, uint16_t* top, uint16_t* bottom) {
   if (!full && !flash_on && !toast_anim && ts.text_mode && !manual_open && !pause_open) {
     std::string prompt; parse_menu(ts, prompt);
     prompt_strip(ts_bot, ts, prompt);
-    rd.bottom = true; rd.by0 = 180; rd.by1 = 194;
+    rd.bottom = true; rd.by0 = UP_H; rd.by1 = UP_H + 12;
     return rd;
   }
   bool draw_top = full;      // a button flash or toast only touches the touch screen
@@ -1292,8 +1317,8 @@ void touch(int x, int y, bool down) {
       if (H && H->click) H->click();
       dirty();
     } else if (!manual_open && !pause_open && !kb_open && last.text_mode) {
-      if (is_bridge(last) && x < 180 && y < 180) { tap_kind = 1; tap_x = x; tap_y = y; }
-      else if (!is_bridge(last) && y < 180 && glay.kind == G_MAP) { tap_kind = 2; tap_x = x; tap_y = y; }
+      if (is_bridge(last) && x < 180 && y < UP_H) { tap_kind = 1; tap_x = x; tap_y = y; }
+      else if (!is_bridge(last) && y < UP_H && glay.kind == G_MAP) { tap_kind = 2; tap_x = x; tap_y = y; }
     }
   } else if (down && touch_was_down) {
 

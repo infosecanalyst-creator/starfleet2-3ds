@@ -12,13 +12,13 @@ TACTICAL DISPLAY: tap anywhere to set a course toward that point. The port works
 
 AUTO / STEER / TARGET: the button under NAV (or R) chooses what a tactical tap does. AUTO, the default, targets when the target box is up and steers otherwise. STEER always steers; TARGET always moves the box.
 
-ACTION BUTTONS: PHASERS, TORPS, SHLD + / SHLD - (5% steps), SPEED + / SPEED - (sublight 0.1c steps) and FREEZE (pause or resume the simulation).
+ACTION BUTTONS (right column): PHASERS, TORPS, SHLD+ / SHLD- (5% steps), SPD+ / SPD- (sublight 0.1c steps), the tap mode (AUTO, STEER or TARGET) and FREEZE (pause or resume the simulation).
 
 PROMPT LINE: shows what the game is asking. Yes/no questions get YES and NO buttons; "press any key" gets CONTINUE.
 
 COMMAND MENU: the row of buttons under the prompt is the game's own menu, read live from the screen. The red letter is the item's hotkey; the highlighted button is the current item.
 
-VIEW TABS: STARS, SYSTEM, WAR, COMBAT, FLEET, ORDERS and LOG jump straight to those displays. MANUAL opens this manual.
+VIEW TABS: STARS, SYSTEM, WAR, COMBAT, FLEET, ORDERS and LOG jump straight to those displays. This manual is in the START menu (MANUAL).
 
 OTHER DISPLAYS: nothing is shown twice. On a menu screen the menu becomes big buttons on the touch screen (tap one to choose it) and the rest of the screen stays on top. On a map (star, system and war maps, combat control) the map goes on the touch screen: tap a star or ship to move the target box there, and tap it again to select. Other screens stay on top, with arrow, page and space keys on the touch screen.
 
