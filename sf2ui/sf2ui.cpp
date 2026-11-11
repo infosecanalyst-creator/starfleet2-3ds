@@ -423,6 +423,7 @@ static void prompt_strip(Surf& s, const TextScreen& ts, const std::string& promp
   const int SY = UP_H;
   s.fill(0, SY, strip_x1, SY + 12, PROMPT_BG);
   s.fill(0, SY + 12, BOT_W, ROW1_Y0, BG);
+  if (strip_x1 < BOT_W) s.fill(strip_x1, 170, BOT_W, SY + 12, BG);   // under the bridge's action column
   if (busy_now) {                                // moving bar: the game is still working on the press
     draw_text(s, 4, SY, "Working...", F6x12, LOUPE);
     int x0 = 74, x1 = strip_x1 - 6, w = 40, span = x1 - x0 - w;
@@ -457,6 +458,7 @@ static void prompt_strip(Surf& s, const TextScreen& ts, const std::string& promp
 }
 static void bottom_rows(Surf& s, const TextScreen& ts) {
   // prompt strip (UP_H..UP_H+12), menu row (ROW1), views row (ROW2)
+  s.fill(0, UP_H + 12, BOT_W, BOT_H, BG);   // the gaps between the rows too (no stale pixels)
   std::string prompt;
   std::vector<MenuItem> items = parse_menu(ts, prompt);
   prompt_strip(s, ts, prompt);
