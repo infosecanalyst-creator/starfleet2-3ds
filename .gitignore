@@ -21,3 +21,4 @@ out/
 # Python caches
 __pycache__/
 *.pyc
+dosbox/ctr/gfx/*.o

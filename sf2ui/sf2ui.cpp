@@ -14,12 +14,14 @@
 namespace sf2ui {
 
 // ------------------------------------------------------------------ colours
-static const uint16_t BG = rgb(8, 10, 18);
-static const uint16_t FRAME = rgb(130, 36, 36);
-static const uint16_t TITLE = rgb(235, 90, 80);
-static const uint16_t BTN = rgb(22, 30, 52), BTN_EDGE = rgb(70, 90, 130), BTN_TXT = rgb(230, 236, 245);
-static const uint16_t BTN_DOWN = rgb(90, 110, 160), BTN_SEL = rgb(64, 70, 92), HOT = rgb(255, 120, 100);
-static const uint16_t PROMPT_BG = rgb(34, 30, 10), HINT = rgb(140, 150, 170), LOUPE = rgb(255, 210, 80);
+// house palette (claude/3ds-look-and-feel.md): navy, blue button faces, gold accents
+static const uint16_t BG = rgb(8, 12, 40);
+static const uint16_t FRAME = rgb(120, 150, 230);
+static const uint16_t TITLE = rgb(255, 204, 64);
+static const uint16_t BTN = rgb(40, 56, 120), BTN_EDGE = rgb(120, 150, 230), BTN_TXT = rgb(235, 240, 250);
+static const uint16_t BTN_DOWN = rgb(220, 180, 60), BTN_SEL = rgb(70, 92, 170), HOT = rgb(255, 150, 120);
+static const uint16_t PROMPT_BG = rgb(20, 30, 70), HINT = rgb(170, 185, 225), LOUPE = rgb(255, 204, 64);
+static const uint16_t FOCUS = rgb(255, 204, 64), SHADOW = rgb(20, 30, 70);
 
 // ------------------------------------------------------------------ state
 static const Host* H = 0;
@@ -38,6 +40,7 @@ struct Btn {
   std::string label; int hot; bool sel;
   const Font* font; Act act; bool on_top;
   bool off;                            // can't be used on this screen: greyed out, taps do nothing
+  bool focus;                          // D-Pad focus (gold ring)
 };
 static std::vector<Btn> btns;          // buttons drawn on the touch screen this frame
 struct BtnId { int x0, y0, x1, y1; std::string label; bool valid; };
@@ -63,6 +66,7 @@ static int tap_x = -1, tap_y = -1;
 // target box driver (closed loop: press an arrow, look where the box went, repeat)
 // START menu (pause): resume, manual, quick save, game settings, exit.
 static bool pause_open = false, quit_confirm = false;
+static int pause_focus = 0;            // D-Pad focus in the START menu (confirm: 0 YES, 1 NO)
 // Busy feedback: a button was pressed and the game hasn't answered yet (see frame()).
 static uint32_t busy_since = 0; static bool busy_now = false;
 // Jumping straight to another view: close what's open (Esc) until the game is back at a view, then switch.
@@ -269,7 +273,7 @@ static Box tile(Surf& s, int x0, int y0, int x1, int y1, const char* title) {
 static void add_btn(int x0, int y0, int x1, int y1, const std::string& label, const Font* f, Act a,
                     int hot = -1, bool sel = false) {
   Btn b; b.x0 = x0; b.y0 = y0; b.x1 = x1; b.y1 = y1; b.label = label; b.hot = hot; b.sel = sel;
-  b.font = f; b.act = a; b.on_top = false; b.off = false;
+  b.font = f; b.act = a; b.on_top = false; b.off = false; b.focus = false;
   btns.push_back(b);
 }
 static Act key_act(Key k, uint8_t mods = 0) { Act a; a.kind = A_KEY; a.key = k; a.mods = mods; a.arg = 0; return a; }
@@ -289,6 +293,10 @@ static void draw_btn(Surf& s, int i) {
   if (text_width(lab.c_str(), *f) > b.x1 - b.x0 - 4) {
     fit_problem("button \"" + lab + "\"");
     while (!lab.empty() && text_width(lab.c_str(), *f) > b.x1 - b.x0 - 4) lab.erase(lab.size() - 1);
+  }
+  if (b.focus && !b.off) {
+    s.rect(b.x0, b.y0, b.x1, b.y1, FOCUS);
+    s.rect(b.x0 + 1, b.y0 + 1, b.x1 - 1, b.y1 - 1, FOCUS);
   }
   int tx = b.x0 + (b.x1 - b.x0 - text_width(lab.c_str(), *f)) / 2 + (down ? 1 : 0);
   int ty = b.y0 + (b.y1 - b.y0 - f->h) / 2 + (down ? 1 : 0);
@@ -974,28 +982,44 @@ static void graphics_bottom(Surf& s) {
 }
 
 // ------------------------------------------------------------------ START menu
+static void hint_strip(Surf& s, const char* hint) {
+  s.fill(0, 224, BOT_W, 240, BTN);
+  s.fill(0, 224, BOT_W, 225, BTN_EDGE);
+  fit_text(s, (BOT_W - text_width(hint, F6x12)) / 2, 226, BOT_W, hint, F6x12, TITLE, "hint strip");
+}
+static void header_bar(Surf& s, const char* title) {
+  s.fill(0, 0, BOT_W, 22, BTN);
+  s.fill(0, 22, BOT_W, 23, BTN_EDGE);
+  fit_text(s, 8, 3, BOT_W, title, F8x16, TITLE, "header");
+}
 static void pause_bottom(Surf& s, const TextScreen& ts) {
   s.fill(0, 0, BOT_W, BOT_H, BG);
   if (quit_confirm) {
-    fit_text(s, (BOT_W - text_width("Exit Star Fleet II?", F8x16)) / 2, 50, BOT_W, "Exit Star Fleet II?", F8x16, TITLE, "pause");
+    header_bar(s, "EXIT GAME");
+    fit_text(s, (BOT_W - text_width("Exit Star Fleet II?", F8x16)) / 2, 50, BOT_W, "Exit Star Fleet II?", F8x16, BTN_TXT, "pause");
     const char* l2 = "Anything since your last save is lost.";
-    fit_text(s, (BOT_W - text_width(l2, F6x12)) / 2, 80, BOT_W, l2, F6x12, BTN_TXT, "pause");
-    add_btn(20, 130, 155, 175, "EXIT GAME", &F8x16, kind_act(A_QUIT_YES));
-    add_btn(165, 130, 300, 175, "KEEP PLAYING", &F8x16, kind_act(A_PAUSE));
+    fit_text(s, (BOT_W - text_width(l2, F6x12)) / 2, 80, BOT_W, l2, F6x12, HINT, "pause");
+    add_btn(30, 130, 150, 172, "YES", &F8x16, kind_act(A_QUIT_YES));
+    btns.back().focus = pause_focus == 0;
+    add_btn(170, 130, 290, 172, "NO", &F8x16, kind_act(A_PAUSE));
+    btns.back().focus = pause_focus != 0;
+    hint_strip(s, "A Select  B Back  ZL Swap");
     return;
   }
-  fit_text(s, (BOT_W - text_width("MENU", F8x16)) / 2, 6, BOT_W, "MENU", F8x16, TITLE, "pause");
+  header_bar(s, "MENU");
   bool bridge = ts.text_mode && is_bridge(ts);
   bool menu = ts.text_mode && screen_has(ts, "Change default settings", 0, 24);
   const char* lab[5] = {"RESUME", "MANUAL", "QUICK SAVE", "GAME SETTINGS", "EXIT GAME"};
   Act act[5] = {kind_act(A_PAUSE), kind_act(A_MANUAL), kind_act(A_SAVE), kind_act(A_SETTINGS), kind_act(A_QUIT)};
   for (int i = 0; i < 5; i++) {
-    add_btn(40, 28 + i * 36, 280, 60 + i * 36, lab[i], &F8x16, act[i]);
+    add_btn(50, 28 + i * 33, 270, 56 + i * 33, lab[i], &F8x16, act[i]);
     if ((i == 2 && !bridge) || (i == 3 && !menu) || (i == 4 && !(H && H->quit))) btns.back().off = true;
+    btns.back().focus = i == pause_focus;
   }
-  const char* note = bridge ? "B or START: back to the game" :
+  const char* note = bridge ? "Quick save keeps your place on the bridge." :
                      menu ? "Quick save works on the bridge." : "Quick save: on the bridge. Settings: main menu.";
-  fit_text(s, (BOT_W - text_width(note, F6x12)) / 2, 216, BOT_W, note, F6x12, HINT, "pause");
+  fit_text(s, (BOT_W - text_width(note, F6x12)) / 2, 197, BOT_W, note, F6x12, HINT, "pause");
+  hint_strip(s, "A Select  B Back  ZL Swap");
 }
 
 // ------------------------------------------------------------------ public API
@@ -1037,7 +1061,7 @@ static void fire(const Act& a) {
       break;
     case A_SAVE: press(K_Q, M_CTRL); say("Quick save", 1500); pause_open = false; break;
     case A_PAUSE: pause_open = false; quit_confirm = false; break;
-    case A_QUIT: quit_confirm = true; break;
+    case A_QUIT: quit_confirm = true; pause_focus = 1; break;
     case A_QUIT_YES: if (H && H->quit) H->quit(); break;
     case A_SETTINGS: pause_open = false; press(K_C); break;
     case A_MODE:
@@ -1311,10 +1335,31 @@ void buttons(uint32_t held, uint32_t pr, uint32_t rel) {
     return;
   }
   if (pause_open) {
-    if (pr & (B_B | B_START)) { if (quit_confirm) quit_confirm = false; else pause_open = false; dirty(); }
+    if (pr & (B_B | B_START)) {
+      H->click();
+      if (quit_confirm) { quit_confirm = false; pause_focus = 4; } else pause_open = false;
+      dirty(); return;
+    }
+    if (quit_confirm) {
+      if (pr & (B_DLEFT | B_DRIGHT)) { pause_focus = !pause_focus; dirty(); }
+      if (pr & B_A) { H->click(); if (pause_focus == 0) fire(kind_act(A_QUIT_YES)); quit_confirm = false; pause_focus = 4; dirty(); }
+      return;
+    }
+    bool bridge = is_bridge(last);
+    bool menu = last.text_mode && screen_has(last, "Change default settings", 0, 24);
+    bool usable[5] = {true, true, bridge, menu, H && H->quit};
+    int step = repeat_due(B_DDOWN, held, pr) ? 1 : repeat_due(B_DUP, held, pr) ? 4 : 0;
+    if (step) {
+      do pause_focus = (pause_focus + step) % 5; while (!usable[pause_focus]);
+      dirty();
+    }
+    if ((pr & B_A) && usable[pause_focus]) {
+      static const ActKind k[5] = {A_PAUSE, A_MANUAL, A_SAVE, A_SETTINGS, A_QUIT};
+      H->click(); fire(kind_act(k[pause_focus])); dirty();
+    }
     return;
   }
-  if (pr & B_START) { pause_open = true; quit_confirm = false; dirty(); return; }
+  if (pr & B_START) { pause_open = true; quit_confirm = false; pause_focus = 0; H->click(); dirty(); return; }
   if (pr & B_SELECT) fire(kind_act(is_bridge(last) ? A_SAVE : A_KB));   // quick save on the bridge
   if (pr & B_A) { press(K_ENTER); typed_enter(); }
   if (pr & B_B) press(K_ESC);
