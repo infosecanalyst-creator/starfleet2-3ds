@@ -701,6 +701,7 @@ static void bridge_bottom(Surf& s, const TextScreen& ts) {
   // the action column, x 240..314: six rows of 24 px, 4 px apart, y 6..170 (rule 11); shields and
   // speed are +/- pairs of 35-px buttons so the tap mode and FREEZE still fit
   const int AX0 = 240, AX1 = 314, AXM = 275;   // halves: 240..275 and 279..314
+  s.fill(236, 0, BOT_W, ROW1_Y0, BG);   // clear behind the buttons: text from the previous screen showed in the gaps
   auto ry = [](int r) { return 6 + r * 28; };
   add_btn(AX0, ry(0), AX1, ry(0) + 24, "PHASERS", &F8x16, key_act(K_INSERT));
   add_btn(AX0, ry(1), AX1, ry(1) + 24, "TORPS", &F8x16, key_act(K_DELETE));
