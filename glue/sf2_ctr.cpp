@@ -210,8 +210,9 @@ static int ptr_x = 160, ptr_y = 120;   // the touchpad pointer, in touch-screen 
 static uint16_t sw_top[sf2ui::TOP_W * sf2ui::TOP_H], sw_bot[sf2ui::BOT_W * sf2ui::BOT_H];
 static void present_top(const uint16_t* img) {            // img = the dashboard
   if (!swap_eff) { present_top_raw(img); return; }
+  const bool native = sf2ui::top_width() == sf2ui::BOT_W;   // laid out at 320 (manual): copy 1:1
   for (int y = 0; y < sf2ui::BOT_H; y++)
-    for (int x = 0; x < sf2ui::BOT_W; x++) sw_bot[y * sf2ui::BOT_W + x] = img[y * sf2ui::TOP_W + x * 5 / 4];
+    for (int x = 0; x < sf2ui::BOT_W; x++) sw_bot[y * sf2ui::BOT_W + x] = img[y * sf2ui::TOP_W + (native ? x : x * 5 / 4)];
   present_bottom_raw(sw_bot, 0, sf2ui::BOT_H);
 }
 static void present_bottom(const uint16_t* img, int y0, int y1) {   // img = the touch-screen picture
@@ -331,6 +332,7 @@ void sf2ctr_events() {
   owns_top = ts.text_mode || sf2ui::modal();
   if (owns_top && !was_owner) top_refresh = 15;
   if (!owns_top && was_owner) sf2_dosbox_redraw();   // e.g. manual closed over the title art
+  sf2ui::set_top_width(swapped && owns_top ? sf2ui::BOT_W : sf2ui::TOP_W);
   sf2ui::Redraw rd = sf2ui::frame(ts, top_img, bot_img);
   { bool eff = swapped && owns_top;
     if (eff != swap_eff || swap_force) {            // layout changed: show both screens afresh

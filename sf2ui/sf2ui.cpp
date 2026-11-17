@@ -79,11 +79,12 @@ static uint32_t ui_version = 1, drawn_version = 0;
 static bool last_text_mode = false;
 
 // manual
-struct Section { std::string title; std::vector<std::string> lines; };
+struct Section { std::string title; std::vector<std::string> paras, lines; int wrap = 0; };
 static std::vector<Section> manual;
 static int man_sel = 0, man_scroll = 0, man_list_top = 0;
 
 static void dirty() { ui_version++; }
+static int top_w = TOP_W;   // width the top-screen panel is laid out for (320 when swapped)
 
 // ---- fit checking: text that doesn't fit its space is recorded so it can be fixed
 static std::vector<std::string> fit_log;
@@ -941,8 +942,8 @@ static void load_manual() {
   FILE* f = H && H->manual_path ? fopen(H->manual_path, "rb") : 0;
   Section cur; cur.title = "About";
   if (!f) {
-    cur.lines.push_back("The manual file was not found.");
-    cur.lines.push_back(H && H->manual_path ? H->manual_path : "");
+    cur.paras.push_back("The manual file was not found.");
+    cur.paras.push_back(H && H->manual_path ? H->manual_path : "");
     manual.push_back(cur); return;
   }
   static char buf[16384];                  // a whole paragraph is one line in the file
@@ -953,23 +954,43 @@ static void load_manual() {
       if (any || !cur.lines.empty()) manual.push_back(cur);
       cur = Section(); cur.title = buf + 2; any = true; continue;
     }
-    // word-wrap to 63 columns (leaves room for the margin and scroll bar)
-    std::string line = buf;
-    do {
-      if ((int)line.size() <= 63) { cur.lines.push_back(line); break; }
-      size_t cut = line.rfind(' ', 63); if (cut == std::string::npos || cut == 0) cut = 63;
-      cur.lines.push_back(line.substr(0, cut));
-      line = line.substr(cut + (line[cut] == ' ' ? 1 : 0));
-    } while (!line.empty());
+    cur.paras.push_back(buf);     // wrapped for the screen width when drawn (manual_wrap)
   }
   fclose(f);
   manual.push_back(cur);
 }
 static const int MAN_LINES = 18;   // text lines on the top screen
+// Word-wrap a section for a screen this many pixels wide (63 columns at 400, 50 at 320 when
+// swapped: same 6x12 text, never squeezed). The wrap is cached per width (swap readability rule 4).
+static void manual_wrap(Section& sec, int w) {
+  int cols = (w - 22) / 6;
+  if (sec.wrap == cols) return;
+  sec.wrap = cols; sec.lines.clear();
+  for (const std::string& para : sec.paras) {
+    // a key table row ("Circle Pad    Left/right: ...") wraps under its description column
+    size_t ind = para.find_first_not_of(' ');
+    size_t gap = para.find("  ", ind == std::string::npos ? 0 : ind);
+    size_t col = gap == std::string::npos ? std::string::npos : para.find_first_not_of(' ', gap);
+    std::string pad = (col != std::string::npos && col <= 24 && (int)col < cols / 2) ? std::string(col, ' ')
+                    : std::string(ind == std::string::npos ? 0 : std::min<size_t>(ind, 24), ' ');
+    std::string line = para;
+    bool first = true;
+    do {
+      if (!first) line = pad + line;
+      first = false;
+      if ((int)line.size() <= cols) { sec.lines.push_back(line); break; }
+      size_t cut = line.rfind(' ', cols);
+      if (cut == std::string::npos || cut <= pad.size()) cut = cols;
+      sec.lines.push_back(line.substr(0, cut));
+      line = line.substr(cut + (line[cut] == ' ' ? 1 : 0));
+    } while (!line.empty());
+  }
+}
 static void manual_top(Surf& s) {
   s.fill(0, 0, TOP_W, TOP_H, BG);
-  const Section& sec = manual[man_sel];
-  Box in = tile(s, 0, 0, TOP_W, TOP_H, sec.title.c_str());
+  Section& sec = manual[man_sel];
+  manual_wrap(sec, top_w);
+  Box in = tile(s, 0, 0, top_w, TOP_H, sec.title.c_str());
   int maxs = (int)sec.lines.size() - MAN_LINES; if (maxs < 0) maxs = 0;
   if (man_scroll > maxs) man_scroll = maxs;
   if (man_scroll < 0) man_scroll = 0;
@@ -1084,6 +1105,8 @@ void init(const Host* host) {
 }
 
 bool modal() { return manual_open; }
+void set_top_width(int w) { if (w != top_w) { top_w = w; for (auto& sec : manual) sec.wrap = 0; dirty(); } }
+int top_width() { return manual_open ? top_w : TOP_W; }
 
 
 std::vector<std::string> fit_problems() { return fit_log; }

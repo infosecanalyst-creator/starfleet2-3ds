@@ -73,6 +73,11 @@ void buttons(uint32_t held, uint32_t pressed, uint32_t released);
 
 // True while sf2ui wants the whole input stream (manual or keyboard open).
 bool modal();
+// Screen swap: the platform says how wide the top-screen panel will be shown (400, or 320 when it
+// goes to the touch screen). top_width() is the width actually laid out: the manual re-wraps to
+// 320; other panels are still drawn 400 wide (and squeezed by the platform).
+void set_top_width(int w);
+int top_width();
 // Left-handed play: swaps the D-pad with the face buttons (Y<->Up, A<->Right, B<->Down, X<->Left).
 // The platform passes every button mask through this where it reads the pad.
 uint32_t lefty_remap(uint32_t m);
