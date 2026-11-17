@@ -38,8 +38,10 @@ R            Tap mode: auto, steer or target
 D-Pad        Arrow keys (menus, target box)
 Circle Pad   Left/right: course -1 / +1 degree (hold to keep turning)
              Up/down: sublight speed +0.1 / -0.1
-ZL           Swap the screens (works any time the
-             game isn't showing its own graphics).
+ZL           Swap the screens on the bridge and in
+             this manual. Other screens stay as they
+             are so they stay readable; the swap comes
+             back when you return to the bridge.
              Swapped, the touch screen is a touchpad:
              slide moves the pointer, a quick still
              tap presses; the Circle Pad also moves

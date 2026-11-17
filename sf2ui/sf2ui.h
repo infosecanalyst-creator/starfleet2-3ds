@@ -77,6 +77,8 @@ bool modal();
 // goes to the touch screen). top_width() is the width actually laid out: the manual re-wraps to
 // 320; other panels are still drawn 400 wide (and squeezed by the platform).
 void set_top_width(int w);
+void set_swapped(bool on);              // ZL swap wanted (shown in the hint on screens that don't swap)
+bool swap_ok(const TextScreen& ts);     // this screen has a readable swapped layout
 int top_width();
 // Left-handed play: swaps the D-pad with the face buttons (Y<->Up, A<->Right, B<->Down, X<->Left).
 // The platform passes every button mask through this where it reads the pad.

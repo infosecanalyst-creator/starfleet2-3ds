@@ -84,6 +84,7 @@ static std::vector<Section> manual;
 static int man_sel = 0, man_scroll = 0, man_list_top = 0;
 
 static void dirty() { ui_version++; }
+static bool swap_wanted = false;   // ZL swap is on (it may not apply to this screen)
 static int top_w = TOP_W;   // width the top-screen panel is laid out for (320 when swapped)
 
 // ---- fit checking: text that doesn't fit its space is recorded so it can be fixed
@@ -900,7 +901,8 @@ static void analyse(const TextScreen& ts) {
 static void generic_top(Surf& s, const TextScreen& ts) {
   s.fill(0, 0, TOP_W, TOP_H, BG);
   cells(s, ts, 0, 0, 79, 24, F5x9, 0, 0, 5, 9);
-  const char* hint = kb_open ? "Type on the touch screen keyboard."
+  const char* hint = swap_wanted ? "ZL swap is on: it applies on the bridge and in the manual."
+                   : kb_open ? "Type on the touch screen keyboard."
                    : glay.kind == G_MENU ? "Tap a menu item on the touch screen."
                    : glay.kind == G_MAP ? "The map is on the touch screen: tap a star or ship to aim."
                    : "Touch screen: keys for this screen.";
@@ -1166,6 +1168,10 @@ void init(const Host* host) {
 }
 
 bool modal() { return manual_open; }
+void set_swapped(bool on) { if (on != swap_wanted) { swap_wanted = on; dirty(); } }
+// Principle (Ryan, Nov 17 2026): everything has to be readable. Only screens with a readable
+// 320-px layout swap (the bridge and the manual); other 80-column text screens stay unswapped.
+bool swap_ok(const TextScreen& ts) { return manual_open || (ts.text_mode && is_bridge(ts)); }
 void set_top_width(int w) { if (w != top_w) { top_w = w; for (auto& sec : manual) sec.wrap = 0; dirty(); } }
 static bool top_native = false;   // the last top panel was laid out at top_w (manual, bridge)
 int top_width() { return top_native ? top_w : TOP_W; }

@@ -361,9 +361,11 @@ void sf2ctr_events() {
   owns_top = ts.text_mode || sf2ui::modal();
   if (owns_top && !was_owner) top_refresh = 15;
   if (!owns_top && was_owner) sf2_dosbox_redraw();   // e.g. manual closed over the title art
-  sf2ui::set_top_width(swapped && owns_top ? sf2ui::BOT_W : sf2ui::TOP_W);
+  bool can_swap = owns_top && sf2ui::swap_ok(ts);
+  sf2ui::set_swapped(swapped);
+  sf2ui::set_top_width(swapped && can_swap ? sf2ui::BOT_W : sf2ui::TOP_W);
   sf2ui::Redraw rd = sf2ui::frame(ts, top_img, bot_img);
-  { bool eff = swapped && owns_top;
+  { bool eff = swapped && can_swap;
     if (eff != swap_eff || swap_force) {            // layout changed: show both screens afresh
       swap_eff = eff; swap_force = false;
       if (owns_top) present_top(top_img);
