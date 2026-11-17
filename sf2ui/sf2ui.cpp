@@ -617,6 +617,66 @@ static void bridge_top(Surf& s, const TextScreen& ts) {
   cells_in(s, ts, 7, 1, 10, 1, F6x12, in.x0, in.y0 + 16, in.x1, in.y1);
 }
 
+// The bridge dashboard laid out for 320 px, used when the screens are swapped and it sits on the
+// touch screen (swap readability rule: never squeeze). Cells use the 5x9 font this port already
+// uses for full DOS screens; tile titles stay 6x12. The velocity column's bar graph is folded
+// into DATA as its two read-outs (sublight s: and hyperspace c:).
+static void bridge_top_narrow(Surf& s, const TextScreen& ts) {
+  s.fill(0, 0, TOP_W, TOP_H, BG);
+  static const int starts[8] = {2, 12, 22, 32, 42, 52, 62, 72};
+  for (int i = 0; i < 8; i++) {
+    int a, b; split(BOT_W, 8, i, a, b);
+    std::string lab = trim(row_str(ts, 0, starts[i], starts[i] + 7));
+    uint8_t at = ts.at[0][starts[i] + 1];
+    s.fill(a, 0, b - 1, 12, VGA[(at >> 4) & 15]);
+    uint16_t fg = (at >> 4) & 15 ? VGA[at & 15] : READ_FG[at & 15];
+    fit_text(s, a + (b - a - 1 - text_width(lab.c_str(), F5x9)) / 2, 2, b - 1, lab.c_str(), F5x9, fg, "alert light");
+  }
+  Box in = tile(s, 0, 12, 204, 98, "COMMS");
+  cells_in(s, ts, 1, 15, 39, 22, F5x9, in.x0, in.y0, in.x1, in.y1);
+  in = tile(s, 204, 12, BOT_W, 98, "DAMAGE");
+  cells_in(s, ts, 60, 2, 77, 8, F5x9, in.x0, in.y0, in.x1, in.y1);
+
+  // energy: toggle, label, value, bar per row, then mission time
+  in = tile(s, 0, 98, 132, TOP_H, "ENERGY");
+  static const int trow[5] = {18, 19, 20, 21, 22}, erow[4] = {18, 19, 20, 22};
+  for (int i = 0; i < 5; i++) {
+    uint8_t at = ts.at[trow[i]][41];
+    int y = in.y0 + i * 11;
+    s.fill(in.x0, y, in.x0 + 17, y + 10, VGA[(at >> 4) & 15]);
+    std::string t = row_str(ts, trow[i], 41, 44);
+    fit_text(s, in.x0 + 1, y + 1, in.x0 + 17, t.c_str(), F5x9, (at >> 4) & 15 ? VGA[at & 15] : READ_FG[at & 15], "energy toggle");
+  }
+  for (int i = 0; i < 4; i++) {
+    int r = erow[i], y = in.y0 + i * 14;
+    std::string lab = trim(row_str(ts, r, 45, 53)), val = trim(row_str(ts, r, 54, 58));
+    while (val.size() < 4) val = " " + val;
+    fit_text(s, in.x0 + 20, y + 1, in.x0 + 62, lab.c_str(), F5x9, READ_FG[ts.at[r][45] & 15], "energy label");
+    fit_text(s, in.x0 + 65, y + 1, in.x0 + 86, val.c_str(), F5x9, READ_FG[ts.at[r][54] & 15], "energy value");
+    int filled = 0;
+    for (int c = 58; c < 78; c++) if (ts.ch[r][c] == 0xDB) filled++;
+    int bx0 = in.x0 + 89, bx1 = in.x1 - 1;
+    s.rect(bx0, y + 2, bx1 + 1, y + 10, rgb(70, 72, 86));
+    if (filled) s.fill(bx0 + 1, y + 3, bx0 + 1 + (bx1 - bx0 - 1) * filled / 20, y + 9, VGA[ts.at[r][58 + filled - 1] & 15]);
+  }
+  int sep = in.y1 - 23;
+  s.hline(in.x0, in.x1, sep, FRAME);
+  cells_in(s, ts, 1, 11, 16, 12, F5x9, in.x0, sep + 1, in.x1, in.y1, 10);
+
+  in = tile(s, 132, 98, 212, 184, "LRS");
+  cells_in(s, ts, 2, 3, 16, 9, F5x9, in.x0, in.y0, in.x1, in.y1);
+  in = tile(s, 132, 184, 212, TOP_H, 0);
+  cells_in(s, ts, 42, 14, 50, 16, F5x9, in.x0, in.y0, in.x1, in.y1 - 12, 10);
+  cells_in(s, ts, 1, 1, 3, 1, F5x9, in.x0, in.y1 - 11, in.x0 + 30, in.y1);
+  cells_in(s, ts, 7, 1, 10, 1, F5x9, in.x0 + 34, in.y1 - 11, in.x1, in.y1);
+
+  in = tile(s, 212, 98, BOT_W, TOP_H, "DATA");
+  int dsep = in.y1 - 23;
+  cells_in(s, ts, 60, 10, 77, 16, F5x9, in.x0, in.y0, in.x1, dsep - 1);
+  s.hline(in.x0, in.x1, dsep, FRAME);
+  cells_in(s, ts, 53, 15, 58, 16, F5x9, in.x0, dsep + 1, in.x1, in.y1, 10);
+}
+
 // tactical geometry on the touch screen: cells 28..49 x 2..13 at 8x13 inside tile (0,0)-(180,168)
 // (13-px rows, down from 14, leave room for the prompt strip and two 24-px button rows under it)
 static const int TAC_X = 2, TAC_Y = 10, TAC_CW = 8, TAC_LH = 13;
@@ -1106,7 +1166,8 @@ void init(const Host* host) {
 
 bool modal() { return manual_open; }
 void set_top_width(int w) { if (w != top_w) { top_w = w; for (auto& sec : manual) sec.wrap = 0; dirty(); } }
-int top_width() { return manual_open ? top_w : TOP_W; }
+static bool top_native = false;   // the last top panel was laid out at top_w (manual, bridge)
+int top_width() { return top_native ? top_w : TOP_W; }
 
 
 std::vector<std::string> fit_problems() { return fit_log; }
@@ -1257,21 +1318,21 @@ Redraw frame(const TextScreen& ts, uint16_t* top, uint16_t* bottom) {
   bool draw_top = full;      // a button flash or toast only touches the touch screen
   btns.clear();
   if (manual_open) {
-    if (draw_top) manual_top(ts_top);
+    if (draw_top) { manual_top(ts_top); top_native = true; }
     manual_bottom(ts_bot); rd.top = draw_top; rd.bottom = true;
   } else if (pause_open) {
     pause_bottom(ts_bot, ts); rd.bottom = true;
   } else if (!ts.text_mode) {
     graphics_bottom(ts_bot); rd.bottom = true;
   } else if (is_bridge(ts)) {
-    if (draw_top) bridge_top(ts_top, ts);
+    if (draw_top) { if (top_w == BOT_W) bridge_top_narrow(ts_top, ts); else bridge_top(ts_top, ts); top_native = true; }
     if (kb_open) keyboard(ts_bot); else bridge_bottom(ts_bot, ts);
     bottom_rows(ts_bot, ts);
     rd.top = draw_top; rd.bottom = true;
   } else {
     analyse(ts);
     if (kb_open) keyboard(ts_bot); else generic_bottom(ts_bot, ts);
-    if (draw_top) generic_top(ts_top, ts);
+    if (draw_top) { generic_top(ts_top, ts); top_native = false; }
     bottom_rows(ts_bot, ts);
     rd.top = draw_top; rd.bottom = true;
   }
