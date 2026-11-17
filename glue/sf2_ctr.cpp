@@ -265,26 +265,55 @@ void sf2ctr_events() {
   bool zl_swap = (down & KEY_ZL) != 0;
   held &= ~KEY_ZL; down &= ~KEY_ZL; up &= ~KEY_ZL;       // ZL is the screen swap, not a game button
   if (zl_swap) { swapped = !swapped; swap_force = true; }
+  if (swap_eff) {
+    // swapped: the Circle Pad moves the pointer on the top screen too (Ryan, Nov 17: expected the
+    // left-hand controls to move the cursor); speed grows with how far the pad is pushed. Course
+    // and sublight speed stay on the touch buttons and by pointing at the tactical display.
+    circlePosition cp; hidCircleRead(&cp);
+    auto axis = [](int v) { int a = abs(v); if (a < 20) return 0; int sp = (a - 20) / 14 + 1; return v < 0 ? -sp : sp; };
+    int mx = axis(cp.dx), my = -axis(cp.dy);
+    if (mx || my) {
+      ptr_x = std::max(0, std::min(319, ptr_x + mx));
+      ptr_y = std::max(0, std::min(239, ptr_y + my));
+      swap_force = true;
+    }
+    const u32 CP = KEY_CPAD_LEFT | KEY_CPAD_RIGHT | KEY_CPAD_UP | KEY_CPAD_DOWN;
+    held &= ~CP; down &= ~CP; up &= ~CP;
+  }
   sf2ui::buttons(held, down, up);
   static bool touching = false;
   static touchPosition last_t;
   if (swap_eff) {
-    // touchpad: slide moves the pointer; a short tap is a press + release at the pointer
-    static bool on = false, moved = false; static int lx, ly, sx, sy; static u64 at; static int tap = 0;
+    // touchpad: slide moves the pointer; a short, still tap is a press + release at the pointer.
+    // Made stricter after Ryan's test (Nov 17: "clicks in just by hovering over a button"):
+    //  - a tap is under 200 ms with at most 4 px of travel (path length, not end-to-end);
+    //  - the pointer does not move until the stylus has travelled 5 px, so a tap never nudges it;
+    //  - the first 2 frames of a touch are ignored for movement (the panel's first samples jump);
+    //  - a tap within 400 ms after a slide ends is ignored (lifting to reposition is not a click).
+    static bool on = false, moved = false; static int lx, ly, path, frames; static u64 at, slide_end = 0; static int tap = 0;
     if (touching) { sf2ui::touch(last_t.px, last_t.py, false); touching = false; }
     if (tap) { sf2ui::touch(ptr_x, ptr_y, false); tap = 0; }
     touchPosition t;
-    if (down & KEY_TOUCH) { hidTouchRead(&t); on = true; moved = false; lx = sx = t.px; ly = sy = t.py; at = osGetTime(); }
+    if (down & KEY_TOUCH) { hidTouchRead(&t); on = true; moved = false; path = 0; frames = 0; lx = t.px; ly = t.py; at = osGetTime(); }
     else if (on && (held & KEY_TOUCH)) {
       hidTouchRead(&t);
-      if (abs(t.px - sx) + abs(t.py - sy) > 6) moved = true;
-      ptr_x = std::max(0, std::min(319, ptr_x + (t.px - lx)));
-      ptr_y = std::max(0, std::min(239, ptr_y + (t.py - ly)));
-      lx = t.px; ly = t.py;
-      swap_force = true;   // redraw so the pointer moves
+      int dx = t.px - lx, dy = t.py - ly;
+      if (++frames <= 2) { lx = t.px; ly = t.py; }        // let the reading settle
+      else {
+        path += abs(dx) + abs(dy);
+        if (path >= 5) moved = true;
+        if (moved) {
+          ptr_x = std::max(0, std::min(319, ptr_x + dx));
+          ptr_y = std::max(0, std::min(239, ptr_y + dy));
+          swap_force = true;   // redraw so the pointer moves
+        }
+        lx = t.px; ly = t.py;
+      }
     } else if (on && !(held & KEY_TOUCH)) {
       on = false;
-      if (!moved && osGetTime() - at < 350) { sf2ui::touch(ptr_x, ptr_y, true); tap = 1; }
+      u64 nowt = osGetTime();
+      if (moved) slide_end = nowt;
+      else if (path <= 4 && nowt - at < 200 && nowt - slide_end > 400) { sf2ui::touch(ptr_x, ptr_y, true); tap = 1; }
     }
   } else if (held & KEY_TOUCH) {
     touchPosition t; hidTouchRead(&t);

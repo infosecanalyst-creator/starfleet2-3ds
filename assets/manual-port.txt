@@ -41,7 +41,10 @@ Circle Pad   Left/right: course -1 / +1 degree (hold to keep turning)
 ZL           Swap the screens (works any time the
              game isn't showing its own graphics).
              Swapped, the touch screen is a touchpad:
-             slide moves the pointer, tap presses
+             slide moves the pointer, a quick still
+             tap presses; the Circle Pad also moves
+             the pointer (course and speed are then
+             on the touch buttons)
 C-Stick      Up/down: hyperspace speed +1 / -1
 C-Stick      Bridge: review earlier messages (left/right)
 START        Open this manual
