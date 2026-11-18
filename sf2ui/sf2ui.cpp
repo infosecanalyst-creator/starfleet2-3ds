@@ -1200,6 +1200,10 @@ static void fire(const Act& a) {
       else typed += (char)(a.arg >= 'A' && a.arg <= 'Z' ? a.arg + 32 : a.arg);
       break;
     case A_SIGNON:
+      // A second tap before the screen redraws (or a tap that lands after sign-on) would type the
+      // name and password again into the next screen, where the letters pick menu items
+      // (seen Nov 18 2026: the "p" of a password chose Practice). Only sign on once, at the prompt.
+      if (autologin != 0 || !at_name_prompt(last)) break;
       typed.clear(); type_text(off_name); press(K_ENTER); autologin = 1; pass_tries = 0; pend_name = off_name; say("Signing on...", 1500);
       break;
     case A_SAVE: press(K_Q, M_CTRL); say("Quick save", 1500); pause_open = false; break;
