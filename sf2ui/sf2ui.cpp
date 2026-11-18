@@ -225,6 +225,20 @@ static bool at_name_prompt(const TextScreen& ts) {
   return screen_has(ts, "SIGN-ON SCREEN") && screen_has(ts, "Enter your name") && !screen_has(ts, "password");
 }
 static bool at_pass_prompt(const TextScreen& ts) { return screen_has(ts, "password:"); }
+// The password prompt is still waiting: its field holds no '*' yet and no answer has come up.
+// (Nov 18 2026: after a good sign-on the prompt line stays on screen under "Welcome aboard", and
+// re-sending the password there typed "poop" into the next screens - "p" chose Practice.)
+static bool pass_waiting(const TextScreen& ts) {
+  for (int r = 0; r < 25; r++) {
+    std::string row = row_str(ts, r, 0, 80);
+    size_t k = row.find("password:");
+    if (k != std::string::npos) {
+      if (row.find('*', k) != std::string::npos) return false;
+      break;
+    }
+  }
+  return !screen_has(ts, "Welcome") && !screen_has(ts, "not on file") && !screen_has(ts, "PRESS ANY KEY");
+}
 
 // ------------------------------------------------------------------ widgets
 static void cells(Surf& s, const TextScreen& ts, int c0, int r0, int c1, int r1, const Font& f,
@@ -1259,7 +1273,7 @@ Redraw frame(const TextScreen& ts, uint16_t* top, uint16_t* bottom) {
   if (!pass_up) pass_seen = 0;
   else if (!pass_seen || sg != pass_sig) { pass_seen = t; pass_sig = sg; }    // restart the wait on any change
   bool still = pass_up && t - pass_seen >= 1200;
-  if (still && (autologin == 1 || (autologin == 2 && t - pass_sent >= 2500 && pass_tries < 3))) {
+  if (still && (autologin == 1 || (autologin == 2 && t - pass_sent >= 2500 && pass_tries < 3 && pass_waiting(ts)))) {
     if (autologin == 2) for (int i = 0; i < 12; i++) press(K_BACKSPACE);   // clear a half-taken first try
     type_text(off_pass); press(K_ENTER); autologin = 2; pass_sent = t; pass_tries++; typed.clear();
     pend_pass = off_pass;
