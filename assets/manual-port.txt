@@ -54,7 +54,7 @@ SELECT       Bridge: quick save (the game's Ctrl+Q)
              Elsewhere: show or hide the keyboard
 
 # Using this manual
-Circle Pad or C-Stick: scroll the text (hold to keep scrolling).
+Circle Pad or C-Stick: scroll the text (hold to keep scrolling). You can also drag the stylus up or down on the touch screen.
 D-Pad: move between the section buttons on the touch screen.
 L / R: previous / next section.
 Tap a section on the touch screen to open it.

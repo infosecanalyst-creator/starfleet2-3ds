@@ -1443,7 +1443,24 @@ static void map_tap(int x, int y) {
   start_drive(col, row, c, r);
 }
 
+static float man_mom = 0;   // manual drag momentum, px per frame (run in buttons())
+static int man_acc = 0;     // drag remainder below one 12 px line
+
 void touch(int x, int y, bool down) {
+  // Manual: a touch that moves more than 6 px drags the text (rule 13) and presses nothing.
+  if (manual_open) {
+    if (down && !touch_was_down) { drag_x = x; drag_y = y; drag_ly = y; dragging = false; man_acc = 0; man_mom = 0; }
+    else if (down && touch_was_down) {
+      if (!dragging && (abs(x - drag_x) > 6 || abs(y - drag_y) > 6)) { dragging = true; pressed_id.valid = false; dirty(); }
+      if (dragging) {
+        man_acc += drag_ly - y; man_mom = (float)(drag_ly - y);
+        while (man_acc >= 12) { man_scroll++; man_acc -= 12; dirty(); }
+        while (man_acc <= -12) { man_scroll--; man_acc += 12; dirty(); }
+      }
+      drag_ly = y;
+      if (dragging) { touch_was_down = down; return; }
+    } else if (!down && touch_was_down && dragging) { dragging = false; touch_was_down = down; return; }
+  }
   if (down && !touch_was_down) {
     tap_kind = 0;
     int i = hit(x, y);
@@ -1501,6 +1518,11 @@ void buttons(uint32_t held, uint32_t pr, uint32_t rel) {
     if (repeat_due(B_DDOWN, held, pr) || (pr & B_R)) { man_sel = (man_sel + 1) % n; man_scroll = 0; dirty(); }
     if (repeat_due(B_DUP, held, pr) || (pr & B_L)) { man_sel = (man_sel + n - 1) % n; man_scroll = 0; dirty(); }
     if (pr & (B_B | B_START)) { manual_open = false; dirty(); }
+    if (!dragging && (man_mom > 0.5f || man_mom < -0.5f)) {   // coast a little after a drag
+      man_acc += (int)(man_mom * 2.0f); man_mom *= 0.88f;
+      while (man_acc >= 12) { man_scroll++; man_acc -= 12; dirty(); }
+      while (man_acc <= -12) { man_scroll--; man_acc += 12; dirty(); }
+    }
     return;
   }
   if (pause_open) {
