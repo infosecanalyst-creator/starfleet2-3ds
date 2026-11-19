@@ -23,6 +23,19 @@
 #include "SDL.h"
 
 static bool swapped = false, swap_eff = false, swap_force = false;
+// Rule 16 (remember the setup): the swap is kept in a marker file next to lefty.txt.
+static const char *kSwapFile = "sdmc:/3ds/starfleet2/.swapped";
+static void swap_load() {
+  static bool loaded = false;
+  if (loaded) return;
+  loaded = true;
+  struct stat sb;
+  if (stat(kSwapFile, &sb) == 0) { swapped = true; swap_force = true; }
+}
+static void swap_save() {
+  if (swapped) { FILE *f = fopen(kSwapFile, "w"); if (f) fclose(f); }
+  else remove(kSwapFile);
+}
 static uint16_t top_img[sf2ui::TOP_W * sf2ui::TOP_H];
 static uint16_t bot_img[sf2ui::BOT_W * sf2ui::BOT_H];
 static bool inited = false, owns_top = false;
@@ -264,7 +277,8 @@ void sf2ctr_events() {
   prev_held = held;
   bool zl_swap = (down & KEY_ZL) != 0;
   held &= ~KEY_ZL; down &= ~KEY_ZL; up &= ~KEY_ZL;       // ZL is the screen swap, not a game button
-  if (zl_swap) { swapped = !swapped; swap_force = true; }
+  swap_load();
+  if (zl_swap) { swapped = !swapped; swap_force = true; swap_save(); }
   if (swap_eff) {
     // swapped: the Circle Pad moves the pointer on the top screen too (Ryan, Nov 17: expected the
     // left-hand controls to move the cursor); speed grows with how far the pad is pushed. Course
