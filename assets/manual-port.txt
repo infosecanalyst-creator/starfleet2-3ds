@@ -1,3 +1,28 @@
+# Getting started
+New to Star Fleet II? This page walks you through your first ten minutes. The game is a real-time starship simulation: you command a Krellan battlecruiser, and the clock keeps running while you read. L (FREEZE) stops the clock at any time; press it again to go on.
+
+1. Title screens. Tap CONTINUE (or press A) to move past the title art.
+
+2. Sign on. The keyboard opens by itself. Type a name for your officer and tap ENTER. When the game asks whether you are a new recruit, tap YES, then type a password you will remember and tap ENTER. Next time, SIGN ON AS <NAME> does all of this in one tap.
+
+3. Sign-on options. This menu becomes big buttons on the touch screen. For your first time, choose Practice: it is a safe place to learn the bridge. Start a new mission when you are ready for the real thing.
+
+4. Your orders. Before you fly, the game shows your orders and other pages of text. Both sticks scroll a long page; tap CONTINUE or press A to go on. During a mission the ORDERS tab brings your orders back at any time.
+
+5. The bridge. The touch screen is your helm: the tactical display (your ship is in the middle), NAV and the action buttons. The top screen is what you watch: alert lights, COMMS messages, ENERGY, the long-range scan (LRS), DAMAGE and DATA.
+- Steer: tap the tactical display where you want to go, or push the Circle Pad left or right.
+- Speed: Circle Pad up or down for sublight speed; C-Stick up or down for hyperspace speed (for long trips between stars).
+- Fight: X fires phasers, Y fires torpedoes, SHLD+ raises the shields.
+- Look around: STARS, SYSTEM and WAR are the maps; COMBAT, FLEET, ORDERS and LOG are the other displays. B (Esc) backs out of a display.
+
+6. Questions. When the game asks something, the line just above the buttons shows the question and the buttons become the answers. When nothing is asked, that line says what to do on this screen (the top screen's gold strip says it too).
+
+7. Saving. On the bridge, SELECT (or START, then QUICK SAVE) saves your place.
+
+8. Learning more. The Training Manual tutorials further down this manual (Tutorial 1 onward) teach flying, combat and missions step by step: follow them in Practice. The Keyboard Quick Reference lists the game's own keys; you never need them, because the port presses them for you and the row of buttons under the prompt shows the game's current commands.
+
+Lost? Press START and choose MANUAL: Getting started is the first section.
+
 # Playing on the 3DS
 Star Fleet II runs unchanged inside DOSBox. This port reads the game's screen and redraws it across both 3DS screens, so you never need a keyboard.
 
@@ -14,7 +39,7 @@ AUTO / STEER / TARGET: the button under NAV (or R) chooses what a tactical tap d
 
 ACTION BUTTONS (right column): PHASERS, TORPS, SHLD+ / SHLD- (5% steps), SPD+ / SPD- (sublight 0.1c steps), the tap mode (AUTO, STEER or TARGET) and FREEZE (pause or resume the simulation).
 
-PROMPT LINE: shows what the game is asking. Yes/no questions get YES and NO buttons; "press any key" gets CONTINUE.
+PROMPT LINE: shows what the game is asking. Yes/no questions get YES and NO buttons; "press any key" gets CONTINUE. When the game is not asking anything, the line says (in pale blue) what to do on this screen; the gold strip at the bottom of the top screen says the same.
 
 COMMAND MENU: the row of buttons under the prompt is the game's own menu, read live from the screen. The red letter is the item's hotkey; the highlighted button is the current item.
 
