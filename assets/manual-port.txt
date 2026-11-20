@@ -45,7 +45,15 @@ ALERTS: in flight, when one of the alert lights on the top screen comes on (LOW 
 
 COMMAND MENU: the row of buttons under the prompt is the game's own menu, read live from the screen. The red letter is the item's hotkey; the highlighted button is the current item. When the menu has more items than fit in one row, MORE at the right end shows the next ones.
 
-VIEW TABS: STARS, SYSTEM, WAR, COMBAT, FLEET, ORDERS and LOG jump straight to those displays. This manual is in the START menu (MANUAL).
+VIEW TABS: STARS, SYSTEM, WAR, COMBAT, FLEET, ORDERS and LOG jump straight to those displays (they work during a mission; outside one they are grey). The first two times you tap each one, the prompt line says what it is:
+- STARS: the star map; tap a star to aim at it.
+- SYSTEM: the map of the star system you are in.
+- WAR: the whole war at a glance.
+- COMBAT: combat control, orders for your ships.
+- FLEET: the state of your ships.
+- ORDERS: your mission orders again.
+- LOG: the messages so far.
+This manual is in the START menu (MANUAL).
 
 OTHER DISPLAYS: nothing is shown twice. On a menu screen the menu becomes big buttons on the touch screen (tap one to choose it) and the rest of the screen stays on top; a menu too long for the touch screen shows five rows at a time: drag the list (the bar on the right shows where you are). On a map (star, system and war maps, combat control) the map goes on the touch screen: tap a star or ship to move the target box there, and tap it again to select.
 

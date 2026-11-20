@@ -1506,7 +1506,18 @@ static void typed_enter() {
 static void fire(const Act& a) {
   switch (a.kind) {
     case A_KEY: if (a.key != K_NONE) press(a.key, a.mods); if (a.key == K_ENTER) typed_enter(); busy_since = now(); break;
-    case A_VIEW: view_goal = a.arg; view_esc = 0; view_next = now(); busy_since = now(); break;
+    case A_VIEW: {
+      view_goal = a.arg; view_esc = 0; view_next = now(); busy_since = now();
+      // P2-5: the first two taps on each view say in one line what it is (at most 38 characters,
+      // so it fits the prompt line beside the bridge's action buttons)
+      static const char* meaning[7] = {"Star map: tap a star to aim at it", "System map: inside this star system",
+                                       "War map: the whole war at a glance", "Combat control: direct your ships",
+                                       "Fleet: the state of your ships", "Orders: your mission orders again",
+                                       "Log: the messages so far"};
+      static int told[7] = {0};
+      if (a.arg >= 0 && a.arg < 7 && told[a.arg] < 2) { told[a.arg]++; say(meaning[a.arg], 3000); }
+      break;
+    }
     case A_TYPE:
       if (last.cursor_y != typed_y) { typed.clear(); typed_y = last.cursor_y; }
       press(a.key, a.mods);
