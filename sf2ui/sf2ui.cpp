@@ -31,7 +31,7 @@ static std::vector<Ev> queue;          // pending key events
 static uint32_t next_key_ms = 0;
 static const uint32_t KEY_GAP_MS = 35; // spacing between injected key events
 
-enum ActKind { A_NONE, A_KEY, A_MODE, A_MANUAL, A_KB, A_SECTION, A_CLOSE, A_TYPE, A_SIGNON, A_SAVE, A_VIEW, A_PAUSE, A_QUIT, A_QUIT_YES, A_SETTINGS, A_LEFTY, A_SECLIST, A_ROWPAGE };
+enum ActKind { A_NONE, A_KEY, A_MODE, A_MANUAL, A_KB, A_SECTION, A_CLOSE, A_TYPE, A_SIGNON, A_SAVE, A_VIEW, A_PAUSE, A_QUIT, A_QUIT_YES, A_SETTINGS, A_LEFTY, A_SECLIST, A_ROWPAGE, A_RDLINE, A_MENUSCROLL };
 struct Act { ActKind kind; Key key; uint8_t mods; int arg; };
 enum { M_SHIFT = 1, M_CTRL = 2, M_ALT = 4 };
 
@@ -486,7 +486,7 @@ static const char* context_hint(const TextScreen& ts) {
     return screen_has(ts, "recruit") ? "First time? Tap YES to enlist as a new recruit" : "Tap YES or NO";
   if (screen_has(ts, "SIGN-ON OPTIONS")) return "New? Choose Practice first. Help: START > MANUAL";
   if (row_mode == R_WINDOW) return "Tap one of the keys below";
-  if (glay_kind() == 1) return menu_scrolls ? "Tap an item to choose it; drag the list for more" : "Tap an item to choose it";
+  if (glay_kind() == 1) return menu_scrolls ? "Tap an item; drag or tap the arrows for more" : "Tap an item to choose it";
   if (glay_kind() == 2) return "Tap a star or ship to aim, tap it again to select";
   if (row_mode == R_ANYKEY) return lefty_on ? "Read the screen, then tap CONTINUE (or D-Rt)" : "Read the screen, then tap CONTINUE (or A)";
   if (in_flight(ts)) return lefty_on ? "D-Lt/Up fire, Circle Pad steers, D-Dn backs out" : "X/Y fire, Circle Pad steers, B backs out";
@@ -1134,7 +1134,10 @@ static void draw_reader(Surf& s, const TextScreen& ts) {
   static const Key keys[7] = {K_PGUP, K_LEFT, K_UP, K_DOWN, K_RIGHT, K_PGDN, K_SPACE};
   for (int i = 0; i < 7; i++) {
     int a, b; split_gap(6, BOT_W - 6, 7, i, a, b);
-    add_btn(a, 140, b, 164, labs[i], &F8x16, key_act(keys[i]));
+    // the up/down arrows scroll the text first, like the sticks (rule 12: dragging has a button too)
+    Act act = key_act(keys[i]);
+    if (keys[i] == K_UP || keys[i] == K_DOWN) { act.kind = A_RDLINE; act.arg = keys[i] == K_UP ? -1 : 1; }
+    add_btn(a, 140, b, 164, labs[i], &F8x16, act);
   }
 }
 // A tap on the reader's text: a word with a red hotkey letter (or an "X  Label" line) sends that key.
@@ -1242,8 +1245,12 @@ static void generic_bottom(Surf& s, const TextScreen& ts) {
       }
       if (menu_top > rows - VIS) menu_top = rows - VIS;
       if (menu_top < 0) menu_top = 0;
-      scroll_bar(s, 310, 6, 6 + VIS * PITCH - 4, menu_top, rows - VIS, VIS);
-      sarea = ScrollArea{true, 0, 0, 308, 6 + VIS * PITCH, PITCH, &menu_top, rows - VIS};
+      scroll_bar(s, 277, 6, 6 + VIS * PITCH - 4, menu_top, rows - VIS, VIS);
+      sarea = ScrollArea{true, 0, 0, 276, 6 + VIS * PITCH, PITCH, &menu_top, rows - VIS};
+      add_btn(284, 6, BOT_W - 6, 80, "\x1e", &F8x16, kind_act(A_MENUSCROLL, -VIS));   // rule 12: a button for the drag
+      if (menu_top == 0) btns.back().off = true;
+      add_btn(284, 88, BOT_W - 6, 162, "\x1f", &F8x16, kind_act(A_MENUSCROLL, VIS));
+      if (menu_top >= rows - VIS) btns.back().off = true;
       menu_scrolls = true;
     }
     for (int i = 0; i < n; i++) {
@@ -1251,7 +1258,7 @@ static void generic_bottom(Surf& s, const TextScreen& ts) {
       int x0, x1, y0, y1;
       if (scroll) {
         if (row < menu_top || row >= menu_top + VIS) continue;
-        split_gap(6, 306, cols, col, x0, x1);
+        split_gap(6, 274, cols, col, x0, x1);
         y0 = 6 + (row - menu_top) * PITCH; y1 = y0 + PITCH - 4;
       } else {
         split_gap(6, BOT_W - 6, cols, col, x0, x1);
@@ -1565,6 +1572,12 @@ static void fire(const Act& a) {
     case A_SECTION: man_sel = a.arg; man_scroll = 0; man_focus = 0; break;
     case A_SECLIST: man_list_top += a.arg; break;   // (clamped when the list is drawn)
     case A_ROWPAGE: row_page++; break;              // (wraps when the row is laid out)
+    case A_MENUSCROLL: menu_top += a.arg; break;     // (clamped when the menu is laid out)
+    case A_RDLINE:
+      if (reader_on && a.arg > 0 && rd_scroll < rd_max) rd_scroll++;
+      else if (reader_on && a.arg < 0 && rd_scroll > 0) rd_scroll--;
+      else { press(a.arg > 0 ? K_DOWN : K_UP); busy_since = now(); }
+      break;
     case A_CLOSE: manual_open = false; man_focus = 0; break;
     case A_LEFTY:
       lefty_on = !lefty_on;
