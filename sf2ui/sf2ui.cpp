@@ -1304,6 +1304,19 @@ Redraw frame(const TextScreen& ts, uint16_t* top, uint16_t* bottom) {
   uint32_t t = now();
   Redraw rd = {false, false, 0, BOT_H};
 
+  // Very first launch (no marker yet): open the manual on "Getting started" once the title art
+  // is up, so a newcomer sees it without hunting for MANUAL (Ryan, Nov 20). Never again after.
+  {
+    static int first_run = -1;   // -1 unknown, 1 show it, 0 done
+    static const char* kSeen = "sdmc:/3ds/starfleet2/.manual_seen";
+    if (first_run < 0) { FILE* f = fopen(kSeen, "rb"); first_run = f ? 0 : 1; if (f) fclose(f); }
+    if (first_run == 1 && !ts.text_mode && !manual_open && !pause_open && !manual.empty()) {
+      first_run = 0;
+      if (FILE* f = fopen(kSeen, "wb")) { fputc('1', f); fclose(f); }
+      fire(kind_act(A_MANUAL)); dirty();
+    }
+  }
+
   // keyboard opens by itself when the game asks for typed text
   if (ts.text_mode && !manual_open) {
     bool want = wants_text(ts);
