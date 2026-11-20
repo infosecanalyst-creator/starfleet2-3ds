@@ -688,8 +688,7 @@ static void bridge_top(Surf& s, const TextScreen& ts) {
     uint16_t fg = (at >> 4) & 15 ? VGA[at & 15] : READ_FG[at & 15];
     fit_text(s, a + (b - a - 1 - text_width(lab.c_str(), F6x12)) / 2, 0, b - 1, lab.c_str(), F6x12, fg, "alert light");
   }
-  // P2-2: the left column gives 16 px to the house hint strip (COMMS keeps 12-px rows); the right
-  // column (DAMAGE, DATA, VEL and the two small read-outs) needs all 228 px and runs to the bottom.
+  // P2-2: the house hint strip runs along the bottom (y 224) under both columns (COMMS keeps 12-px rows).
   Box in = tile(s, 0, 12, 238, 124, "COMMS");
   cells_in(s, ts, 1, 15, 39, 22, F6x12, in.x0, in.y0, in.x1, in.y1);
 
@@ -721,22 +720,38 @@ static void bridge_top(Surf& s, const TextScreen& ts) {
 
   in = tile(s, 138, 124, 238, 224, "LRS");
   cells_in(s, ts, 2, 3, 16, 9, F6x12, in.x0, in.y0, in.x1, in.y1);
-  if (!lefty_loaded) lefty_load();
-  const char* hint = lefty_on ? "D-Lt/Up fire L freeze R tap START menu" : "X/Y fire  L freeze  R tap  START menu";
-  s.fill(0, 224, 238, TOP_H, BTN);
-  s.hline(0, 238, 224, BTN_EDGE);
-  fit_text(s, (238 - text_width(hint, F6x12)) / 2, 226, 236, hint, F6x12, TITLE, "bridge hint");
-  in = tile(s, 238, 12, 356, 108, "DAMAGE");
+  // Right column (Ryan, Nov 20): the VEL bar graph is folded into DATA as its two read-outs
+  // (sublight s: and hyperspace c:, beside the DATA rows they line up with), as the swapped 320-px
+  // layout does, so the gold hint strip spans the whole width. Everything stays 6x12.
+  in = tile(s, 238, 12, 350, 108, "DAMAGE");
   cells_in(s, ts, 60, 2, 77, 8, F6x12, in.x0, in.y0, in.x1, in.y1);
-  in = tile(s, 238, 108, 356, 204, "DATA");
-  cells_in(s, ts, 60, 10, 77, 16, F6x12, in.x0, in.y0, in.x1, in.y1);
-  in = tile(s, 238, 204, 356, 240, 0);
-  cells_in(s, ts, 42, 14, 50, 16, F6x12, in.x0, in.y0, in.x1, in.y1, 10);
-  in = tile(s, 356, 12, 400, 204, "VEL");
-  cells_in(s, ts, 53, 2, 58, 16, F6x12, in.x0, in.y0, in.x1, in.y1);
-  in = tile(s, 356, 204, 400, 240, 0);
-  cells_in(s, ts, 1, 1, 3, 1, F6x12, in.x0, in.y0, in.x1, in.y0 + 16);
-  cells_in(s, ts, 7, 1, 10, 1, F6x12, in.x0, in.y0 + 16, in.x1, in.y1);
+  // beside DAMAGE: the shields / tractor beam box (ss, TB) and the two status read-outs of row 1
+  in = tile(s, 350, 12, 400, 108, 0);
+  {
+    // the box's outer columns (42 and 50) are padding; drop them when they are blank so the box
+    // stays 6x12 in 46 px, else show all nine columns in 5x9 rather than cut anything
+    bool pad_blank = true;
+    for (int r = 14; r <= 16; r++) if (ts.ch[r][42] > ' ' || ts.ch[r][50] > ' ') pad_blank = false;
+    if (pad_blank) cells_in(s, ts, 43, 14, 49, 16, F6x12, in.x0, in.y0 + 4, in.x1, in.y0 + 4 + 36, 12);
+    else cells_in(s, ts, 42, 14, 50, 16, F5x9, in.x0, in.y0 + 4, in.x1, in.y0 + 4 + 36, 12);
+    s.hline(in.x0, in.x1, in.y0 + 46, FRAME);
+    cells_in(s, ts, 1, 1, 3, 1, F6x12, in.x0, in.y0 + 52, in.x1, in.y0 + 64, 12);
+    cells_in(s, ts, 7, 1, 10, 1, F6x12, in.x0, in.y0 + 70, in.x1, in.y0 + 82, 12);
+  }
+  in = tile(s, 238, 108, 400, 224, "DATA");
+  {
+    const int lh = 14, top = in.y0 + (in.y1 - in.y0 - 7 * lh) / 2;   // 7 rows, spaced like the other tiles
+    cells_in(s, ts, 60, 10, 77, 16, F6x12, in.x0, top, in.x0 + 110, top + 7 * lh, lh);
+    s.vline(in.x0 + 112, in.y0 + 2, in.y1 - 2, FRAME);
+    // s: and c: (VEL rows 15-16) beside DATA's last two rows (rows 15-16 too)
+    cells_in(s, ts, 53, 15, 58, 16, F6x12, in.x0 + 114, top + 5 * lh, in.x1, top + 7 * lh, lh);
+  }
+  if (!lefty_loaded) lefty_load();
+  const char* hint = lefty_on ? "D-Lt/Up fire  L freeze  R tap mode  ZR buttons  START menu"
+                              : "X/Y fire  L freeze  R tap mode  ZR buttons  START menu";
+  s.fill(0, 224, TOP_W, TOP_H, BTN);
+  s.hline(0, TOP_W, 224, BTN_EDGE);
+  fit_text(s, (TOP_W - text_width(hint, F6x12)) / 2, 226, TOP_W - 2, hint, F6x12, TITLE, "bridge hint");
 }
 
 // The bridge dashboard laid out for 320 px, used when the screens are swapped and it sits on the

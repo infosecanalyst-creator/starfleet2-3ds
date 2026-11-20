@@ -26,7 +26,7 @@ Lost? Press START and choose MANUAL: Getting started is the first section.
 # Playing on the 3DS
 Star Fleet II runs unchanged inside DOSBox. This port reads the game's screen and redraws it across both 3DS screens, so you never need a keyboard.
 
-The top screen shows everything you watch: alert lights, communications, energy, long-range scan, damage, data, velocity, mission time and status.
+The top screen shows everything you watch: alert lights, communications, energy, long-range scan, damage, data (with your speeds: s: sublight, c: hyperspace), mission time and status. On the bridge its gold strip along the bottom lists the main buttons.
 
 The touch screen shows everything you touch: the tactical display, navigation, action buttons, the game's own command menu and the view tabs.
 
