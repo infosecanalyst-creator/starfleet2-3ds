@@ -1919,12 +1919,14 @@ Redraw frame(const TextScreen& ts, uint16_t* top, uint16_t* bottom) {
     graphics_bottom(ts_bot); rd.bottom = true;
   } else if (is_bridge(ts)) {
     if (draw_top) { if (top_w == BOT_W) bridge_top_narrow(ts_top, ts); else bridge_top(ts_top, ts); top_native = true; }
+    reader_on = false;
     if (kb_open) keyboard(ts_bot); else bridge_bottom(ts_bot, ts);
     bottom_rows(ts_bot, ts);
     rd.top = draw_top; rd.bottom = true;
   } else {
     analyse(ts);
-    if (kb_open) keyboard(ts_bot); else generic_bottom(ts_bot, ts);
+    if (kb_open) { reader_on = false; keyboard(ts_bot); }   // (the top must not keep a stale reader page)
+    else generic_bottom(ts_bot, ts);
     bottom_rows(ts_bot, ts);      // (before the top: it decides row_mode, which the top's hint reads)
     if (draw_top) { generic_top(ts_top, ts); top_native = false; }
     rd.top = draw_top; rd.bottom = true;
