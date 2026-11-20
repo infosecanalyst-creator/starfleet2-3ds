@@ -46,9 +46,11 @@ static const int CLICK_CH = 22;               // a channel the emulator's audio 
 static s16* click_pcm = 0;
 static ndspWaveBuf click_buf;
 static bool click_ok = false;
+static bool click_ndsp = false;               // our own ndspInit() reference (released in click_exit)
 
 static void click_init() {
   if (R_FAILED(ndspInit())) return;           // no DSP firmware: buttons still animate, just silently
+  click_ndsp = true;
   const int rate = 22050, n = rate * 22 / 1000; // 22 ms
   click_pcm = (s16*)linearAlloc(n * sizeof(s16));
   if (!click_pcm) return;
@@ -72,6 +74,14 @@ static void click() {
   if (!click_ok) return;
   if (click_buf.status == NDSP_WBUF_QUEUED || click_buf.status == NDSP_WBUF_PLAYING) ndspChnWaveBufClear(CLICK_CH);
   ndspChnWaveBufAdd(CLICK_CH, &click_buf);
+}
+// Every ndspInit() this port does itself gets its ndspExit() before the app exits. (JA2 crashed at
+// exit: its click sound's reference kept the DSP thread running while exit() freed its stack.)
+// The channel is stopped first, so the DSP never reads the click buffer after it is freed.
+static void click_exit() {
+  if (click_ok) { ndspChnWaveBufClear(CLICK_CH); ndspChnReset(CLICK_CH); click_ok = false; }
+  if (click_ndsp) { ndspExit(); click_ndsp = false; }
+  if (click_pcm) { linearFree(click_pcm); click_pcm = 0; }
 }
 
 // ------------------------------------------------------------------ framebuffers
@@ -146,6 +156,11 @@ static void init() {
 }
 
 bool sf2ctr_owns_top() { return owns_top; }
+
+// main(), after DOSBox has stopped and before SDL_Quit(): release what this layer set up.
+void sf2ctr_shutdown() {
+  click_exit();
+}
 
 // SDL draws the top screen from its own thread (citro3d), and a video mode change can repaint it
 // after our last frame. While we own the top screen, re-present it for a while afterwards.
