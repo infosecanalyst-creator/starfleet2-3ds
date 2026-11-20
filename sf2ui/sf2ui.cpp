@@ -1163,12 +1163,52 @@ static char reader_hotkey(int x, int y) {
   if (k >= (int)l.ch.size() || l.ch[k] == ' ' || l.src[k] < 0) return 0;
   return hotkey_at(last, l.src[k] % 80, l.src[k] / 80);
 }
-static void generic_top(Surf& s, const TextScreen& ts) {
+// Text pages (Ryan, Nov 20): the page is read on the touch screen, so the top screen does not show
+// it again. It shows the house header bar with the page's title (its first line), where the reader
+// is in the page (lines a-b of n, and a bar), and the controls in the gold strip.
+static void reader_top(Surf& s, const char* hint) {
   s.fill(0, 0, TOP_W, TOP_H, BG);
-  cells(s, ts, 0, 0, 79, 24, F5x9, 0, 0, 5, 9);
+  // the title: the page's first paragraph when it fits the header in 6x12 (a heading the reader
+  // wrapped at 50 columns), else its first line
+  std::string title, para;
+  size_t i = 0;
+  while (i < rlines.size() && trim(rlines[i].ch).empty()) i++;
+  if (i < rlines.size()) title = trim(rlines[i].ch);
+  for (; i < rlines.size() && !trim(rlines[i].ch).empty(); i++) para += (para.empty() ? "" : " ") + trim(rlines[i].ch);
+  if (text_width(para.c_str(), F6x12) <= TOP_W - 16) title = para;
+  s.fill(0, 0, TOP_W, 22, BTN);
+  s.hline(0, TOP_W, 22, BTN_EDGE);
+  // reader lines are at most RD_COLS (50) characters: 6x12 always fits the 384 px between the margins
+  const Font* tf = text_width(title.c_str(), F8x16) <= TOP_W - 16 ? &F8x16 : &F6x12;
+  fit_text(s, 8, (22 - tf->h) / 2, TOP_W - 8, title.c_str(), *tf, TITLE, "reader title");
+  const int n = (int)rlines.size();
+  const int a = rd_scroll + 1, b = std::min(n, rd_scroll + RD_LINES);
+  const char* where = "Reading on the touch screen";
+  fit_text(s, (TOP_W - text_width(where, F6x12)) / 2, 70, TOP_W - 8, where, F6x12, HINT, "reader top");
+  char pos[48];
+  if (rd_max <= 0) snprintf(pos, sizeof pos, "All %d lines shown", n);
+  else snprintf(pos, sizeof pos, "Lines %d-%d of %d", a, b, n);
+  fit_text(s, (TOP_W - text_width(pos, F8x16)) / 2, 96, TOP_W - 8, pos, F8x16, BTN_TXT, "reader position");
+  // the page as a bar: the gold part is the stretch of it on the touch screen
+  const int bx0 = 40, bx1 = TOP_W - 40, by0 = 128, by1 = 140;
+  s.rect(bx0, by0, bx1, by1, BTN_EDGE);
+  int span = bx1 - bx0 - 4;
+  int ta = n ? span * rd_scroll / n : 0, tb = n ? span * b / n : span;
+  if (tb - ta < 6) tb = std::min(span, ta + 6);
+  s.fill(bx0 + 2 + ta, by0 + 2, bx0 + 2 + tb, by1 - 2, TITLE);
+  const char* ends = rd_max <= 0 ? "" : rd_scroll >= rd_max ? "End of the page" : rd_scroll == 0 ? "Top of the page" : "";
+  if (*ends) fit_text(s, (TOP_W - text_width(ends, F6x12)) / 2, 150, TOP_W - 8, ends, F6x12, HINT, "reader top");
+  s.fill(0, 224, TOP_W, TOP_H, BTN);
+  s.hline(0, TOP_W, 224, BTN_EDGE);
+  fit_text(s, (TOP_W - text_width(hint, F6x12)) / 2, 226, TOP_W - 2, hint, F6x12, TITLE, "top hint");
+}
+static void generic_top(Surf& s, const TextScreen& ts) {
   // house hint strip (look-and-feel: gold on the header colour): what to do on this screen
   const char* hint = swap_wanted ? "ZL swap is on: it applies on the bridge and in the manual."
                                  : context_hint(ts);
+  if (reader_on && !rlines.empty()) { reader_top(s, hint); return; }
+  s.fill(0, 0, TOP_W, TOP_H, BG);
+  cells(s, ts, 0, 0, 79, 24, F5x9, 0, 0, 5, 9);
   if (glay.kind != G_PLAIN) {        // the part on the touch screen is not repeated here
     int x0 = glay.c0 * 5, y0 = glay.r0 * 9, x1 = (glay.c1 + 1) * 5, y1 = (glay.r1 + 1) * 9;
     s.fill(x0, y0, x1, y1, BG);
@@ -1178,12 +1218,6 @@ static void generic_top(Surf& s, const TextScreen& ts) {
     int tw = text_width(note, *nf);
     if (tw <= x1 - x0 - 4 && y1 - y0 >= nf->h + 2)
       draw_text(s, x0 + (x1 - x0 - tw) / 2, y0 + (y1 - y0 - nf->h) / 2, note, *nf, HINT);
-  }
-  if (reader_on && !rlines.empty()) {   // gold bar at the right edge beside the rows the reader shows
-    int a = 24, b = -1;
-    for (int i = rd_scroll; i < rd_scroll + RD_LINES && i < (int)rlines.size(); i++)
-      for (int16_t sr : rlines[i].src) if (sr >= 0) { a = std::min(a, sr / 80); b = std::max(b, sr / 80); }
-    if (b >= a) s.fill(397, a * 9, 400, (b + 1) * 9, TITLE);
   }
   // (y 225, one pixel lower than the house 224: the game's row 24 ends at y 224)
   s.fill(0, 225, TOP_W, TOP_H, BTN);
