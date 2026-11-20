@@ -31,6 +31,7 @@
 #include "cross.h"
 #ifdef SF2_3DS
 extern unsigned int sf2_io_ops, sf2_io_disk;
+void sf2_game_wrote(const char* path);
 // Time spent in each kind of DOS file call (printed in the 3DS debug log).
 unsigned long long sf2_now_us();
 const char* sf2_prof_name[12] = {"open", "create", "findfirst", "findnext", "attr", "exists", "stat", "unlink", "rename", "close", "dirscan", "other"};
@@ -445,6 +446,7 @@ bool localDrive::Rename(char * oldname,char * newname) {
 #ifdef SF2_3DS
 	SF2_FORGET(0);
 	int temp=sf2w_rename(newold,dirCache.GetExpandName(newnew));
+	if (temp == 0) sf2_game_wrote(newold);
 #else
 	int temp=rename(newold,dirCache.GetExpandName(newnew));
 #endif
@@ -564,6 +566,7 @@ bool localFile::Write(Bit8u * data,Bit16u * size) {
 		return false;
 	}
 #ifdef SF2_3DS
+	sf2_game_wrote(sf2_path);
 	if (mem) {
 		sf2_io_ops++;
 		if (*size == 0) { mem_size = mem_pos; mem_dirty = true; return true; }   // DOS truncate
@@ -677,6 +680,22 @@ localFile::localFile(const char* _name, FILE * handle) {
 
 #ifdef SF2_3DS
 unsigned int sf2_io_ops = 0, sf2_io_disk = 0;     // file operations, and those that went to the SD card
+// Rule 17 (exit save): the 3DS layer watches the game's writes after it presses the quick save.
+unsigned int sf2_game_writes = 0;                 // DOS writes and renames by the game
+char sf2_game_write_path[CROSS_LEN] = "";         // the file last written (for the debug log)
+void sf2_game_wrote(const char* path) {
+	sf2_game_writes++;
+	if (path && path[0] && strcmp(path, sf2_game_write_path) != 0) safe_strncpy(sf2_game_write_path, path, CROSS_LEN);
+}
+// Queue every open game file's unwritten changes for the background writer (exit save: files the
+// game still holds open would otherwise only reach the card when it closes them).
+void sf2_flush_open_files() {
+	for (int i = 0; i < DOS_FILES; i++)
+		if (Files[i] && Files[i]->IsOpen()) {
+			localFile* lf = dynamic_cast<localFile*>(Files[i]);
+			if (lf) lf->Flush();
+		}
+}
 void localFile::sf2_attach(const char* host_path) {
 	safe_strncpy(sf2_path, host_path, sizeof sf2_path);
 	mem_load();

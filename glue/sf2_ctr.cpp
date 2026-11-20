@@ -144,6 +144,77 @@ static void key_logged(sf2ui::Key k, bool down) {
 static void save_bg(const char* path, const char* data, unsigned n) { sf2w_queue(path, (const uint8_t*)data, n); }
 static bool quit_req = false;                  // START menu > EXIT GAME
 static void quit_app() { sf2ctr_log("exit chosen in the START menu"); quit_req = true; }
+
+// ------------------------------------------------------------------ exit save (UI rule 17)
+// START > EXIT GAME, or the system closing the app (HOME > Close, power button): if the game is on
+// the bridge, press its own quick save (Ctrl+Q, as SELECT does), keep the emulation running until
+// the game has written its files, then stop DOSBox. main() then waits for the background writer to
+// put those files on the card (sf2ctr_log_flush(true) -> sf2w_wait(0)) before the app ends.
+//
+// Everything here runs on the emulation (main) thread, from sf2ctr_events(), between emulated
+// milliseconds; nothing waits and nothing is done in the APT hooks (a wait inside the HOME/sleep
+// hook froze HOME on hardware, 51483e3). A HOME press itself (suspend) does not save.
+//
+// "Written" = the game made at least one DOS write after the keys went in, then nothing for
+// EX_QUIET_MS; then every file the game still holds open is queued too. Timeouts: the first write
+// must come within EX_START_MS of the keys going in, and all of it within EX_TOTAL_MS. On a time-
+// out, START > EXIT asks "Not saved! Exit anyway?" (focus on NO); a system close just exits.
+extern unsigned int sf2_game_writes;            // drive_local.cpp: DOS writes / renames by the game
+extern char sf2_game_write_path[];
+void sf2_flush_open_files();                    // drive_local.cpp
+static const unsigned EX_QUIET_MS = 700, EX_START_MS = 3000, EX_TOTAL_MS = 8000;
+enum ExitState { EX_NONE, EX_SAVING, EX_ASKED };
+static ExitState ex_state = EX_NONE;
+static bool ex_home = false;                    // the system is closing the app: no screens, no question
+static unsigned ex_ms = 0, ex_keys_ms = 0, ex_last_ms = 0;   // run time of the wait (HOME pauses excluded)
+static unsigned ex_io_last = 0, ex_n = 0;
+static bool ex_keys_in = false, ex_wrote = false;
+static u64 ex_prev = 0;
+
+static void exit_now(const char* why) {
+  sf2ctr_log("exit: %s", why);
+  throw(0);
+}
+static void exit_begin(bool home) {
+  if (ex_state == EX_SAVING) {                  // already saving (EXIT chosen), then HOME > Close
+    if (home && !ex_home) { ex_home = true; sf2ctr_log("exit save: the system is closing the app; still waiting"); }
+    return;
+  }
+  if (!sf2ui::can_quick_save()) exit_now(home ? "closed by the system, not on the bridge (no quick save)"
+                                              : "EXIT GAME, not on the bridge (no quick save)");
+  sf2ui::quick_save();
+  if (!home) sf2ui::exit_save_ui(true);
+  ex_state = EX_SAVING; ex_home = home;
+  ex_ms = ex_keys_ms = ex_last_ms = 0; ex_n = 0;
+  ex_io_last = sf2_game_writes;
+  ex_keys_in = ex_wrote = false;
+  ex_prev = osGetTime();
+  quit_req = false;
+  sf2ctr_log("exit save: quick save pressed (%s)", home ? "closed by the system" : "EXIT GAME");
+}
+static void exit_step() {
+  u64 t = osGetTime();
+  unsigned d = (unsigned)(t - ex_prev); ex_prev = t;
+  ex_ms += d > 100 ? 100 : d;                   // (time spent suspended in the HOME Menu does not count)
+  if (!ex_keys_in) {                            // writes before the keys are in are not the save
+    ex_io_last = sf2_game_writes;
+    if (!sf2ui::keys_pending()) { ex_keys_in = true; ex_keys_ms = ex_ms; }
+  }
+  if (ex_keys_in && sf2_game_writes != ex_io_last) {
+    ex_n += sf2_game_writes - ex_io_last; ex_io_last = sf2_game_writes; ex_last_ms = ex_ms; ex_wrote = true;
+  }
+  if (ex_wrote && ex_ms - ex_last_ms >= EX_QUIET_MS) {
+    sf2_flush_open_files();
+    sf2ctr_log("exit save: %u writes, last %s, done %u ms after the keys", ex_n, sf2_game_write_path, ex_last_ms - ex_keys_ms);
+    exit_now("quick saved; the background writer finishes the files before the app ends");
+  }
+  bool late = (ex_keys_in && !ex_wrote && ex_ms - ex_keys_ms > EX_START_MS) || ex_ms > EX_TOTAL_MS;
+  if (!late) return;
+  sf2ctr_log("exit save: not finished (%s, %u writes after %u ms)", ex_wrote ? "still writing" : "no writes", ex_n, ex_ms);
+  if (ex_home) exit_now("closed by the system; the save did not finish");
+  sf2ui::exit_unsaved_ask();
+  ex_state = EX_ASKED;
+}
 static sf2ui::Host host = {key_logged, click, ms, "sdmc:/3ds/starfleet2/manual.txt", "sdmc:/3ds/starfleet2/officer.txt", save_bg, quit_app, "sdmc:/3ds/starfleet2/lefty.txt",
                              "sdmc:/3ds/starfleet2/settings.txt"};
 
@@ -280,9 +351,27 @@ void sf2ctr_events() {
   if (tick - last_poll < (u64)(SYSCLOCK_ARM11 / 125)) return;
   last_poll = tick;
 
+  // Exit (rule 17). Once the system has told the app to close, APT and SDL's event pump (which calls
+  // aptMainLoop() too) are not touched again, the screens are not drawn, and no input is read: the
+  // emulation only runs until the quick save is written.
+  if (ex_state == EX_SAVING && ex_home) {
+    exit_step();
+    static u64 last_keys = 0;                   // keep feeding the queued keys to the game
+    u64 nt = osGetTime();
+    if (nt - last_keys >= 33) { last_keys = nt; sf2ui::TextScreen ts; sf2_read_screen(ts); sf2ui::frame(ts, top_img, bot_img); }
+    return;
+  }
   SDL_Event e;
-  while (SDL_PollEvent(&e)) if (e.type == SDL_QUIT) throw(0);
-  if (!aptMainLoop() || quit_req) throw(0);
+  bool closing = false;
+  while (SDL_PollEvent(&e)) if (e.type == SDL_QUIT) closing = true;
+  if (!closing && !aptMainLoop()) closing = true;
+  if (closing) { exit_begin(true); return; }
+  if (quit_req) {
+    if (ex_state == EX_ASKED) exit_now("EXIT GAME without a save (Not saved! Exit anyway? YES)");
+    exit_begin(false);
+  }
+  if (ex_state == EX_ASKED && !sf2ui::exit_prompt_open()) { ex_state = EX_NONE; sf2ctr_log("exit save: NO, back to the game"); }
+  if (ex_state == EX_SAVING) exit_step();
   hidScanInput();
 
   // SDL's event pump also calls hidScanInput(), so hidKeysDown()/hidKeysUp() miss presses:
