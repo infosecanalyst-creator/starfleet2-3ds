@@ -31,7 +31,7 @@ static std::vector<Ev> queue;          // pending key events
 static uint32_t next_key_ms = 0;
 static const uint32_t KEY_GAP_MS = 35; // spacing between injected key events
 
-enum ActKind { A_NONE, A_KEY, A_MODE, A_MANUAL, A_KB, A_SECTION, A_CLOSE, A_TYPE, A_SIGNON, A_SAVE, A_VIEW, A_PAUSE, A_QUIT, A_QUIT_YES, A_SETTINGS, A_LEFTY, A_SECLIST };
+enum ActKind { A_NONE, A_KEY, A_MODE, A_MANUAL, A_KB, A_SECTION, A_CLOSE, A_TYPE, A_SIGNON, A_SAVE, A_VIEW, A_PAUSE, A_QUIT, A_QUIT_YES, A_SETTINGS, A_LEFTY, A_SECLIST, A_ROWPAGE };
 struct Act { ActKind kind; Key key; uint8_t mods; int arg; };
 enum { M_SHIFT = 1, M_CTRL = 2, M_ALT = 4 };
 
@@ -459,6 +459,7 @@ static int glay_kind();   // the generic layout's kind (G_PLAIN / G_MENU / G_MAP
 // prompt strip reuses it, which is safe because that path only runs while the screen is unchanged).
 enum RowMode { R_DEFAULT, R_MENU, R_WINDOW, R_YESNO, R_ANYKEY, R_SIGNON };
 static RowMode row_mode = R_DEFAULT;
+static int row_page = 0;   // page of the game's menu row shown (MORE moves on; P2-6)
 // Newcomer guidance: one short line saying what to do on this screen (at most 52 characters so it
 // fits the touch screen's prompt strip without scrolling; the top screen's hint strip shows it too).
 static const char* context_hint(const TextScreen& ts) {
@@ -560,12 +561,47 @@ static void bottom_rows(Surf& s, const TextScreen& ts) {
   row_mode = !items.empty() ? (window_hints(ts) ? R_WINDOW : R_MENU) : yesno ? R_YESNO : anykey ? R_ANYKEY : R_DEFAULT;
   prompt_strip(s, ts, prompt);
   if (!items.empty()) {
+    // P2-6: the game's menu row in 308 px. Even widths when every label fits; otherwise widths that
+    // follow the labels (6x12, 4 px padding each side); if even that is too wide, pages of items
+    // with a MORE button that shows the next page.
     int n = (int)items.size();
+    std::vector<int> need(n);
+    bool even_ok = true;
     for (int i = 0; i < n; i++) {
+      need[i] = std::max(24, text_width(items[i].label.c_str(), F6x12) + 8);
       int a, b; split_gap(6, BOT_W - 6, n, i, a, b);
+      if (text_width(items[i].label.c_str(), F6x12) > b - a - 4) even_ok = false;
+    }
+    std::string sig; for (auto& m : items) sig += m.label + "|";
+    static std::string row_sig;
+    if (sig != row_sig) { row_sig = sig; row_page = 0; }
+    int total = 4 * (n - 1); for (int w : need) total += w;
+    int from = 0, to = n;                     // items shown: [from, to)
+    bool more = false;
+    if (!even_ok && total > BOT_W - 12) {     // pages: as many items as fit beside a 44-px MORE
+      std::vector<int> starts(1, 0);
+      int w = 0;
+      for (int i = 0; i < n; i++) {
+        int add = need[i] + (i > starts.back() ? 4 : 0);
+        if (w + add + 4 + 44 > BOT_W - 12 && i > starts.back()) { starts.push_back(i); w = need[i]; }
+        else w += add;
+      }
+      int pages = (int)starts.size();
+      row_page %= pages;
+      from = starts[row_page]; to = row_page + 1 < pages ? starts[row_page + 1] : n;
+      more = true;
+    }
+    int m = to - from, x = 6, avail = BOT_W - 12 - (more ? 48 : 0);
+    int used = 4 * (m - 1); for (int i = from; i < to; i++) used += need[i];
+    int extra = std::max(0, avail - used);
+    for (int i = from; i < to; i++) {
+      int a, b;
+      if (even_ok) split_gap(6, BOT_W - 6, n, i, a, b);
+      else { int k = i - from; a = x; b = a + need[i] + extra / m + (k < extra % m ? 1 : 0); x = b + 4; }
       Key k = items[i].key == 27 ? K_ESC : items[i].key == 13 ? K_ENTER : key_for_char(items[i].key);
       add_btn(a, ROW1_Y0, b, ROW1_Y1, items[i].label, &F8x16, key_act(k, items[i].mods), items[i].hot, items[i].sel);
     }
+    if (more) add_btn(BOT_W - 6 - 44, ROW1_Y0, BOT_W - 6, ROW1_Y1, "MORE", &F8x16, kind_act(A_ROWPAGE));
   } else if (yesno) {
     add_btn(6, ROW1_Y0, 158, ROW1_Y1, "YES", &F8x16, key_act(K_Y), 0);
     add_btn(162, ROW1_Y0, 314, ROW1_Y1, "NO", &F8x16, key_act(K_N), 0);
@@ -1498,6 +1534,7 @@ static void fire(const Act& a) {
       break;
     case A_SECTION: man_sel = a.arg; man_scroll = 0; man_focus = 0; break;
     case A_SECLIST: man_list_top += a.arg; break;   // (clamped when the list is drawn)
+    case A_ROWPAGE: row_page++; break;              // (wraps when the row is laid out)
     case A_CLOSE: manual_open = false; man_focus = 0; break;
     case A_LEFTY:
       lefty_on = !lefty_on;

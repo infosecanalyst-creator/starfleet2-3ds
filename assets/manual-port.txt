@@ -41,7 +41,7 @@ ACTION BUTTONS (right column): PHASERS, TORPS, SHLD+ / SHLD- (5% steps), SPD+ / 
 
 PROMPT LINE: shows what the game is asking. Yes/no questions get YES and NO buttons; "press any key" gets CONTINUE. When the game is not asking anything, the line says (in pale blue) what to do on this screen; the gold strip at the bottom of the top screen says the same.
 
-COMMAND MENU: the row of buttons under the prompt is the game's own menu, read live from the screen. The red letter is the item's hotkey; the highlighted button is the current item.
+COMMAND MENU: the row of buttons under the prompt is the game's own menu, read live from the screen. The red letter is the item's hotkey; the highlighted button is the current item. When the menu has more items than fit in one row, MORE at the right end shows the next ones.
 
 VIEW TABS: STARS, SYSTEM, WAR, COMBAT, FLEET, ORDERS and LOG jump straight to those displays. This manual is in the START menu (MANUAL).
 
