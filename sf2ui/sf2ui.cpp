@@ -1177,6 +1177,7 @@ static bool mostly_text(const TextScreen& ts) {
       uint8_t x = ts.ch[r][c];
       if ((x >= 'A' && x <= 'Z') || (x >= 'a' && x <= 'z')) letters++;
       else if ((x >= 0xB0 && x <= 0xB2) || (x >= 0xDB && x <= 0xDF) || x == 0xFE || x == 0xF9 || x == 0xFA) art++;
+      else if ((x == ' ' || x == 0 || x == 0xFF) && (ts.at[r][c] >> 4) != 0) art++;   // coloured blank cells: grids, bars
     }
   return letters >= 60 && art * 2 < letters;
 }
