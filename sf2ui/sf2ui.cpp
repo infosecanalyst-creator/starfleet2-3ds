@@ -442,6 +442,38 @@ static bool window_hints(const TextScreen& ts) {     // a window with its own ke
 }
 
 static bool cursor_question(const TextScreen& ts);
+static int glay_kind();   // the generic layout's kind (G_PLAIN / G_MENU / G_MAP, defined below)
+// What the touch screen's button row offers right now (set by bottom_rows; the idle redraw of the
+// prompt strip reuses it, which is safe because that path only runs while the screen is unchanged).
+enum RowMode { R_DEFAULT, R_MENU, R_WINDOW, R_YESNO, R_ANYKEY, R_SIGNON };
+static RowMode row_mode = R_DEFAULT;
+// Newcomer guidance: one short line saying what to do on this screen (at most 52 characters so it
+// fits the touch screen's prompt strip without scrolling; the top screen's hint strip shows it too).
+static const char* context_hint(const TextScreen& ts) {
+  if (!ts.text_mode) return "Tap CONTINUE or press A";
+  if (is_bridge(ts)) {
+    int c, r;
+    bool box = find_tdb(ts, c, r, 29, 2, 49, 13);
+    bool target = tap_mode == TM_TARGET || (tap_mode == TM_AUTO && box);
+    if (target) return box ? "Tap a target, tap it again to lock on" : "No target box (Weapons: Manual)";
+    return "Tap display: steer \xb3 X/Y: fire";
+  }
+  if (kb_open) {
+    if (at_name_prompt(ts)) return off_name.empty() ? "Type your officer name, then tap ENTER"
+                                                    : "Tap SIGN ON AS, or type a new name and ENTER";
+    if (at_pass_prompt(ts)) return "Type a password (new recruits choose one), ENTER";
+    return "Type on the keyboard, then tap ENTER";
+  }
+  if (row_mode == R_YESNO)
+    return screen_has(ts, "recruit") ? "First time? Tap YES to enlist as a new recruit" : "Tap YES or NO";
+  if (screen_has(ts, "SIGN-ON OPTIONS")) return "New? Choose Practice first. Help: START > MANUAL";
+  if (row_mode == R_WINDOW) return "Tap one of the keys below";
+  if (glay_kind() == 1) return "Tap an item to choose it";
+  if (glay_kind() == 2) return "Tap a star or ship to aim, tap it again to select";
+  if (row_mode == R_ANYKEY) return "Read the screen, then tap CONTINUE (or A)";
+  if (in_flight(ts)) return "X/Y fire, Circle Pad steers, B backs out";
+  return "Sticks scroll the page \xb3 A: Enter \xb3 B: back";
+}
 // Prompt strip (y UP_H..UP_H+12): the game's question, a toast, or the line being typed; scrolls when long.
 // On the bridge it stops at x 236 (the action buttons run down to y 170 beside it).
 static int strip_x1 = BOT_W;
@@ -464,6 +496,7 @@ static void prompt_strip(Surf& s, const TextScreen& ts, const std::string& promp
   std::string line = showing_toast ? toast : prompt;
   if (!showing_toast && kb_open && ts.cursor_y >= 0 && ts.cursor_y < 25) line = trim(row_str(ts, ts.cursor_y, 0, 80));
   uint16_t pc = showing_toast ? LOUPE : READ_FG[ts.at[24][0] & 15 ? ts.at[24][0] & 15 : 14];
+  if (line.empty()) { line = context_hint(ts); pc = HINT; }   // nothing asked: say what to do here
   int lw = text_width(line.c_str(), F6x12);
   if (lw <= strip_x1 - 8) {
     draw_text(s, 4, UP_H, line.c_str(), F6x12, pc);
@@ -488,7 +521,6 @@ static void bottom_rows(Surf& s, const TextScreen& ts) {
   s.fill(0, UP_H + 12, BOT_W, BOT_H, BG);   // the gaps between the rows too (no stale pixels)
   std::string prompt;
   std::vector<MenuItem> items = parse_menu(ts, prompt);
-  prompt_strip(s, ts, prompt);
 
   bool yesno = (prompt.find('?') != std::string::npos && items.empty()) || cursor_question(ts);
   if (yesno) items.clear();
@@ -510,6 +542,8 @@ static void bottom_rows(Surf& s, const TextScreen& ts) {
     }
   bool anykey = items.empty() && !yesno &&
                 (prompt.find("PRESS") != std::string::npos || screen_has(ts, "PRESS ANY KEY", 18, 24) || screen_has(ts, "PRESS KEY", 18, 24));
+  row_mode = !items.empty() ? (window_hints(ts) ? R_WINDOW : R_MENU) : yesno ? R_YESNO : anykey ? R_ANYKEY : R_DEFAULT;
+  prompt_strip(s, ts, prompt);
   if (!items.empty()) {
     int n = (int)items.size();
     for (int i = 0; i < n; i++) {
@@ -780,6 +814,8 @@ struct GLayout {
   int ox, oy, cw, lh; const Font* f;  // where the map is drawn (G_MAP)
 };
 static GLayout glay;
+static int glay_kind() { return glay.kind; }
+static_assert(G_MENU == 1 && G_MAP == 2, "context_hint() reads glay_kind() as numbers");
 
 static bool is_key_char(uint8_t c) { return (c >= 'A' && c <= 'Z') || (c >= '0' && c <= '9'); }
 static bool is_alpha(uint8_t c) { return (c >= 'A' && c <= 'Z') || (c >= 'a' && c <= 'z'); }
@@ -918,11 +954,9 @@ static void analyse(const TextScreen& ts) {
 static void generic_top(Surf& s, const TextScreen& ts) {
   s.fill(0, 0, TOP_W, TOP_H, BG);
   cells(s, ts, 0, 0, 79, 24, F5x9, 0, 0, 5, 9);
+  // house hint strip (look-and-feel: gold on the header colour): what to do on this screen
   const char* hint = swap_wanted ? "ZL swap is on: it applies on the bridge and in the manual."
-                   : kb_open ? "Type on the touch screen keyboard."
-                   : glay.kind == G_MENU ? "Tap a menu item on the touch screen."
-                   : glay.kind == G_MAP ? "The map is on the touch screen: tap a star or ship to aim."
-                   : "Touch screen: keys for this screen.";
+                                 : context_hint(ts);
   if (glay.kind != G_PLAIN) {        // the part on the touch screen is not repeated here
     int x0 = glay.c0 * 5, y0 = glay.r0 * 9, x1 = (glay.c1 + 1) * 5, y1 = (glay.r1 + 1) * 9;
     s.fill(x0, y0, x1, y1, BG);
@@ -933,8 +967,10 @@ static void generic_top(Surf& s, const TextScreen& ts) {
     if (tw <= x1 - x0 - 4 && y1 - y0 >= nf->h + 2)
       draw_text(s, x0 + (x1 - x0 - tw) / 2, y0 + (y1 - y0 - nf->h) / 2, note, *nf, HINT);
   }
-  s.fill(0, 225, TOP_W, TOP_H, BG);
-  fit_text(s, 4, 226, TOP_W - 2, hint, F6x12, HINT, "top hint");
+  // (y 225, one pixel lower than the house 224: the game's row 24 ends at y 224)
+  s.fill(0, 225, TOP_W, TOP_H, BTN);
+  s.hline(0, TOP_W, 225, BTN_EDGE);
+  fit_text(s, (TOP_W - text_width(hint, F6x12)) / 2, 227, TOP_W - 2, hint, F6x12, TITLE, "top hint");
 }
 static uint32_t user_pan_ms = 0;
 static uint32_t screen_sig(const TextScreen& ts) {   // changes when a different screen appears
@@ -1129,6 +1165,8 @@ static void graphics_bottom(Surf& s) {
   fit_text(s, (BOT_W - text_width("STAR FLEET II", F8x16)) / 2, 40, BOT_W, "STAR FLEET II", F8x16, TITLE, "title");
   fit_text(s, (BOT_W - text_width("Krellan Commander", F6x12)) / 2, 62, BOT_W, "Krellan Commander", F6x12, BTN_TXT, "title");
   add_btn(40, 100, 280, 150, "CONTINUE", &F8x16, key_act(K_ENTER));
+  const char* tip = "New here? MANUAL starts with Getting started.";
+  fit_text(s, (BOT_W - text_width(tip, F6x12)) / 2, 170, BOT_W - 6, tip, F6x12, HINT, "title tip");
   add_btn(6, 202, 156, 234, "BACK", &F8x16, key_act(K_ESC));             // UI rule 11: 6 px from the edges, 8 apart
   add_btn(164, 202, 314, 234, "MANUAL", &F8x16, kind_act(A_MANUAL));
 }
@@ -1233,7 +1271,15 @@ static void fire(const Act& a) {
       say(tap_mode == TM_AUTO ? "Taps target when the target box is up, else steer" :
           tap_mode == TM_STEER ? "Taps always steer" : "Taps always move the target box");
       break;
-    case A_MANUAL: manual_open = true; man_scroll = 0; pause_open = false; break;
+    case A_MANUAL: {
+      // The first time in a session the manual opens on "Getting started" (newcomers); after
+      // that it keeps the section the player last read.
+      static bool opened_before = false;
+      if (!opened_before)
+        for (int i = 0; i < (int)manual.size(); i++) if (manual[i].title == "Getting started") { man_sel = i; break; }
+      opened_before = true;
+      manual_open = true; man_scroll = 0; pause_open = false; break;
+    }
     case A_KB:
       if (kb_open) { kb_open = false; kb_user_hidden = true; kb_forced = false; }
       else { kb_open = true; kb_forced = true; kb_user_hidden = false; }
@@ -1360,8 +1406,8 @@ Redraw frame(const TextScreen& ts, uint16_t* top, uint16_t* bottom) {
   } else {
     analyse(ts);
     if (kb_open) keyboard(ts_bot); else generic_bottom(ts_bot, ts);
+    bottom_rows(ts_bot, ts);      // (before the top: it decides row_mode, which the top's hint reads)
     if (draw_top) { generic_top(ts_top, ts); top_native = false; }
-    bottom_rows(ts_bot, ts);
     rd.top = draw_top; rd.bottom = true;
   }
   for (int i = 0; i < (int)btns.size(); i++) draw_btn(ts_bot, i);
