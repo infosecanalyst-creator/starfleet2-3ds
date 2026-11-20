@@ -460,14 +460,15 @@ static RowMode row_mode = R_DEFAULT;
 // Newcomer guidance: one short line saying what to do on this screen (at most 52 characters so it
 // fits the touch screen's prompt strip without scrolling; the top screen's hint strip shows it too).
 static const char* context_hint(const TextScreen& ts) {
+  if (!lefty_loaded) lefty_load();
   if (focus_mode) return lefty_on ? "Ring: ABXY move, D-Rt press, D-Dn or ZR done" : "Ring: D-Pad move, A press, B or ZR done";
-  if (!ts.text_mode) return "Tap CONTINUE or press A";
+  if (!ts.text_mode) return lefty_on ? "Tap CONTINUE or press D-Right" : "Tap CONTINUE or press A";
   if (is_bridge(ts)) {
     int c, r;
     bool box = find_tdb(ts, c, r, 29, 2, 49, 13);
     bool target = tap_mode == TM_TARGET || (tap_mode == TM_AUTO && box);
     if (target) return box ? "Tap a target, tap it again to lock on" : "No target box (Weapons: Manual)";
-    return "Tap display: steer \xb3 X/Y: fire";
+    return lefty_on ? "Tap display: steer \xb3 D-Lt/D-Up: fire" : "Tap display: steer \xb3 X/Y: fire";
   }
   if (kb_open) {
     if (at_name_prompt(ts)) return off_name.empty() ? "Type your officer name, then tap ENTER"
@@ -481,9 +482,9 @@ static const char* context_hint(const TextScreen& ts) {
   if (row_mode == R_WINDOW) return "Tap one of the keys below";
   if (glay_kind() == 1) return "Tap an item to choose it";
   if (glay_kind() == 2) return "Tap a star or ship to aim, tap it again to select";
-  if (row_mode == R_ANYKEY) return "Read the screen, then tap CONTINUE (or A)";
-  if (in_flight(ts)) return "X/Y fire, Circle Pad steers, B backs out";
-  return "Sticks scroll the page \xb3 A: Enter \xb3 B: back";
+  if (row_mode == R_ANYKEY) return lefty_on ? "Read the screen, then tap CONTINUE (or D-Rt)" : "Read the screen, then tap CONTINUE (or A)";
+  if (in_flight(ts)) return lefty_on ? "D-Lt/Up fire, Circle Pad steers, D-Dn backs out" : "X/Y fire, Circle Pad steers, B backs out";
+  return lefty_on ? "Sticks scroll the page \xb3 D-Rt: Enter \xb3 D-Dn: back" : "Sticks scroll the page \xb3 A: Enter \xb3 B: back";
 }
 // Prompt strip (y UP_H..UP_H+12): the game's question, a toast, or the line being typed; scrolls when long.
 // On the bridge it stops at x 236 (the action buttons run down to y 170 beside it).
