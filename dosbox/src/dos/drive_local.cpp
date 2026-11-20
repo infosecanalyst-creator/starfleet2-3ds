@@ -23,6 +23,7 @@
 #include <string.h>
 #include <time.h>
 #include <errno.h>
+#include <ctype.h>
 
 #include "dosbox.h"
 #include "dos_inc.h"
@@ -445,8 +446,9 @@ bool localDrive::Rename(char * oldname,char * newname) {
 	CROSS_FILENAME(newnew);
 #ifdef SF2_3DS
 	SF2_FORGET(0);
-	int temp=sf2w_rename(newold,dirCache.GetExpandName(newnew));
-	if (temp == 0) sf2_game_wrote(newold);
+	char sf2_new[CROSS_LEN]; safe_strncpy(sf2_new, dirCache.GetExpandName(newnew), CROSS_LEN);
+	int temp=sf2w_rename(newold,sf2_new);
+	if (temp == 0) sf2_game_wrote(sf2_new);
 #else
 	int temp=rename(newold,dirCache.GetExpandName(newnew));
 #endif
@@ -681,11 +683,35 @@ localFile::localFile(const char* _name, FILE * handle) {
 #ifdef SF2_3DS
 unsigned int sf2_io_ops = 0, sf2_io_disk = 0;     // file operations, and those that went to the SD card
 // Rule 17 (exit save): the 3DS layer watches the game's writes after it presses the quick save.
+// Only a real save counts: the game also writes its logs and planet files on its own (seen on
+// hardware: a Ctrl+Q that saved nothing still wrote RPTLOG.5, CMBLOG.5 and PAF0.006).
 unsigned int sf2_game_writes = 0;                 // DOS writes and renames by the game
-char sf2_game_write_path[CROSS_LEN] = "";         // the file last written (for the debug log)
+unsigned int sf2_save_writes = 0;                 // ... of those, to files that can be a save
+char sf2_game_write_path[CROSS_LEN] = "";         // the file last written
+char sf2_save_write_path[CROSS_LEN] = "";         // the save-type file last written
+char sf2_exit_files[512] = "";                    // distinct files written since sf2_exit_files_mark() (debug log)
+static bool sf2_not_save(const char* path) {      // logs, scan and planet files: never the save itself
+	const char* b = strrchr(path, '/'); b = b ? b + 1 : path;
+	char u[64]; size_t i = 0;
+	for (; b[i] && i < sizeof u - 1; i++) u[i] = (char)toupper((unsigned char)b[i]);
+	u[i] = 0;
+	if (strstr(u, "LOG.") || strstr(u, "LOG_")) return true;          // RPTLOG, CMBLOG, MSGLOG, PLOG, SPD_LOG
+	return !strncmp(u, "SPD", 3) || !strncmp(u, "SCANFAIL", 8) || !strncmp(u, "PAF", 3);
+}
+void sf2_exit_files_mark() { sf2_exit_files[0] = 0; }
 void sf2_game_wrote(const char* path) {
 	sf2_game_writes++;
-	if (path && path[0] && strcmp(path, sf2_game_write_path) != 0) safe_strncpy(sf2_game_write_path, path, CROSS_LEN);
+	if (!path || !path[0] || strcmp(path, sf2_game_write_path) == 0) {
+		if (path && path[0] && !sf2_not_save(path)) sf2_save_writes++;
+		return;
+	}
+	safe_strncpy(sf2_game_write_path, path, CROSS_LEN);
+	const char* b = strrchr(path, '/'); b = b ? b + 1 : path;
+	if (!strstr(sf2_exit_files, b) && strlen(sf2_exit_files) + strlen(b) + 2 < sizeof sf2_exit_files) {
+		if (sf2_exit_files[0]) strcat(sf2_exit_files, " ");
+		strcat(sf2_exit_files, b);
+	}
+	if (!sf2_not_save(path)) { sf2_save_writes++; safe_strncpy(sf2_save_write_path, path, CROSS_LEN); }
 }
 // Queue every open game file's unwritten changes for the background writer (exit save: files the
 // game still holds open would otherwise only reach the card when it closes them).

@@ -68,6 +68,8 @@ static int tap_x = -1, tap_y = -1;
 static bool pause_open = false, quit_confirm = false;
 static bool unsaved_confirm = false;   // the exit question is "Not saved! Exit anyway?" (rule 17)
 static bool exit_ui = false;           // the platform's exit save is running: "Saving..." (rule 17)
+static int unsaved_reason = 0;         // 0 the save did not finish, 1 the game refused
+static bool exit_cant = false;         // the game said this mission can't be saved (until the next sign-on menu)
 static int pause_focus = 0;            // D-Pad focus in the START menu (confirm: 0 YES, 1 NO)
 // Busy feedback: a button was pressed and the game hasn't answered yet (see frame()).
 static uint32_t busy_since = 0; static bool busy_now = false;
@@ -494,6 +496,26 @@ static bool window_hints(const TextScreen& ts) {     // a window with its own ke
 }
 
 static bool cursor_question(const TextScreen& ts);
+// A yes/no question shown anywhere on rows 1-23 ("Do you want to switch to Practice mode?"), whatever
+// its colours (hardware, Nov 20: the Practice question came up inside the menu screen with no YES/NO
+// buttons). A short line that ends in '?' (or '?' then a [Y]/[N] hint) and asks Do/Are you / want to.
+static std::string dialog_question(const TextScreen& ts) {
+  for (int r = 1; r < 24; r++) {
+    std::string row = trim(row_str(ts, r, 0, 80));
+    size_t q = row.rfind('?');
+    if (q == std::string::npos || row.size() > 70) continue;
+    std::string tail = row.substr(q + 1);
+    bool end_ok = trim(tail).empty() || tail.find("[Y") != std::string::npos || tail.find("[N") != std::string::npos ||
+                  tail.find("(Y") != std::string::npos;
+    if (!end_ok) continue;
+    if (row.find("Do you") != std::string::npos || row.find("Are you") != std::string::npos ||
+        row.find("want to") != std::string::npos || row.find("Overwrite") != std::string::npos ||
+        row.find("overwrite") != std::string::npos || row.find("Replace") != std::string::npos)
+      return row;
+  }
+  return "";
+}
+static bool practice_on = false;   // the player said YES to a Practice-mode question (the EXIT wording)
 static int glay_kind();   // the generic layout's kind (G_PLAIN / G_MENU / G_MAP, defined below)
 // What the touch screen's button row offers right now (set by bottom_rows; the idle redraw of the
 // prompt strip reuses it, which is safe because that path only runs while the screen is unchanged).
@@ -587,6 +609,7 @@ static void bottom_rows(Surf& s, const TextScreen& ts) {
   std::vector<MenuItem> items = parse_menu(ts, prompt);
 
   bool yesno = (prompt.find('?') != std::string::npos && items.empty()) || cursor_question(ts);
+  { std::string dq = dialog_question(ts); if (!dq.empty()) { yesno = true; prompt = dq; } }
   if (yesno) items.clear();
   for (int r = 1; r < 24 && !yesno; r++) {        // a dialog asking a question ("Do you still want to exit?")
     std::string row = row_str(ts, r, 0, 80);
@@ -1074,6 +1097,7 @@ static bool find_map(const TextScreen& ts, GLayout& g) {
 static void analyse(const TextScreen& ts) {
   glay.kind = G_PLAIN; glay.items.clear(); glay.r0 = glay.c0 = 0; glay.r1 = glay.c1 = -1;
   if (kb_open) return;
+  if (!dialog_question(ts).empty()) return;   // a question is up: YES/NO, not the menu behind it
   if (find_map(ts, glay)) return;
   if (find_menu(ts, glay)) return;
   glay.kind = G_PLAIN; glay.r1 = glay.c1 = -1;
@@ -1568,12 +1592,23 @@ static void pause_bottom(Surf& s, const TextScreen& ts) {
   s.fill(0, 0, BOT_W, BOT_H, BG);
   if (quit_confirm) {
     header_bar(s, "EXIT GAME");
-    // rule 17: on the bridge EXIT quick saves first; if that save did not finish, this asks again
+    // rule 17: on the bridge EXIT tries the game's own save first, and only promises what it can
+    // (hardware, Nov 20: a Practice mission's Ctrl+Q wrote only logs)
     const bool br = ts.text_mode && is_bridge(ts);
-    const char* l1 = unsaved_confirm ? "Not saved! Exit anyway?" : "Exit Star Fleet II?";
-    const char* l2 = unsaved_confirm ? "The quick save did not finish." :
-                     br ? "Your place is quick saved first." : "Anything since your last save is lost.";
-    const char* l3 = unsaved_confirm ? "NO keeps playing." : br ? "" : "(Quick save works on the bridge.)";
+    const char *l1, *l2, *l3;
+    if (unsaved_confirm) {
+      l1 = "Not saved! Exit anyway?";
+      l2 = unsaved_reason == 1 ? "The game says this mission can't be saved." : "The save did not finish.";
+      l3 = "NO keeps playing.";
+    } else if (!br) {
+      l1 = "Exit Star Fleet II?"; l2 = "Anything since your last save is lost."; l3 = "(The game saves on the bridge only.)";
+    } else if (exit_cant) {
+      l1 = "Exit Star Fleet II?"; l2 = "This mission can't be saved (the game"; l3 = "said so): it ends here.";
+    } else if (practice_on) {
+      l1 = "Exit Star Fleet II?"; l2 = "Practice missions may not save."; l3 = "The game's save is tried first.";
+    } else {
+      l1 = "Exit Star Fleet II?"; l2 = "The game's save is tried first."; l3 = "New saves are named EXITSAVE.";
+    }
     fit_text(s, (BOT_W - text_width(l1, F8x16)) / 2, 50, BOT_W - 6, l1, F8x16, unsaved_confirm ? rgb(255, 120, 100) : BTN_TXT, "pause");
     fit_text(s, (BOT_W - text_width(l2, F6x12)) / 2, 80, BOT_W - 6, l2, F6x12, HINT, "pause");
     if (*l3) fit_text(s, (BOT_W - text_width(l3, F6x12)) / 2, 96, BOT_W - 6, l3, F6x12, HINT, "pause");
@@ -1606,7 +1641,7 @@ static void saving_bottom(Surf& s) {
   header_bar(s, "EXIT GAME");
   const char* l1 = "Saving...";
   fit_text(s, (BOT_W - text_width(l1, F8x16)) / 2, 60, BOT_W - 6, l1, F8x16, TITLE, "saving");
-  const char* l2 = "Quick saving your place on the bridge.";
+  const char* l2 = "Saving your place on the bridge.";
   fit_text(s, (BOT_W - text_width(l2, F6x12)) / 2, 92, BOT_W - 6, l2, F6x12, BTN_TXT, "saving");
   // moving bar (never looks dead, rule 3)
   int x0 = 40, x1 = BOT_W - 40, w = 48, span = x1 - x0 - w;
@@ -1622,6 +1657,73 @@ static void saving_bottom(Surf& s) {
 // ------------------------------------------------------------------ public API
 bool can_quick_save() { return last.text_mode && is_bridge(last); }
 void quick_save() { press(K_Q, M_CTRL); }
+
+// The exit save sequence (rule 17). Ctrl+Q saves under the name last given in Save Mission; with no
+// name yet it may do nothing or ask for one. So: Ctrl+Q; if no save file is written within 2.5 s,
+// the full save (Ctrl+V, then Alt+V if Ctrl+V changed nothing). A file-name prompt gets EXITSAVE +
+// Enter, an overwrite / save question gets Y, and a "cannot be saved" message (Practice) ends it.
+// Later exits then find the name set, and Ctrl+Q is enough.
+enum EsPhase { ES_OFF, ES_QUICK, ES_FULL, ES_FULL_ALT };
+static EsPhase es_phase = ES_OFF;
+static uint32_t es_t = 0, es_y_at = 0; static uint32_t es_sig = 0; static bool es_name_sent = false;
+static std::string es_note;
+static TextScreen es_ts0;              // the screen when the sequence began (only new text is read)
+static std::string lower(std::string x) { for (auto& c : x) c = (char)tolower((unsigned char)c); return x; }
+void exit_save_begin() {
+  press(K_Q, M_CTRL);
+  es_phase = ES_QUICK; es_t = now(); es_sig = screen_sig(last); es_name_sent = false; es_y_at = 0; es_ts0 = last;
+  es_note = "Ctrl+Q";
+}
+const char* exit_save_note() { return es_note.c_str(); }
+bool exit_save_refused() { return exit_cant; }
+int exit_save_step(bool save_written, bool save_quiet) {
+  if (es_phase == ES_OFF) return ES_NOTHING;
+  if (!queue.empty()) return ES_RUNNING;
+  uint32_t t = now();
+  if (save_quiet) { es_phase = ES_OFF; return ES_SAVED; }
+  const TextScreen& ts = last;
+  if (ts.text_mode) {
+    for (int r = 0; r < 25; r++) {               // the game refuses: Practice, or no saving here
+      if (!memcmp(ts.ch[r], es_ts0.ch[r], 80)) continue;   // (old COMMS lines are not its answer)
+      std::string row = lower(trim(row_str(ts, r, 0, 80)));
+      bool sv = row.find("save") != std::string::npos;
+      if ((sv && (row.find("cannot") != std::string::npos || row.find("can't") != std::string::npos ||
+                  row.find("unable") != std::string::npos || row.find("not be") != std::string::npos ||
+                  row.find("not allowed") != std::string::npos || row.find("practice") != std::string::npos)) ||
+          row.find("not saved") != std::string::npos) {
+        es_note += " -> refused: \"" + trim(row_str(ts, r, 0, 80)) + "\"";
+        es_phase = ES_OFF; exit_cant = true; return ES_CANT;
+      }
+    }
+    std::string q = dialog_question(ts);
+    if (q.empty() && cursor_question(ts)) q = trim(row_str(ts, ts.cursor_y, 0, 80));
+    std::string ql = lower(q);
+    if (!q.empty() && (ql.find("overwrite") != std::string::npos || ql.find("replace") != std::string::npos ||
+                       ql.find("exist") != std::string::npos || ql.find("save") != std::string::npos)) {
+      if (t - es_y_at > 1500) { es_y_at = t; press(K_Y); es_note += " -> Y (\"" + q + "\")"; }
+      return ES_RUNNING;
+    }
+    if (!es_name_sent && ts.cursor_y >= 0 && ts.cursor_y < 25 &&     // a file-name prompt on the cursor's row
+        memcmp(ts.ch[ts.cursor_y], es_ts0.ch[ts.cursor_y], 80)) {
+      std::string cr = lower(row_str(ts, ts.cursor_y, 0, 80));
+      if (cr.find("file") != std::string::npos || cr.find("name") != std::string::npos || cr.find("save") != std::string::npos) {
+        type_text("EXITSAVE"); press(K_ENTER); es_name_sent = true; es_t = t;
+        es_note += " -> name EXITSAVE (\"" + trim(row_str(ts, ts.cursor_y, 0, 80)) + "\")";
+        return ES_RUNNING;
+      }
+    }
+  }
+  if (save_written) return ES_RUNNING;            // writing: wait until it goes quiet
+  uint32_t el = t - es_t;
+  if (es_phase == ES_QUICK && el > 2500 && !es_name_sent) {
+    press(K_V, M_CTRL); es_phase = ES_FULL; es_t = t; es_sig = screen_sig(ts); es_note += " -> nothing, Ctrl+V";
+  } else if (es_phase == ES_FULL && el > 1500 && !es_name_sent && screen_sig(ts) == es_sig) {
+    press(K_V, M_ALT); es_phase = ES_FULL_ALT; es_t = t; es_sig = screen_sig(ts); es_note += " -> no change, Alt+V";
+  } else if ((es_phase == ES_FULL || es_phase == ES_FULL_ALT || es_name_sent) && el > 6000) {
+    es_note += " -> nothing written"; es_phase = ES_OFF; return ES_NOTHING;
+  }
+  return ES_RUNNING;
+}
 bool keys_pending() { return !queue.empty(); }
 void exit_save_ui(bool on) {
   if (on == exit_ui) return;
@@ -1629,8 +1731,8 @@ void exit_save_ui(bool on) {
   if (on) { pause_open = false; quit_confirm = false; unsaved_confirm = false; manual_open = false; kb_open = false; focus_mode = false; pressed_id.valid = false; }
   dirty();
 }
-void exit_unsaved_ask() {
-  exit_ui = false;
+void exit_unsaved_ask(int reason) {
+  exit_ui = false; unsaved_reason = reason;
   pause_open = true; quit_confirm = true; unsaved_confirm = true; pause_focus = 1;   // focus on NO
   manual_open = false; focus_mode = false;
   dirty();
@@ -1668,9 +1770,16 @@ static void typed_enter() {
   typed.clear();
 }
 
+// The answer to a Practice-mode question decides what EXIT promises (practice missions may not save).
+static void note_answer(Key k) {
+  std::string q = dialog_question(last);
+  if (q.find("ractice") == std::string::npos) return;
+  if (k == K_Y || k == K_ENTER) practice_on = true;
+  else if (k == K_N) practice_on = false;
+}
 static void fire(const Act& a) {
   switch (a.kind) {
-    case A_KEY: if (a.key != K_NONE) press(a.key, a.mods); if (a.key == K_ENTER) typed_enter(); busy_since = now(); break;
+    case A_KEY: note_answer(a.key); if (a.key != K_NONE) press(a.key, a.mods); if (a.key == K_ENTER) typed_enter(); busy_since = now(); break;
     case A_VIEW: {
       view_goal = a.arg; view_esc = 0; view_next = now(); busy_since = now();
       // P2-5: the first two taps on each view say in one line what it is (at most 38 characters,
@@ -1770,6 +1879,7 @@ Redraw frame(const TextScreen& ts, uint16_t* top, uint16_t* bottom) {
     }
   }
 
+  if (ts.text_mode && exit_cant && screen_has(ts, "SIGN-ON OPTIONS")) exit_cant = false;   // a new mission may save
   // keyboard opens by itself when the game asks for typed text
   if (ts.text_mode && !manual_open) {
     bool want = wants_text(ts);
@@ -2211,7 +2321,7 @@ void buttons(uint32_t held, uint32_t pr, uint32_t rel) {
     held &= ~PAD; pr &= ~PAD;
   }
   if (pr & B_SELECT) fire(kind_act(is_bridge(last) ? A_SAVE : A_KB));   // quick save on the bridge
-  if (pr & B_A) { press(K_ENTER); typed_enter(); }
+  if (pr & B_A) { note_answer(K_ENTER); press(K_ENTER); typed_enter(); }
   if (pr & B_B) press(K_ESC);
   if (pr & B_X) press(K_INSERT);           // fire phasers
   if (pr & B_Y) press(K_DELETE);           // fire torpedoes

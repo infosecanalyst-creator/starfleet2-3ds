@@ -147,28 +147,31 @@ static void quit_app() { sf2ctr_log("exit chosen in the START menu"); quit_req =
 
 // ------------------------------------------------------------------ exit save (UI rule 17)
 // START > EXIT GAME, or the system closing the app (HOME > Close, power button): if the game is on
-// the bridge, press its own quick save (Ctrl+Q, as SELECT does), keep the emulation running until
-// the game has written its files, then stop DOSBox. main() then waits for the background writer to
-// put those files on the card (sf2ctr_log_flush(true) -> sf2w_wait(0)) before the app ends.
+// the bridge, run sf2ui's save sequence (the game's own Ctrl+Q; with no save name yet the full save,
+// Ctrl+V, answered with the name EXITSAVE), keep the emulation running until the game has written a
+// real save file, then stop DOSBox. main() then waits for the background writer to put the files on
+// the card (sf2ctr_log_flush(true) -> sf2w_wait(0)) before the app ends.
 //
 // Everything here runs on the emulation (main) thread, from sf2ctr_events(), between emulated
 // milliseconds; nothing waits and nothing is done in the APT hooks (a wait inside the HOME/sleep
 // hook froze HOME on hardware, 51483e3). A HOME press itself (suspend) does not save.
 //
-// "Written" = the game made at least one DOS write after the keys went in, then nothing for
-// EX_QUIET_MS; then every file the game still holds open is queued too. Timeouts: the first write
-// must come within EX_START_MS of the keys going in, and all of it within EX_TOTAL_MS. On a time-
-// out, START > EXIT asks "Not saved! Exit anyway?" (focus on NO); a system close just exits.
-extern unsigned int sf2_game_writes;            // drive_local.cpp: DOS writes / renames by the game
-extern char sf2_game_write_path[];
+// Only a save-type file counts (drive_local.cpp leaves out the game's logs, scan and planet files,
+// which it writes anyway: hardware, Nov 20, a Ctrl+Q that saved nothing still wrote RPTLOG.5,
+// CMBLOG.5 and PAF0.006). Done = such a write, then EX_QUIET_MS without any game write; then every
+// file the game still holds open is queued too. The whole wait is capped at EX_TOTAL_MS. If the
+// game refuses (Practice) or nothing is saved, START > EXIT asks "Not saved! Exit anyway?" (focus on
+// NO); a system close just exits.
+extern unsigned int sf2_game_writes, sf2_save_writes;   // drive_local.cpp
+extern char sf2_save_write_path[], sf2_exit_files[];
 void sf2_flush_open_files();                    // drive_local.cpp
-static const unsigned EX_QUIET_MS = 700, EX_START_MS = 3000, EX_TOTAL_MS = 8000;
+void sf2_exit_files_mark();
+static const unsigned EX_QUIET_MS = 700, EX_TOTAL_MS = 15000;
 enum ExitState { EX_NONE, EX_SAVING, EX_ASKED };
 static ExitState ex_state = EX_NONE;
 static bool ex_home = false;                    // the system is closing the app: no screens, no question
-static unsigned ex_ms = 0, ex_keys_ms = 0, ex_last_ms = 0;   // run time of the wait (HOME pauses excluded)
-static unsigned ex_io_last = 0, ex_n = 0;
-static bool ex_keys_in = false, ex_wrote = false;
+static unsigned ex_ms = 0, ex_last_ms = 0;      // run time of the wait (HOME pauses excluded)
+static unsigned ex_io_last = 0, ex_save0 = 0;
 static u64 ex_prev = 0;
 
 static void exit_now(const char* why) {
@@ -180,39 +183,38 @@ static void exit_begin(bool home) {
     if (home && !ex_home) { ex_home = true; sf2ctr_log("exit save: the system is closing the app; still waiting"); }
     return;
   }
-  if (!sf2ui::can_quick_save()) exit_now(home ? "closed by the system, not on the bridge (no quick save)"
-                                              : "EXIT GAME, not on the bridge (no quick save)");
-  sf2ui::quick_save();
+  if (!sf2ui::can_quick_save()) exit_now(home ? "closed by the system, not on the bridge (no save)"
+                                              : "EXIT GAME, not on the bridge (no save)");
+  if (sf2ui::exit_save_refused()) exit_now("this mission can't be saved (the game said so earlier)");
+  sf2_exit_files_mark();
+  sf2ui::exit_save_begin();
   if (!home) sf2ui::exit_save_ui(true);
   ex_state = EX_SAVING; ex_home = home;
-  ex_ms = ex_keys_ms = ex_last_ms = 0; ex_n = 0;
-  ex_io_last = sf2_game_writes;
-  ex_keys_in = ex_wrote = false;
+  ex_ms = ex_last_ms = 0;
+  ex_io_last = sf2_game_writes; ex_save0 = sf2_save_writes;
   ex_prev = osGetTime();
   quit_req = false;
-  sf2ctr_log("exit save: quick save pressed (%s)", home ? "closed by the system" : "EXIT GAME");
+  sf2ctr_log("exit save: started (%s)", home ? "closed by the system" : "EXIT GAME");
 }
 static void exit_step() {
   u64 t = osGetTime();
   unsigned d = (unsigned)(t - ex_prev); ex_prev = t;
   ex_ms += d > 100 ? 100 : d;                   // (time spent suspended in the HOME Menu does not count)
-  if (!ex_keys_in) {                            // writes before the keys are in are not the save
-    ex_io_last = sf2_game_writes;
-    if (!sf2ui::keys_pending()) { ex_keys_in = true; ex_keys_ms = ex_ms; }
-  }
-  if (ex_keys_in && sf2_game_writes != ex_io_last) {
-    ex_n += sf2_game_writes - ex_io_last; ex_io_last = sf2_game_writes; ex_last_ms = ex_ms; ex_wrote = true;
-  }
-  if (ex_wrote && ex_ms - ex_last_ms >= EX_QUIET_MS) {
+  if (sf2_game_writes != ex_io_last) { ex_io_last = sf2_game_writes; ex_last_ms = ex_ms; }
+  bool saved = sf2_save_writes != ex_save0;
+  bool quiet = saved && ex_ms - ex_last_ms >= EX_QUIET_MS;
+  int st = sf2ui::exit_save_step(saved, quiet);
+  if (st == sf2ui::ES_SAVED) {
     sf2_flush_open_files();
-    sf2ctr_log("exit save: %u writes, last %s, done %u ms after the keys", ex_n, sf2_game_write_path, ex_last_ms - ex_keys_ms);
-    exit_now("quick saved; the background writer finishes the files before the app ends");
+    sf2ctr_log("exit save: saved (%s); files written: %s; save file %s", sf2ui::exit_save_note(), sf2_exit_files, sf2_save_write_path);
+    exit_now("saved; the background writer finishes the files before the app ends");
   }
-  bool late = (ex_keys_in && !ex_wrote && ex_ms - ex_keys_ms > EX_START_MS) || ex_ms > EX_TOTAL_MS;
-  if (!late) return;
-  sf2ctr_log("exit save: not finished (%s, %u writes after %u ms)", ex_wrote ? "still writing" : "no writes", ex_n, ex_ms);
-  if (ex_home) exit_now("closed by the system; the save did not finish");
-  sf2ui::exit_unsaved_ask();
+  if (st == sf2ui::ES_RUNNING && ex_ms <= EX_TOTAL_MS) return;
+  sf2ctr_log("exit save: not saved (%s; %s after %u ms); files written: %s", sf2ui::exit_save_note(),
+             st == sf2ui::ES_CANT ? "the game refused" : st == sf2ui::ES_NOTHING ? "no save file" : "timed out",
+             ex_ms, sf2_exit_files[0] ? sf2_exit_files : "none");
+  if (ex_home) exit_now("closed by the system; not saved");
+  sf2ui::exit_unsaved_ask(st == sf2ui::ES_CANT ? 1 : 0);
   ex_state = EX_ASKED;
 }
 static sf2ui::Host host = {key_logged, click, ms, "sdmc:/3ds/starfleet2/manual.txt", "sdmc:/3ds/starfleet2/officer.txt", save_bg, quit_app, "sdmc:/3ds/starfleet2/lefty.txt",

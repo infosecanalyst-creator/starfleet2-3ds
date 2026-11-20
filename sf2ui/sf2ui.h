@@ -103,8 +103,16 @@ void force_redraw();  // test harness: redraw both screens on the next frame
 bool can_quick_save();       // the game is on the bridge
 void quick_save();           // press the game's quick save (Ctrl+Q), as SELECT does
 bool keys_pending();         // injected key events still waiting to go in
+// The save sequence: Ctrl+Q, then the full save (Ctrl+V / Alt+V) answering a file-name prompt with
+// EXITSAVE and overwrite / save questions with Y. Step it every poll with what the platform saw:
+// save_written = a save-type file was written since begin, save_quiet = and nothing for a while.
+enum { ES_RUNNING = 0, ES_SAVED = 1, ES_CANT = -1, ES_NOTHING = -2 };
+void exit_save_begin();
+int exit_save_step(bool save_written, bool save_quiet);
+const char* exit_save_note();   // what the sequence did (for the debug log)
+bool exit_save_refused();       // the game already said this mission can't be saved
 void exit_save_ui(bool on);  // show / hide the "Saving..." panel
-void exit_unsaved_ask();     // ask "Not saved! Exit anyway?"
+void exit_unsaved_ask(int reason);   // ask "Not saved! Exit anyway?" (reason 1: the game refused)
 bool exit_prompt_open();     // that question is still open
 
 }  // namespace sf2ui
