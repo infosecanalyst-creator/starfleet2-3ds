@@ -72,6 +72,11 @@ ZL           Swap the screens on the bridge and in
              tap presses; the Circle Pad also moves
              the pointer (course and speed are then
              on the touch buttons)
+ZR           Button ring: press ZR and the D-Pad
+             moves a gold ring over the touch
+             buttons, A presses the ringed button,
+             B or ZR goes back to normal. Everything
+             you can tap works this way too.
 C-Stick      Up/down: hyperspace speed +1 / -1
 C-Stick      Bridge: review earlier messages (left/right)
 Sticks       Off the bridge (orders, reports, any long

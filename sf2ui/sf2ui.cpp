@@ -74,6 +74,13 @@ static int view_goal = -1, view_esc = 0; static uint32_t view_next = 0;
 static bool tdb_drive = false; static int tdb_tc, tdb_tr, tdb_steps; static uint32_t tdb_next = 0;
 static bool tdb_enter_after = false; static int tdb_best = 9999;
 
+// ZR focus mode (rule 6): on the game screens the D-Pad and A belong to the game (arrow keys, Enter),
+// so ZR hands them to the touch buttons for a while: the D-Pad moves a gold ring, A presses the ringed
+// button, B or ZR hands them back. (fx, fy): centre of the ringed button.
+static bool focus_mode = false; static int fx = 160, fy = 200;
+static bool lefty_on = false, lefty_loaded = false;   // left-handed play (rule 10)
+static void lefty_load();
+
 static TextScreen last;                // last screen drawn (for change detection)
 static uint32_t ui_version = 1, drawn_version = 0;
 static bool last_text_mode = false;
@@ -453,6 +460,7 @@ static RowMode row_mode = R_DEFAULT;
 // Newcomer guidance: one short line saying what to do on this screen (at most 52 characters so it
 // fits the touch screen's prompt strip without scrolling; the top screen's hint strip shows it too).
 static const char* context_hint(const TextScreen& ts) {
+  if (focus_mode) return lefty_on ? "Ring: ABXY move, D-Rt press, D-Dn or ZR done" : "Ring: D-Pad move, A press, B or ZR done";
   if (!ts.text_mode) return "Tap CONTINUE or press A";
   if (is_bridge(ts)) {
     int c, r;
@@ -1105,8 +1113,6 @@ static void manual_wrap(Section& sec, int w) {
     } while (!line.empty());
   }
 }
-static bool lefty_on = false, lefty_loaded = false;
-static void lefty_load();
 // House top screen (look-and-feel): 22-px header bar with the section title in gold at x 8 and the
 // section number right-aligned, 1:1 text from y 28, the gold hint strip at y 224.
 static void manual_top(Surf& s) {
@@ -1465,6 +1471,16 @@ Redraw frame(const TextScreen& ts, uint16_t* top, uint16_t* bottom) {
     if (draw_top) { generic_top(ts_top, ts); top_native = false; }
     rd.top = draw_top; rd.bottom = true;
   }
+  if (focus_mode && !manual_open && !pause_open) {     // ring the button nearest the last focus point
+    int best = -1, bd = 1 << 30;
+    for (int i = 0; i < (int)btns.size(); i++) {
+      if (btns[i].off) continue;
+      int dx = (btns[i].x0 + btns[i].x1) / 2 - fx, dy = (btns[i].y0 + btns[i].y1) / 2 - fy, d = dx * dx + dy * dy;
+      if (d < bd) { bd = d; best = i; }
+    }
+    if (best < 0) focus_mode = false;
+    else btns[best].focus = true;
+  }
   for (int i = 0; i < (int)btns.size(); i++) draw_btn(ts_bot, i);
   memcpy(&last, &ts, sizeof ts);
   last_text_mode = ts.text_mode;
@@ -1676,7 +1692,42 @@ void buttons(uint32_t held, uint32_t pr, uint32_t rel) {
     }
     return;
   }
-  if (pr & B_START) { pause_open = true; quit_confirm = false; pause_focus = 0; H->click(); dirty(); return; }
+  if (pr & B_START) { pause_open = true; quit_confirm = false; pause_focus = 0; focus_mode = false; H->click(); dirty(); return; }
+  if (pr & B_ZR) {
+    focus_mode = !focus_mode;
+    if (focus_mode) say(lefty_on ? "ABXY: move  D-Rt: press  D-Dn/ZR: done" : "D-Pad: move  A: press  B/ZR: done", 3000);
+    dirty(); return;
+  }
+  if (focus_mode) {
+    const uint32_t PAD = B_DUP | B_DDOWN | B_DLEFT | B_DRIGHT | B_A | B_B;
+    int cur = -1;
+    for (int i = 0; i < (int)btns.size(); i++) if (btns[i].focus) cur = i;
+    if (cur >= 0) {
+      int cx = (btns[cur].x0 + btns[cur].x1) / 2, cy = (btns[cur].y0 + btns[cur].y1) / 2;
+      static const uint32_t dirs[4] = {B_DRIGHT, B_DLEFT, B_DDOWN, B_DUP};
+      for (int d = 0; d < 4; d++) {
+        if (!repeat_due(dirs[d], held, pr)) continue;
+        int best = -1, bc = 1 << 30;
+        for (int i = 0; i < (int)btns.size(); i++) {
+          if (i == cur || btns[i].off) continue;
+          int bx = (btns[i].x0 + btns[i].x1) / 2, by = (btns[i].y0 + btns[i].y1) / 2;
+          int along = d == 0 ? bx - cx : d == 1 ? cx - bx : d == 2 ? by - cy : cy - by;
+          int across = d < 2 ? abs(by - cy) : abs(bx - cx);
+          if (along <= 0) continue;
+          int cost = along + 2 * across;
+          if (cost < bc) { bc = cost; best = i; }
+        }
+        if (best >= 0) { fx = (btns[best].x0 + btns[best].x1) / 2; fy = (btns[best].y0 + btns[best].y1) / 2; dirty(); }
+      }
+      if (pr & B_A) {
+        if (H && H->click) H->click();
+        flash_id = id_of(btns[cur]); flash_until = now() + 110; flash_on = true;
+        fire(btns[cur].act);
+      }
+    }
+    if (pr & B_B) { focus_mode = false; dirty(); }
+    held &= ~PAD; pr &= ~PAD;
+  }
   if (pr & B_SELECT) fire(kind_act(is_bridge(last) ? A_SAVE : A_KB));   // quick save on the bridge
   if (pr & B_A) { press(K_ENTER); typed_enter(); }
   if (pr & B_B) press(K_ESC);
