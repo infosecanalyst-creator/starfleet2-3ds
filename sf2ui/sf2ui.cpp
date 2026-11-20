@@ -345,15 +345,19 @@ static void split(int total, int n, int i, int& a, int& b) {
   a = i * base + (i < extra ? i : extra);
   b = a + base + (i < extra ? 1 : 0);
 }
-// Rule 11 (buttons >= 24 px, 4 px apart, 6 px from the screen edges): the touch screen is laid out as
+// Rule 11 (buttons >= 24 px, 6 px from the screen edges, 8 px apart; Ryan, Nov 20: 4 px only between
+// the segmented view tabs): the touch screen is laid out as
 //   upper area 0..UP_H (game text, maps, keyboard, the bridge's tactical display)
 //   prompt strip UP_H..UP_H+12, menu row ROW1 (24 px), views row ROW2 (24 px, ends 6 px above the edge)
-static const int UP_H = 168, ROW1_Y0 = 182, ROW1_Y1 = 206, ROW2_Y0 = 210, ROW2_Y1 = 234;
-// n buttons side by side between x0 and x1 with 4-px gaps: button i spans a..b
-static void split_gap(int x0, int x1, int n, int i, int& a, int& b) {
-  int w = x1 - x0 - 4 * (n - 1);
+static const int UP_H = 166, ROW1_Y0 = 178, ROW1_Y1 = 202, ROW2_Y0 = 210, ROW2_Y1 = 234;
+static const int GAP = 8, TAB_GAP = 4;
+// The bridge's action column runs down beside the menu row, which then stops 8 px short of it.
+static const int BRIDGE_ROW_X1 = 230;
+// n buttons side by side between x0 and x1 with gap-px gaps: button i spans a..b
+static void split_gap(int x0, int x1, int n, int i, int& a, int& b, int gap = GAP) {
+  int w = x1 - x0 - gap * (n - 1);
   int base = w / n, extra = w % n;
-  a = x0 + i * (base + 4) + (i < extra ? i : extra);
+  a = x0 + i * (base + gap) + (i < extra ? i : extra);
   b = a + base + (i < extra ? 1 : 0);
 }
 
@@ -494,14 +498,13 @@ static const char* context_hint(const TextScreen& ts) {
   return lefty_on ? "Sticks scroll the page \xb3 D-Rt: Enter \xb3 D-Dn: back" : "Sticks scroll the page \xb3 A: Enter \xb3 B: back";
 }
 // Prompt strip (y UP_H..UP_H+12): the game's question, a toast, or the line being typed; scrolls when long.
-// On the bridge it stops at x 236 (the action buttons run down to y 170 beside it).
+// On the bridge it stops at x 236 (the action buttons run down to y 190 beside it).
 static int strip_x1 = BOT_W;
 static void prompt_strip(Surf& s, const TextScreen& ts, const std::string& prompt) {
   strip_x1 = is_bridge(ts) ? 236 : BOT_W;
   const int SY = UP_H;
   s.fill(0, SY, strip_x1, SY + 12, PROMPT_BG);
-  s.fill(0, SY + 12, BOT_W, ROW1_Y0, BG);
-  if (strip_x1 < BOT_W) s.fill(strip_x1, 170, BOT_W, SY + 12, BG);   // under the bridge's action column
+  s.fill(0, SY + 12, strip_x1, ROW1_Y0, BG);   // (on the bridge the action column runs down beside it)
   if (!alert_text.empty() && (int32_t)(alert_until - now()) > 0) {
     uint16_t edge = alert_red ? rgb(255, 80, 64) : TITLE;
     s.fill(0, SY, strip_x1, ROW1_Y0, alert_red ? rgb(70, 12, 10) : rgb(60, 46, 8));
@@ -572,8 +575,9 @@ static void bottom_rows(Surf& s, const TextScreen& ts) {
                 (prompt.find("PRESS") != std::string::npos || screen_has(ts, "PRESS ANY KEY", 18, 24) || screen_has(ts, "PRESS KEY", 18, 24));
   row_mode = !items.empty() ? (window_hints(ts) ? R_WINDOW : R_MENU) : yesno ? R_YESNO : anykey ? R_ANYKEY : R_DEFAULT;
   prompt_strip(s, ts, prompt);
+  const int rx1 = is_bridge(ts) ? BRIDGE_ROW_X1 : BOT_W - 6;   // the row's right end
   if (!items.empty()) {
-    // P2-6: the game's menu row in 308 px. Even widths when every label fits; otherwise widths that
+    // P2-6: the game's menu row in 308 px (224 on the bridge). Even widths when every label fits; otherwise widths that
     // follow the labels (6x12, 4 px padding each side); if even that is too wide, pages of items
     // with a MORE button that shows the next page.
     int n = (int)items.size();
@@ -581,21 +585,21 @@ static void bottom_rows(Surf& s, const TextScreen& ts) {
     bool even_ok = true;
     for (int i = 0; i < n; i++) {
       need[i] = std::max(24, text_width(items[i].label.c_str(), F6x12) + 8);
-      int a, b; split_gap(6, BOT_W - 6, n, i, a, b);
+      int a, b; split_gap(6, rx1, n, i, a, b);
       if (text_width(items[i].label.c_str(), F6x12) > b - a - 4) even_ok = false;
     }
     std::string sig; for (auto& m : items) sig += m.label + "|";
     static std::string row_sig;
     if (sig != row_sig) { row_sig = sig; row_page = 0; }
-    int total = 4 * (n - 1); for (int w : need) total += w;
+    int total = GAP * (n - 1); for (int w : need) total += w;
     int from = 0, to = n;                     // items shown: [from, to)
     bool more = false;
-    if (!even_ok && total > BOT_W - 12) {     // pages: as many items as fit beside a 44-px MORE
+    if (!even_ok && total > rx1 - 6) {        // pages: as many items as fit beside a 44-px MORE
       std::vector<int> starts(1, 0);
       int w = 0;
       for (int i = 0; i < n; i++) {
-        int add = need[i] + (i > starts.back() ? 4 : 0);
-        if (w + add + 4 + 44 > BOT_W - 12 && i > starts.back()) { starts.push_back(i); w = need[i]; }
+        int add = need[i] + (i > starts.back() ? GAP : 0);
+        if (w + add + GAP + 44 > rx1 - 6 && i > starts.back()) { starts.push_back(i); w = need[i]; }
         else w += add;
       }
       int pages = (int)starts.size();
@@ -603,39 +607,42 @@ static void bottom_rows(Surf& s, const TextScreen& ts) {
       from = starts[row_page]; to = row_page + 1 < pages ? starts[row_page + 1] : n;
       more = true;
     }
-    int m = to - from, x = 6, avail = BOT_W - 12 - (more ? 48 : 0);
-    int used = 4 * (m - 1); for (int i = from; i < to; i++) used += need[i];
+    int m = to - from, x = 6, avail = rx1 - 6 - (more ? 44 + GAP : 0);
+    int used = GAP * (m - 1); for (int i = from; i < to; i++) used += need[i];
     int extra = std::max(0, avail - used);
     for (int i = from; i < to; i++) {
       int a, b;
-      if (even_ok) split_gap(6, BOT_W - 6, n, i, a, b);
-      else { int k = i - from; a = x; b = a + need[i] + extra / m + (k < extra % m ? 1 : 0); x = b + 4; }
+      if (even_ok) split_gap(6, rx1, n, i, a, b);
+      else { int k = i - from; a = x; b = a + need[i] + extra / m + (k < extra % m ? 1 : 0); x = b + GAP; }
       Key k = items[i].key == 27 ? K_ESC : items[i].key == 13 ? K_ENTER : key_for_char(items[i].key);
       add_btn(a, ROW1_Y0, b, ROW1_Y1, items[i].label, &F8x16, key_act(k, items[i].mods), items[i].hot, items[i].sel);
     }
-    if (more) add_btn(BOT_W - 6 - 44, ROW1_Y0, BOT_W - 6, ROW1_Y1, "MORE", &F8x16, kind_act(A_ROWPAGE));
+    if (more) add_btn(rx1 - 44, ROW1_Y0, rx1, ROW1_Y1, "MORE", &F8x16, kind_act(A_ROWPAGE));
   } else if (yesno) {
-    add_btn(6, ROW1_Y0, 158, ROW1_Y1, "YES", &F8x16, key_act(K_Y), 0);
-    add_btn(162, ROW1_Y0, 314, ROW1_Y1, "NO", &F8x16, key_act(K_N), 0);
+    int a, b;
+    split_gap(6, rx1, 2, 0, a, b); add_btn(a, ROW1_Y0, b, ROW1_Y1, "YES", &F8x16, key_act(K_Y), 0);
+    split_gap(6, rx1, 2, 1, a, b); add_btn(a, ROW1_Y0, b, ROW1_Y1, "NO", &F8x16, key_act(K_N), 0);
   } else if (kb_open && at_name_prompt(ts) && !off_name.empty() && autologin == 0) {
     std::string up = off_name;
     for (auto& ch2 : up) if (ch2 >= 'a' && ch2 <= 'z') ch2 -= 32;
     std::string lab = "SIGN ON AS " + up;
-    if (text_width(lab.c_str(), F8x16) > 206 - 4) lab = "SIGN ON";
-    add_btn(6, ROW1_Y0, 206, ROW1_Y1, lab, &F8x16, kind_act(A_SIGNON), -1, true);
-    add_btn(210, ROW1_Y0, 314, ROW1_Y1, "HIDE KEYS", &F8x16, kind_act(A_KB));
+    const int hx0 = rx1 - 104;                // HIDE KEYS: 104 px at the right end
+    if (text_width(lab.c_str(), F8x16) > hx0 - GAP - 6 - 4) lab = "SIGN ON";
+    add_btn(6, ROW1_Y0, hx0 - GAP, ROW1_Y1, lab, &F8x16, kind_act(A_SIGNON), -1, true);
+    add_btn(hx0, ROW1_Y0, rx1, ROW1_Y1, "HIDE KEYS", &F8x16, kind_act(A_KB));
   } else {
     int a, b;
-    split_gap(6, BOT_W - 6, 3, 0, a, b); add_btn(a, ROW1_Y0, b, ROW1_Y1, anykey ? "CONTINUE" : "ENTER", &F8x16, key_act(K_ENTER));
-    split_gap(6, BOT_W - 6, 3, 1, a, b); add_btn(a, ROW1_Y0, b, ROW1_Y1, "BACK", &F8x16, key_act(K_ESC));
-    split_gap(6, BOT_W - 6, 3, 2, a, b); add_btn(a, ROW1_Y0, b, ROW1_Y1, kb_open ? "HIDE KEYS" : "KEYBOARD", &F8x16, kind_act(A_KB));
+    split_gap(6, rx1, 3, 0, a, b); add_btn(a, ROW1_Y0, b, ROW1_Y1, anykey ? "CONTINUE" : "ENTER", &F8x16, key_act(K_ENTER));
+    split_gap(6, rx1, 3, 1, a, b); add_btn(a, ROW1_Y0, b, ROW1_Y1, "BACK", &F8x16, key_act(K_ESC));
+    split_gap(6, rx1, 3, 2, a, b); add_btn(a, ROW1_Y0, b, ROW1_Y1, kb_open ? "HIDE KEYS" : "KEYBOARD", &F8x16, kind_act(A_KB));
   }
-  // Seven views (MANUAL moved to the START menu: eight 6-letter buttons can't be 4 px apart in 308 px)
+  // Seven views (MANUAL moved to the START menu: eight 6-letter buttons can't be 4 px apart in 308 px).
+  // A segmented row of tabs: the one row allowed 4-px gaps (Ryan, Nov 20).
   static const char* views[7] = {"STARS", "SYSTEM", "WAR", "COMBAT", "FLEET", "ORDERS", "LOG"};
   // The views only exist during a mission (the status lights are on the top row then).
   bool in_mission = row_str(ts, 0, 0, 80).find("LOW PWR") != std::string::npos;
   for (int i = 0; i < 7; i++) {
-    int a, b; split_gap(6, BOT_W - 6, 7, i, a, b);
+    int a, b; split_gap(6, BOT_W - 6, 7, i, a, b, TAB_GAP);
     add_btn(a, ROW2_Y0, b, ROW2_Y1, views[i], &F6x12, kind_act(A_VIEW, i));
     if (!in_mission) btns.back().off = true;
   }
@@ -657,23 +664,24 @@ static bool wants_text(const TextScreen& ts) {
 }
 static void keyboard(Surf& s) {
   static const char* rows[4] = {"1234567890", "QWERTYUIOP", "ASDFGHJKL-", "ZXCVBNM,./"};
-  // 5 rows of 28-px keys, 4 px apart, y 6..162 (rule 11)
+  // 5 rows of 24-px keys, 8 px apart, y 6..158 (rule 11). Ten 24-px keys in a row leave 68 px for
+  // nine gaps in 308: 8 px each where possible, 7 px for four of them (the only gaps under 8).
   s.fill(0, 0, BOT_W, UP_H, BG);
   for (int r = 0; r < 4; r++)
     for (int k = 0; k < 10; k++) {
-      int a, b; split_gap(6, BOT_W - 6, 10, k, a, b);
+      int a = 6 + k * 24 + k * 7 + std::min(k, 5);   // gaps: 8 8 8 8 8 7 7 7 7
       std::string lab(1, rows[r][k]);
       Act ka = key_act(key_for_char(rows[r][k])); ka.kind = A_TYPE; ka.arg = rows[r][k];
-      add_btn(a, 6 + r * 32, b, 6 + r * 32 + 28, lab, &F8x16, ka);
+      add_btn(a, 6 + r * 32, a + 24, 6 + r * 32 + 24, lab, &F8x16, ka);
     }
-  const int ky0 = 6 + 4 * 32, ky1 = ky0 + 28;
-  add_btn(6, ky0, 66, ky1, "ESC", &F8x16, key_act(K_ESC));
+  const int ky0 = 6 + 4 * 32, ky1 = ky0 + 24;
+  add_btn(6, ky0, 62, ky1, "ESC", &F8x16, key_act(K_ESC));
   Act sp = key_act(K_SPACE); sp.kind = A_TYPE; sp.arg = ' ';
   Act del = key_act(K_BACKSPACE); del.kind = A_TYPE; del.arg = 8;
   Act ent = key_act(K_ENTER); ent.kind = A_TYPE; ent.arg = 13;
   add_btn(70, ky0, 186, ky1, "SPACE", &F8x16, sp);
-  add_btn(190, ky0, 250, ky1, "DEL", &F8x16, del);
-  add_btn(254, ky0, 314, ky1, "ENTER", &F8x16, ent);
+  add_btn(194, ky0, 250, ky1, "DEL", &F8x16, del);
+  add_btn(258, ky0, 314, ky1, "ENTER", &F8x16, ent);
 }
 
 // ------------------------------------------------------------------ bridge layout
@@ -814,9 +822,10 @@ static void bridge_top_narrow(Surf& s, const TextScreen& ts) {
   cells_in(s, ts, 53, 15, 58, 16, F5x9, in.x0, dsep + 1, in.x1, in.y1, 10);
 }
 
-// tactical geometry on the touch screen: cells 28..49 x 2..13 at 8x13 inside tile (0,0)-(180,168)
-// (13-px rows, down from 14, leave room for the prompt strip and two 24-px button rows under it)
-static const int TAC_X = 2, TAC_Y = 10, TAC_CW = 8, TAC_LH = 13;
+// tactical geometry on the touch screen: cells 28..49 x 2..13 at 8x13 inside tile (0,0)-(180,166)
+// (13-px rows, down from 14, leave room for the prompt strip and two 24-px button rows 8 px apart
+// under it; the cells start one pixel into the title band so the 12 rows end above the frame)
+static const int TAC_X = 2, TAC_Y = 9, TAC_CW = 8, TAC_LH = 13;
 
 static void bridge_bottom(Surf& s, const TextScreen& ts) {
   std::string t1 = row_str(ts, 1, 29, 50), title;
@@ -829,23 +838,24 @@ static void bridge_bottom(Surf& s, const TextScreen& ts) {
   Box in = tile(s, 0, 0, 180, UP_H, full.c_str());
   TextScreen t2 = ts;
   t2.ch[7][28] = ' '; t2.at[7][28] = 0;     // last digit of the port heading, not an axis label
-  if (22 * TAC_CW > in.x1 - in.x0 || 12 * TAC_LH > in.y1 - in.y0) fit_problem("tactical display is bigger than its tile");
-  cells(s, t2, 28, 2, 49, 13, F8x14, in.x0, in.y0, TAC_CW, TAC_LH);
+  if (TAC_X + 22 * TAC_CW > in.x1 || TAC_Y + 12 * TAC_LH > UP_H - 1) fit_problem("tactical display is bigger than its tile");
+  cells(s, t2, 28, 2, 49, 13, F8x14, TAC_X, TAC_Y, TAC_CW, TAC_LH);
   int tc, tr;
   (void)tc; (void)tr;
   in = tile(s, 180, 0, 236, UP_H, "NAV");
   cells_in(s, ts, 18, 2, 25, 13, F6x12, in.x0, in.y0, in.x1, in.y1);
-  // the action column, x 240..314: six rows of 24 px, 4 px apart, y 6..170 (rule 11); shields and
-  // speed are +/- pairs of 35-px buttons so the tap mode and FREEZE still fit
-  const int AX0 = 240, AX1 = 314, AXM = 275;   // halves: 240..275 and 279..314
-  s.fill(236, 0, BOT_W, ROW1_Y0, BG);   // clear behind the buttons: text from the previous screen showed in the gaps
-  auto ry = [](int r) { return 6 + r * 28; };
+  // the action column, x 238..314: six rows of 24 px, 8 px apart, y 6..190 (rule 11), beside the
+  // prompt strip and the menu row (which stops at x 230 on the bridge); shields and speed are +/-
+  // pairs of 34-px buttons, 8 px apart, so the tap mode and FREEZE still fit
+  const int AX0 = 238, AX1 = 314, AXM = 272;   // halves: 238..272 and 280..314
+  s.fill(236, 0, BOT_W, ROW1_Y1, BG);   // clear behind the buttons: text from the previous screen showed in the gaps
+  auto ry = [](int r) { return 6 + r * 32; };
   add_btn(AX0, ry(0), AX1, ry(0) + 24, "PHASERS", &F8x16, key_act(K_INSERT));
   add_btn(AX0, ry(1), AX1, ry(1) + 24, "TORPS", &F8x16, key_act(K_DELETE));
   add_btn(AX0, ry(2), AXM, ry(2) + 24, "SHLD+", &F6x12, key_act((Key)(K_F1 + 7)));
-  add_btn(AXM + 4, ry(2), AX1, ry(2) + 24, "SHLD-", &F6x12, key_act((Key)(K_F1 + 6)));
+  add_btn(AXM + GAP, ry(2), AX1, ry(2) + 24, "SHLD-", &F6x12, key_act((Key)(K_F1 + 6)));
   add_btn(AX0, ry(3), AXM, ry(3) + 24, "SPD+", &F6x12, key_act((Key)(K_F1 + 3)));
-  add_btn(AXM + 4, ry(3), AX1, ry(3) + 24, "SPD-", &F6x12, key_act((Key)(K_F1 + 2)));
+  add_btn(AXM + GAP, ry(3), AX1, ry(3) + 24, "SPD-", &F6x12, key_act((Key)(K_F1 + 2)));
   add_btn(AX0, ry(4), AX1, ry(4) + 24, TAP_LABEL[tap_mode], &F8x16, kind_act(A_MODE), 0, true);
   add_btn(AX0, ry(5), AX1, ry(5) + 24, "FREEZE", &F8x16, key_act(K_F, M_CTRL));
 }
@@ -1163,7 +1173,7 @@ static void draw_reader(Surf& s, const TextScreen& ts) {
   static const char* labs[7] = {"PG UP", "\x1b", "\x18", "\x19", "\x1a", "PG DN", "SPACE"};
   static const Key keys[7] = {K_PGUP, K_LEFT, K_UP, K_DOWN, K_RIGHT, K_PGDN, K_SPACE};
   for (int i = 0; i < 7; i++) {
-    int a, b; split_gap(6, BOT_W - 6, 7, i, a, b);
+    int a, b; split_gap(6, BOT_W - 6, 7, i, a, b);   // (8-px gaps: PG UP, PG DN, SPACE drop to 6x12)
     // the up/down arrows scroll the text first, like the sticks (rule 12: dragging has a button too)
     Act act = key_act(keys[i]);
     if (keys[i] == K_UP || keys[i] == K_DOWN) { act.kind = A_RDLINE; act.arg = keys[i] == K_UP ? -1 : 1; }
@@ -1293,9 +1303,9 @@ static void generic_bottom(Surf& s, const TextScreen& ts) {
       for (auto& l : glay.items) if (text_width((std::string("X ") + l.label).c_str(), F6x12) > half) { cols = 1; rows = n; break; }
     }
     bool small = cols == 2 || rows > 7;
-    // Rule 11: rows at least 24 px. A menu with more rows than that allows shows 5 rows of 28 px at a
-    // time and scrolls (drag, scroll bar; the game's own highlight is kept in view).
-    bool scroll = (UP_H - 10 - 4 * (rows - 1)) / rows < 24;
+    // Rule 11: rows at least 24 px, 8 px apart. A menu with more rows than that allows shows 5 rows
+    // of 24 px at a time and scrolls (drag, scroll bar; the game's own highlight is kept in view).
+    bool scroll = (UP_H - 10 - GAP * (rows - 1)) / rows < 24;
     const int VIS = 5, PITCH = 32;
     if (scroll) {
       static std::string seen_first; static int seen_sel = -1;
@@ -1309,11 +1319,11 @@ static void generic_bottom(Surf& s, const TextScreen& ts) {
       }
       if (menu_top > rows - VIS) menu_top = rows - VIS;
       if (menu_top < 0) menu_top = 0;
-      scroll_bar(s, 277, 6, 6 + VIS * PITCH - 4, menu_top, rows - VIS, VIS);
+      scroll_bar(s, 277, 6, 6 + VIS * PITCH - GAP, menu_top, rows - VIS, VIS);
       sarea = ScrollArea{true, 0, 0, 276, 6 + VIS * PITCH, PITCH, &menu_top, rows - VIS};
       add_btn(284, 6, BOT_W - 6, 80, "\x1e", &F8x16, kind_act(A_MENUSCROLL, -VIS));   // rule 12: a button for the drag
       if (menu_top == 0) btns.back().off = true;
-      add_btn(284, 88, BOT_W - 6, 162, "\x1f", &F8x16, kind_act(A_MENUSCROLL, VIS));
+      add_btn(284, 88, BOT_W - 6, 6 + VIS * PITCH - GAP, "\x1f", &F8x16, kind_act(A_MENUSCROLL, VIS));
       if (menu_top >= rows - VIS) btns.back().off = true;
       menu_scrolls = true;
     }
@@ -1323,7 +1333,7 @@ static void generic_bottom(Surf& s, const TextScreen& ts) {
       if (scroll) {
         if (row < menu_top || row >= menu_top + VIS) continue;
         split_gap(6, 274, cols, col, x0, x1);
-        y0 = 6 + (row - menu_top) * PITCH; y1 = y0 + PITCH - 4;
+        y0 = 6 + (row - menu_top) * PITCH; y1 = y0 + PITCH - GAP;
       } else {
         split_gap(6, BOT_W - 6, cols, col, x0, x1);
         split_gap(6, UP_H - 4, rows, row, y0, y1);   // (split_gap works for rows too)
@@ -1460,7 +1470,7 @@ uint32_t lefty_remap(uint32_t m) {
 }
 static void manual_bottom(Surf& s) {
   s.fill(0, 0, BOT_W, BOT_H, BG);
-  // UI rule 11: buttons 24 px tall, 4 px apart, 6 px from the edges
+  // UI rule 11: buttons 24 px tall, 8 px apart, 6 px from the edges
   const int rows = 5;  // section buttons visible; the list follows the highlight, and the arrows page it
   int n = (int)manual.size();
   static int seen_sel = -1;
@@ -1475,25 +1485,25 @@ static void manual_bottom(Surf& s) {
   int lx1 = paged ? 270 : BOT_W - 6;   // section buttons; with more sections than rows: a scroll bar and arrows
   for (int i = 0; i < rows && man_list_top + i < n; i++) {
     int k = man_list_top + i;
-    add_btn(6, 6 + i * 28, lx1, 30 + i * 28, manual[k].title, &F8x16, kind_act(A_SECTION, k), -1, k == man_sel);
+    add_btn(6, 6 + i * 32, lx1, 30 + i * 32, manual[k].title, &F8x16, kind_act(A_SECTION, k), -1, k == man_sel);
   }
   if (paged) {                    // rule 13: show there is more, and let the stylus page the list
-    int ty0 = 6, ty1 = 142, th = (ty1 - ty0) * rows / n; if (th < 10) th = 10;
+    int ty0 = 6, ty1 = 158, th = (ty1 - ty0) * rows / n; if (th < 10) th = 10;
     int ty = ty0 + (ty1 - ty0 - th) * man_list_top / (n - rows);
     s.fill(272, ty0, 275, ty1, rgb(40, 44, 60));
     s.fill(272, ty, 275, ty + th, BTN_EDGE);
-    add_btn(279, 6, BOT_W - 6, 70, "\x1e", &F8x16, kind_act(A_SECLIST, -rows));
+    add_btn(279, 6, BOT_W - 6, 78, "\x1e", &F8x16, kind_act(A_SECLIST, -rows));
     if (man_list_top == 0) btns.back().off = true;
-    add_btn(279, 78, BOT_W - 6, 142, "\x1f", &F8x16, kind_act(A_SECLIST, rows));
+    add_btn(279, 86, BOT_W - 6, 158, "\x1f", &F8x16, kind_act(A_SECLIST, rows));
     if (man_list_top >= n - rows) btns.back().off = true;
   }
   if (!lefty_loaded) lefty_load();
-  add_btn(6, 146, BOT_W - 6, 170, lefty_on ? "LEFT HAND: ON" : "LEFT HAND: OFF", &F8x16, kind_act(A_LEFTY), -1, lefty_on);
+  add_btn(6, 166, BOT_W - 6, 190, lefty_on ? "LEFT HAND: ON" : "LEFT HAND: OFF", &F8x16, kind_act(A_LEFTY), -1, lefty_on);
   btns.back().focus = man_focus == -1;
-  s.fill(0, 174, BOT_W, 189, PROMPT_BG);
-  fit_text(s, 6, 175, BOT_W - 6, lefty_on ? "Sticks scroll \xb3 ABXY, L/R sections \xb3 D-Dn close"
+  s.fill(0, 193, BOT_W, 207, PROMPT_BG);
+  fit_text(s, 6, 194, BOT_W - 6, lefty_on ? "Sticks scroll \xb3 ABXY, L/R sections \xb3 D-Dn close"
                                           : "Sticks scroll \xb3 D-Pad, L/R sections \xb3 B close", F6x12, HINT, "manual hint");
-  add_btn(6, 194, BOT_W - 6, 228, "CLOSE MANUAL", &F8x16, kind_act(A_CLOSE));
+  add_btn(6, 210, BOT_W - 6, 234, "CLOSE MANUAL", &F8x16, kind_act(A_CLOSE));
   btns.back().focus = man_focus == -2;
 }
 
@@ -1540,7 +1550,7 @@ static void pause_bottom(Surf& s, const TextScreen& ts) {
   const char* lab[5] = {"RESUME", "MANUAL", "QUICK SAVE", "GAME SETTINGS", "EXIT GAME"};
   Act act[5] = {kind_act(A_PAUSE), kind_act(A_MANUAL), kind_act(A_SAVE), kind_act(A_SETTINGS), kind_act(A_QUIT)};
   for (int i = 0; i < 5; i++) {
-    add_btn(50, 28 + i * 33, 270, 56 + i * 33, lab[i], &F8x16, act[i]);
+    add_btn(50, 30 + i * 34, 270, 56 + i * 34, lab[i], &F8x16, act[i]);   // 26 px tall, 8 px apart
     if ((i == 2 && !bridge) || (i == 3 && !menu) || (i == 4 && !(H && H->quit))) btns.back().off = true;
     btns.back().focus = i == pause_focus;
   }
