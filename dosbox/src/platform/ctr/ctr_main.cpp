@@ -52,7 +52,6 @@
 #include "ctr_input.h"
 #ifdef SF2_3DS
 #include "sf2_ctr.h"
-#include "sf2_writer.h"
 #include <exception>
 #endif
 
@@ -87,14 +86,7 @@ void aptHookFunc(APT_HookType hookType, void *param)
 	switch (hookType) {
 		case APTHOOK_ONSUSPEND:
 			ctr_backlight_enable(true,GSPLCD_SCREEN_BOTTOM);
-			// fall through
 		case APTHOOK_ONSLEEP:
-			// T4: libctru calls this from inside aptMainLoop(), just before HOME or sleep stops
-			// the program (the game is already paused: the emulation waits in that call). The
-			// game writes its data files itself through the background writer; let what it has
-			// queued land now (up to 3 s), so a console turned off or a HOME -> Close while away
-			// keeps it. Only waits on the writer thread; nothing is written from here.
-			if (!sf2w_flush(3000)) sf2ctr_log("HOME/sleep: writes still queued after 3 s");
 			break;
 		case APTHOOK_ONRESTORE:
 		case APTHOOK_ONWAKEUP:
