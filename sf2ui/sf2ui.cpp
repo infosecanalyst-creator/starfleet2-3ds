@@ -201,6 +201,9 @@ static bool is_bridge(const TextScreen& ts) {
   return has(r0, "LOW PWR") && has(r1, "NAV") && has(r1, "TACTICAL") && has(r1, "VEL") &&
          has(r1, "DAMAGE") && has(r2, "LRS") && has(r9, "DATA") && has(r14, "ss") && has(r17, "ENERGY");
 }
+// Any flight screen (the bridge and its variants: Damage Control, overlay windows) keeps the
+// LOW PWR status line on row 0; reading screens never have it.
+static bool in_flight(const TextScreen& ts) { return row_str(ts, 0, 0, 80).find("LOW PWR") != std::string::npos; }
 static bool is_box(uint8_t c) { return c >= 0xB3 && c <= 0xDA; }
 // The target designator box: a 3x3 frame of magenta box-drawing cells. Returns its centre.
 static bool find_tdb(const TextScreen& ts, int& cc, int& cr, int c0 = 1, int r0 = 1, int c1 = 78, int r1 = 23) {
@@ -1562,6 +1565,16 @@ void buttons(uint32_t held, uint32_t pr, uint32_t rel) {
   if (repeat_due(B_DDOWN, held, pr)) press(K_DOWN);
   if (repeat_due(B_DLEFT, held, pr)) press(K_LEFT);
   if (repeat_due(B_DRIGHT, held, pr)) press(K_RIGHT);
+  // Off the flight screens (orders, reports, long text pages) the sticks read, like the manual:
+  // up/down scroll the page a line at a time (hold to keep going), left/right page up/down.
+  // They never send the helm keys there.
+  if (last.text_mode && !in_flight(last)) {
+    if (repeat_due(B_CPAD_DOWN, held, pr) || repeat_due(B_CSTICK_DOWN, held, pr)) press(K_DOWN);
+    if (repeat_due(B_CPAD_UP, held, pr) || repeat_due(B_CSTICK_UP, held, pr)) press(K_UP);
+    if (repeat_due(B_CPAD_RIGHT, held, pr) || repeat_due(B_CSTICK_RIGHT, held, pr)) press(K_PGDN);
+    if (repeat_due(B_CPAD_LEFT, held, pr) || repeat_due(B_CSTICK_LEFT, held, pr)) press(K_PGUP);
+    return;
+  }
   if (repeat_due(B_CPAD_LEFT, held, pr)) press((Key)(K_F1 + 4));   // heading -1
   if (repeat_due(B_CPAD_RIGHT, held, pr)) press((Key)(K_F1 + 5));  // heading +1
   if (repeat_due(B_CPAD_UP, held, pr)) press((Key)(K_F1 + 3));     // sublight +0.1

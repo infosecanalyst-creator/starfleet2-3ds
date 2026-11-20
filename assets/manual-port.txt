@@ -49,6 +49,10 @@ ZL           Swap the screens on the bridge and in
              on the touch buttons)
 C-Stick      Up/down: hyperspace speed +1 / -1
 C-Stick      Bridge: review earlier messages (left/right)
+Sticks       Off the bridge (orders, reports, any long
+             page of text) both sticks scroll it:
+             up/down a line at a time (hold to keep
+             going), left/right a page at a time
 START        Open this manual
 SELECT       Bridge: quick save (the game's Ctrl+Q)
              Elsewhere: show or hide the keyboard
