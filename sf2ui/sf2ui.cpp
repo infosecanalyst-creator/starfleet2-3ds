@@ -31,7 +31,7 @@ static std::vector<Ev> queue;          // pending key events
 static uint32_t next_key_ms = 0;
 static const uint32_t KEY_GAP_MS = 35; // spacing between injected key events
 
-enum ActKind { A_NONE, A_KEY, A_MODE, A_MANUAL, A_KB, A_SECTION, A_CLOSE, A_TYPE, A_SIGNON, A_SAVE, A_VIEW, A_PAUSE, A_QUIT, A_QUIT_YES, A_SETTINGS, A_LEFTY };
+enum ActKind { A_NONE, A_KEY, A_MODE, A_MANUAL, A_KB, A_SECTION, A_CLOSE, A_TYPE, A_SIGNON, A_SAVE, A_VIEW, A_PAUSE, A_QUIT, A_QUIT_YES, A_SETTINGS, A_LEFTY, A_SECLIST };
 struct Act { ActKind kind; Key key; uint8_t mods; int arg; };
 enum { M_SHIFT = 1, M_CTRL = 2, M_ALT = 4 };
 
@@ -82,6 +82,7 @@ static bool last_text_mode = false;
 struct Section { std::string title; std::vector<std::string> paras, lines; int wrap = 0; };
 static std::vector<Section> manual;
 static int man_sel = 0, man_scroll = 0, man_list_top = 0;
+static int man_focus = 0;   // D-Pad focus in the manual: 0 the section list, -1 LEFT HAND, -2 CLOSE MANUAL (rule 6)
 
 static void dirty() { ui_version++; }
 static bool swap_wanted = false;   // ZL swap is on (it may not apply to this screen)
@@ -305,9 +306,11 @@ static void draw_btn(Surf& s, int i) {
   s.fill(b.x0, b.y0, b.x1, b.y1, BG);
   if (b.off) s.round_rect(b.x0 + 1, b.y0 + 1, b.x1 - 1, b.y1 - 1, OFF_BG, OFF_EDGE);
   else s.round_rect(b.x0 + 1, b.y0 + 1, b.x1 - 1, b.y1 - 1, down ? BTN_DOWN : (b.sel ? BTN_SEL : BTN), down ? BTN_TXT : BTN_EDGE);
+  if (!b.off && !down) s.hline(b.x0 + 3, b.x1 - 2, b.y1 - 1, SHADOW);   // house style: raised edge (gone while pressed)
   // label: pick the biggest font that fits, never cut off
   const Font* f = b.font;
   if (text_width(b.label.c_str(), *f) > b.x1 - b.x0 - 4 && f != &F6x12) f = &F6x12;
+  if (text_width(b.label.c_str(), *f) > b.x1 - b.x0 - 4) f = &F5x9;   // last resort (long manual titles)
   std::string lab = b.label;
   if (text_width(lab.c_str(), *f) > b.x1 - b.x0 - 4) {
     fit_problem("button \"" + lab + "\"");
@@ -1075,7 +1078,7 @@ static void load_manual() {
   fclose(f);
   manual.push_back(cur);
 }
-static const int MAN_LINES = 18;   // text lines on the top screen
+static const int MAN_LINES = 16;   // text lines on the top screen (between the header bar and the hint strip)
 // Word-wrap a section for a screen this many pixels wide (63 columns at 400, 50 at 320 when
 // swapped: same 6x12 text, never squeezed). The wrap is cached per width (swap readability rule 4).
 static void manual_wrap(Section& sec, int w) {
@@ -1102,16 +1105,34 @@ static void manual_wrap(Section& sec, int w) {
     } while (!line.empty());
   }
 }
+static bool lefty_on = false, lefty_loaded = false;
+static void lefty_load();
+// House top screen (look-and-feel): 22-px header bar with the section title in gold at x 8 and the
+// section number right-aligned, 1:1 text from y 28, the gold hint strip at y 224.
 static void manual_top(Surf& s) {
   s.fill(0, 0, TOP_W, TOP_H, BG);
   Section& sec = manual[man_sel];
   manual_wrap(sec, top_w);
-  Box in = tile(s, 0, 0, top_w, TOP_H, sec.title.c_str());
+  s.fill(0, 0, top_w, 22, BTN);
+  s.hline(0, top_w, 22, BTN_EDGE);
+  char num[16]; snprintf(num, sizeof num, "%d/%d", man_sel + 1, (int)manual.size());
+  int nw = text_width(num, F6x12);
+  const Font* tf = text_width(sec.title.c_str(), F8x16) <= top_w - 24 - nw ? &F8x16 : &F6x12;
+  bool show_num = text_width(sec.title.c_str(), *tf) <= top_w - 24 - nw;
+  fit_text(s, 8, (22 - tf->h) / 2, top_w - 8, sec.title.c_str(), *tf, TITLE, "manual title");
+  if (show_num) draw_text(s, top_w - 8 - nw, 5, num, F6x12, rgb(150, 150, 165));
+  Box in = {0, 28, top_w - 2, 28 + MAN_LINES * 12};
+  if (!lefty_loaded) lefty_load();
+  const char* hint = lefty_on ? "Sticks scroll  ABXY sections  L/R pages  D-Dn close"
+                              : "Sticks scroll  D-Pad sections  L/R pages  B close";
+  s.fill(0, 224, top_w, TOP_H, BTN);
+  s.hline(0, top_w, 224, BTN_EDGE);
+  fit_text(s, (top_w - text_width(hint, F6x12)) / 2, 226, top_w - 2, hint, F6x12, TITLE, "manual top hint");
   int maxs = (int)sec.lines.size() - MAN_LINES; if (maxs < 0) maxs = 0;
   if (man_scroll > maxs) man_scroll = maxs;
   if (man_scroll < 0) man_scroll = 0;
   for (int i = 0; i < MAN_LINES && man_scroll + i < (int)sec.lines.size(); i++)
-    fit_text(s, in.x0 + 3, in.y0 + 1 + i * 12, in.x1 - 4, sec.lines[man_scroll + i].c_str(), F6x12, BTN_TXT, "manual text");
+    fit_text(s, in.x0 + 8, in.y0 + i * 12, in.x1 - 4, sec.lines[man_scroll + i].c_str(), F6x12, BTN_TXT, "manual text");
   // scroll bar
   if (maxs > 0) {
     int track = in.y1 - in.y0, th = track * MAN_LINES / (int)sec.lines.size();
@@ -1121,7 +1142,6 @@ static void manual_top(Surf& s) {
     s.fill(in.x1 - 3, ty, in.x1 - 1, ty + th, BTN_EDGE);
   }
 }
-static bool lefty_on = false, lefty_loaded = false;
 static void lefty_load() {
   lefty_loaded = true;
   FILE* f = H && H->lefty_path ? fopen(H->lefty_path, "rb") : 0;
@@ -1144,19 +1164,40 @@ uint32_t lefty_remap(uint32_t m) {
 static void manual_bottom(Surf& s) {
   s.fill(0, 0, BOT_W, BOT_H, BG);
   // UI rule 11: buttons 24 px tall, 4 px apart, 6 px from the edges
-  const int rows = 5;  // section buttons visible; the list scrolls with the highlight
-  if (man_sel < man_list_top) man_list_top = man_sel;
-  if (man_sel >= man_list_top + rows) man_list_top = man_sel - rows + 1;
-  for (int i = 0; i < rows && man_list_top + i < (int)manual.size(); i++) {
+  const int rows = 5;  // section buttons visible; the list follows the highlight, and the arrows page it
+  int n = (int)manual.size();
+  static int seen_sel = -1;
+  if (man_sel != seen_sel) {      // a new section was chosen: bring it into view (the arrows may scroll away)
+    seen_sel = man_sel;
+    if (man_sel < man_list_top) man_list_top = man_sel;
+    if (man_sel >= man_list_top + rows) man_list_top = man_sel - rows + 1;
+  }
+  if (man_list_top > n - rows) man_list_top = n - rows;
+  if (man_list_top < 0) man_list_top = 0;
+  bool paged = n > rows;
+  int lx1 = paged ? 270 : BOT_W - 6;   // section buttons; with more sections than rows: a scroll bar and arrows
+  for (int i = 0; i < rows && man_list_top + i < n; i++) {
     int k = man_list_top + i;
-    add_btn(6, 6 + i * 28, BOT_W - 6, 30 + i * 28, manual[k].title, &F8x16, kind_act(A_SECTION, k), -1, k == man_sel);
+    add_btn(6, 6 + i * 28, lx1, 30 + i * 28, manual[k].title, &F8x16, kind_act(A_SECTION, k), -1, k == man_sel);
+  }
+  if (paged) {                    // rule 13: show there is more, and let the stylus page the list
+    int ty0 = 6, ty1 = 142, th = (ty1 - ty0) * rows / n; if (th < 10) th = 10;
+    int ty = ty0 + (ty1 - ty0 - th) * man_list_top / (n - rows);
+    s.fill(272, ty0, 275, ty1, rgb(40, 44, 60));
+    s.fill(272, ty, 275, ty + th, BTN_EDGE);
+    add_btn(279, 6, BOT_W - 6, 70, "\x1e", &F8x16, kind_act(A_SECLIST, -rows));
+    if (man_list_top == 0) btns.back().off = true;
+    add_btn(279, 78, BOT_W - 6, 142, "\x1f", &F8x16, kind_act(A_SECLIST, rows));
+    if (man_list_top >= n - rows) btns.back().off = true;
   }
   if (!lefty_loaded) lefty_load();
   add_btn(6, 146, BOT_W - 6, 170, lefty_on ? "LEFT HAND: ON" : "LEFT HAND: OFF", &F8x16, kind_act(A_LEFTY), -1, lefty_on);
+  btns.back().focus = man_focus == -1;
   s.fill(0, 174, BOT_W, 189, PROMPT_BG);
-  fit_text(s, 6, 175, BOT_W - 6, lefty_on ? "Sticks scroll \xb3 ABXY, L/R sections \xb3 D-Down close"
+  fit_text(s, 6, 175, BOT_W - 6, lefty_on ? "Sticks scroll \xb3 ABXY, L/R sections \xb3 D-Dn close"
                                           : "Sticks scroll \xb3 D-Pad, L/R sections \xb3 B close", F6x12, HINT, "manual hint");
   add_btn(6, 194, BOT_W - 6, 228, "CLOSE MANUAL", &F8x16, kind_act(A_CLOSE));
+  btns.back().focus = man_focus == -2;
 }
 
 // ------------------------------------------------------------------ graphics (title art) screens
@@ -1278,14 +1319,15 @@ static void fire(const Act& a) {
       if (!opened_before)
         for (int i = 0; i < (int)manual.size(); i++) if (manual[i].title == "Getting started") { man_sel = i; break; }
       opened_before = true;
-      manual_open = true; man_scroll = 0; pause_open = false; break;
+      manual_open = true; man_scroll = 0; man_focus = 0; pause_open = false; break;
     }
     case A_KB:
       if (kb_open) { kb_open = false; kb_user_hidden = true; kb_forced = false; }
       else { kb_open = true; kb_forced = true; kb_user_hidden = false; }
       break;
-    case A_SECTION: man_sel = a.arg; man_scroll = 0; break;
-    case A_CLOSE: manual_open = false; break;
+    case A_SECTION: man_sel = a.arg; man_scroll = 0; man_focus = 0; break;
+    case A_SECLIST: man_list_top += a.arg; break;   // (clamped when the list is drawn)
+    case A_CLOSE: manual_open = false; man_focus = 0; break;
     case A_LEFTY:
       lefty_on = !lefty_on;
       if (H && H->lefty_path) {
@@ -1577,9 +1619,31 @@ void buttons(uint32_t held, uint32_t pr, uint32_t rel) {
     if (repeat_due(B_CPAD_DOWN, held, pr) || repeat_due(B_CSTICK_DOWN, held, pr)) { man_scroll++; dirty(); }
     if (repeat_due(B_CPAD_UP, held, pr) || repeat_due(B_CSTICK_UP, held, pr)) { man_scroll--; dirty(); }
     int n = (int)manual.size();
-    if (repeat_due(B_DDOWN, held, pr) || (pr & B_R)) { man_sel = (man_sel + 1) % n; man_scroll = 0; dirty(); }
-    if (repeat_due(B_DUP, held, pr) || (pr & B_L)) { man_sel = (man_sel + n - 1) % n; man_scroll = 0; dirty(); }
-    if (pr & (B_B | B_START)) { manual_open = false; dirty(); }
+    // D-Pad: through the sections, then LEFT HAND and CLOSE MANUAL (gold ring; A presses them), then
+    // round to the first section. L/R always page the sections.
+    if (pr & B_R) { man_sel = (man_sel + 1) % n; man_scroll = 0; man_focus = 0; dirty(); }
+    if (pr & B_L) { man_sel = (man_sel + n - 1) % n; man_scroll = 0; man_focus = 0; dirty(); }
+    if (repeat_due(B_DDOWN, held, pr)) {
+      if (man_focus == -1) man_focus = -2;
+      else if (man_focus == -2) { man_focus = 0; man_sel = 0; man_scroll = 0; }
+      else if (man_sel == n - 1) man_focus = -1;
+      else { man_sel++; man_scroll = 0; }
+      dirty();
+    }
+    if (repeat_due(B_DUP, held, pr)) {
+      if (man_focus == -2) man_focus = -1;
+      else if (man_focus == -1) man_focus = 0;
+      else if (man_sel == 0) man_focus = -2;
+      else { man_sel--; man_scroll = 0; }
+      dirty();
+    }
+    if ((pr & B_A) && man_focus < 0) {
+      if (H && H->click) H->click();
+      flash_until = now() + 110; flash_on = true;
+      for (auto& b : btns) if (b.focus) flash_id = id_of(b);
+      fire(kind_act(man_focus == -1 ? A_LEFTY : A_CLOSE));
+    }
+    if (pr & (B_B | B_START)) { manual_open = false; man_focus = 0; dirty(); }
     if (!dragging && (man_mom > 0.5f || man_mom < -0.5f)) {   // coast a little after a drag
       man_acc += (int)(man_mom * 2.0f); man_mom *= 0.88f;
       while (man_acc >= 12) { man_scroll++; man_acc -= 12; dirty(); }

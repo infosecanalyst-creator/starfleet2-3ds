@@ -78,15 +78,16 @@ Sticks       Off the bridge (orders, reports, any long
              page of text) both sticks scroll it:
              up/down a line at a time (hold to keep
              going), left/right a page at a time
-START        Open this manual
+START        Menu: resume, manual, quick save,
+             game settings, exit
 SELECT       Bridge: quick save (the game's Ctrl+Q)
              Elsewhere: show or hide the keyboard
 
 # Using this manual
 Circle Pad or C-Stick: scroll the text (hold to keep scrolling). You can also drag the stylus up or down on the touch screen.
-D-Pad: move between the section buttons on the touch screen.
+D-Pad: move between the section buttons on the touch screen. Past the last section it moves on to LEFT HAND and CLOSE MANUAL (a gold ring shows which); A presses the ringed button.
 L / R: previous / next section.
-Tap a section on the touch screen to open it.
+Tap a section on the touch screen to open it. When there are more sections than fit, the arrow buttons beside the list page it, and the bar between them shows where you are.
 B or START: close the manual.
 
 # Left-handed play
