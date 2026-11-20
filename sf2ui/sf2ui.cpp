@@ -97,6 +97,37 @@ static int man_sel = 0, man_scroll = 0, man_list_top = 0;
 static int man_focus = 0;   // D-Pad focus in the manual: 0 the section list, -1 LEFT HAND, -2 CLOSE MANUAL (rule 6)
 
 static void dirty() { ui_version++; }
+
+// ---- rule 16, remember the setup: the tap mode and the manual section the player last read, in
+// one small file (settings.txt, "key=value" lines). Written only when a value actually changed
+// (a tap-mode press, closing the manual), through the same background writer as lefty.txt.
+static std::string set_manual;          // remembered manual section title
+static std::string set_written;         // the file's contents as last read or written
+static void load_settings() {
+  FILE* f = H && H->settings_path ? fopen(H->settings_path, "rb") : 0;
+  if (!f) return;
+  char line[160];
+  while (fgets(line, sizeof line, f)) {
+    size_t n = strlen(line); while (n && (line[n - 1] == '\n' || line[n - 1] == '\r')) line[--n] = 0;
+    set_written += std::string(line) + "\n";
+    if (!strncmp(line, "tapmode=", 8)) {
+      for (int i = 0; i < 3; i++) if (!strcmp(line + 8, TAP_LABEL[i])) tap_mode = (TapMode)i;
+    } else if (!strncmp(line, "manual=", 7)) set_manual = line + 7;
+  }
+  fclose(f);
+}
+static void manual_closed() {          // the section on screen when the manual closes is remembered
+  if (man_sel >= 0 && man_sel < (int)manual.size()) set_manual = manual[man_sel].title;
+}
+static void save_settings() {
+  if (!H || !H->settings_path) return;
+  std::string text = std::string("tapmode=") + TAP_LABEL[tap_mode] + "\n";
+  if (!set_manual.empty()) text += "manual=" + set_manual + "\n";
+  if (text == set_written) return;     // nothing changed: no SD write
+  set_written = text;
+  if (H->save) H->save(H->settings_path, text.data(), (unsigned)text.size());   // (3DS: in the background)
+  else if (FILE* f = fopen(H->settings_path, "wb")) { fwrite(text.data(), 1, text.size(), f); fclose(f); }
+}
 static bool swap_wanted = false;   // ZL swap is on (it may not apply to this screen)
 static int top_w = TOP_W;   // width the top-screen panel is laid out for (320 when swapped)
 
@@ -1567,6 +1598,7 @@ void init(const Host* host) {
   memset(&last, 0, sizeof last);
   load_manual();
   load_officer();
+  load_settings();
   dirty();
 }
 
@@ -1627,15 +1659,24 @@ static void fire(const Act& a) {
     case A_SETTINGS: pause_open = false; press(K_C); break;
     case A_MODE:
       tap_mode = (TapMode)((tap_mode + 1) % 3);
+      save_settings();
       say(tap_mode == TM_AUTO ? "Taps target when the target box is up, else steer" :
           tap_mode == TM_STEER ? "Taps always steer" : "Taps always move the target box");
       break;
     case A_MANUAL: {
-      // The first time in a session the manual opens on "Getting started" (newcomers); after
+      // The first time in a session the manual opens on the section the player last read (rule 16,
+      // remembered across launches), or on "Getting started" if there is none (newcomers); after
       // that it keeps the section the player last read.
       static bool opened_before = false;
-      if (!opened_before)
-        for (int i = 0; i < (int)manual.size(); i++) if (manual[i].title == "Getting started") { man_sel = i; break; }
+      if (!opened_before) {
+        int want = -1, gs = -1;
+        for (int i = 0; i < (int)manual.size(); i++) {
+          if (!set_manual.empty() && manual[i].title == set_manual) want = i;
+          if (manual[i].title == "Getting started") gs = i;
+        }
+        if (want < 0) want = gs;
+        if (want >= 0) man_sel = want;
+      }
       opened_before = true;
       manual_open = true; man_scroll = 0; man_focus = 0; pause_open = false; break;
     }
@@ -1652,7 +1693,7 @@ static void fire(const Act& a) {
       else if (reader_on && a.arg < 0 && rd_scroll > 0) rd_scroll--;
       else { press(a.arg > 0 ? K_DOWN : K_UP); busy_since = now(); }
       break;
-    case A_CLOSE: manual_open = false; man_focus = 0; break;
+    case A_CLOSE: manual_open = false; man_focus = 0; manual_closed(); save_settings(); break;
     case A_LEFTY:
       lefty_on = !lefty_on;
       if (H && H->lefty_path) {
@@ -2039,7 +2080,7 @@ void buttons(uint32_t held, uint32_t pr, uint32_t rel) {
       for (auto& b : btns) if (b.focus) flash_id = id_of(b);
       fire(kind_act(man_focus == -1 ? A_LEFTY : A_CLOSE));
     }
-    if (pr & (B_B | B_START)) { manual_open = false; man_focus = 0; dirty(); }
+    if (pr & (B_B | B_START)) { manual_open = false; man_focus = 0; manual_closed(); save_settings(); dirty(); }
     if (!dragging && (man_mom > 0.5f || man_mom < -0.5f)) {   // coast a little after a drag
       man_acc += (int)(man_mom * 2.0f); man_mom *= 0.88f;
       while (man_acc >= 12) { man_scroll++; man_acc -= 12; dirty(); }

@@ -46,6 +46,7 @@ struct Host {
   void (*save)(const char* path, const char* data, unsigned n);   // write a small file (0: plain fopen)
   void (*quit)();                     // leave the app (START menu > EXIT GAME); 0: not offered
   const char* lefty_path;             // remembered left-handed setting ("1" or "0")
+  const char* settings_path;          // remembered tap mode and manual section (rule 16); 0: not kept
 };
 
 // The game's text screen, as read from video memory.

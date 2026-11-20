@@ -35,7 +35,7 @@ Graphics screens (the title art) appear on the top screen as the game drew them.
 # Touch screen
 TACTICAL DISPLAY: tap anywhere to set a course toward that point. The port works out the bearing and turns the ship for you. When the game shows its target box (Weapons targeting set to Manual), a tap moves the box to the ship or object you touched instead; tap it again to lock on (Enter).
 
-AUTO / STEER / TARGET: the button under NAV (or R) chooses what a tactical tap does. AUTO, the default, targets when the target box is up and steers otherwise. STEER always steers; TARGET always moves the box.
+AUTO / STEER / TARGET: the button under NAV (or R) chooses what a tactical tap does. AUTO, the default, targets when the target box is up and steers otherwise. STEER always steers; TARGET always moves the box. Your choice is remembered next time you play.
 
 ACTION BUTTONS (right column): PHASERS, TORPS, SHLD+ / SHLD- (5% steps), SPD+ / SPD- (sublight 0.1c steps), the tap mode (AUTO, STEER or TARGET) and FREEZE (pause or resume the simulation).
 
@@ -64,6 +64,10 @@ KEYBOARD: opens by itself when the game wants typed text (your name, password, n
 SIGN-ON: after you sign on once, the port remembers your officer. Next time, tap SIGN ON AS <NAME> under the keyboard and it enters your name and password for you. The officer is kept in /3ds/starfleet2/officer.txt; delete that file to forget it.
 
 Every touch button clicks and visibly presses in when you tap it.
+
+BUTTON RING (ZR): everything you can tap also works without the stylus. Press ZR and a gold ring appears on a touch button; the D-Pad moves it to the next button in that direction (grey buttons are skipped), A presses the ringed button, and B or ZR hands the D-Pad and A back to the game. The bridge's gold strip on the top screen reminds you: "ZR buttons".
+
+SETTINGS KEPT: the tap mode, the manual section you last read, left-handed play and the screen swap are kept in /3ds/starfleet2/ (settings.txt, lefty.txt, .swapped) and come back the next time you play.
 
 # Buttons
 A            Enter (execute / confirm)
@@ -107,6 +111,7 @@ D-Pad: move between the section buttons on the touch screen. Past the last secti
 L / R: previous / next section.
 Tap a section on the touch screen to open it. When there are more sections than fit, the arrow buttons beside the list page it, and the bar between them shows where you are.
 B or START: close the manual.
+The manual opens again on the section you were reading when you closed it, even after you quit and restart the game.
 
 # Left-handed play
 LEFT HAND (the button at the bottom of the manual's touch screen) swaps the D-Pad with the face buttons: Y and Up, A and Right, B and Down, X and Left. So the D-Pad becomes Enter, Esc, phasers and torpedoes, and the face buttons become the arrow keys. The setting is saved in /3ds/starfleet2/lefty.txt and also applies to this manual.
