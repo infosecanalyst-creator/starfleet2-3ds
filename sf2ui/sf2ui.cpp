@@ -1348,7 +1348,7 @@ static void manual_top(Surf& s) {
   manual_wrap(sec, top_w);
   s.fill(0, 0, top_w, 22, BTN);
   s.hline(0, top_w, 22, BTN_EDGE);
-  char num[16]; snprintf(num, sizeof num, "%d/%d", man_sel + 1, (int)manual.size());
+  char num[24]; snprintf(num, sizeof num, "%d/%d", man_sel + 1, (int)manual.size());
   int nw = text_width(num, F6x12);
   const Font* tf = text_width(sec.title.c_str(), F8x16) <= top_w - 24 - nw ? &F8x16 : &F6x12;
   bool show_num = text_width(sec.title.c_str(), *tf) <= top_w - 24 - nw;
