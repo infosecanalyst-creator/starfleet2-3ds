@@ -81,6 +81,9 @@ static bool focus_mode = false; static int fx = 160, fy = 200;
 static bool lefty_on = false, lefty_loaded = false;   // left-handed play (rule 10)
 static bool reader_on = false;   // the touch screen shows the page's text (P2-1 reader)
 static bool menu_scrolls = false; // a menu too long for the touch screen scrolls there
+// Rule 14 alert strip: a light coming on (row 0) or a new COMMS line shows for 3 s where the eyes are
+// (over the touch screen's prompt line), boxed in red (danger) or gold (news), always in words.
+static std::string alert_text; static bool alert_red = false; static uint32_t alert_until = 0;
 static void lefty_load();
 
 static TextScreen last;                // last screen drawn (for change detection)
@@ -499,6 +502,15 @@ static void prompt_strip(Surf& s, const TextScreen& ts, const std::string& promp
   s.fill(0, SY, strip_x1, SY + 12, PROMPT_BG);
   s.fill(0, SY + 12, BOT_W, ROW1_Y0, BG);
   if (strip_x1 < BOT_W) s.fill(strip_x1, 170, BOT_W, SY + 12, BG);   // under the bridge's action column
+  if (!alert_text.empty() && (int32_t)(alert_until - now()) > 0) {
+    uint16_t edge = alert_red ? rgb(255, 80, 64) : TITLE;
+    s.fill(0, SY, strip_x1, ROW1_Y0, alert_red ? rgb(70, 12, 10) : rgb(60, 46, 8));
+    s.rect(0, SY, strip_x1, ROW1_Y0, edge);
+    const Font* f = text_width(alert_text.c_str(), F6x12) <= strip_x1 - 8 ? &F6x12 : &F5x9;
+    fit_text(s, 4, SY + 1 + (12 - f->h) / 2, strip_x1 - 4, alert_text.c_str(), *f, alert_red ? rgb(255, 235, 230) : TITLE, "alert strip");
+    marquee = false;
+    return;
+  }
   if (busy_now) {                                // moving bar: the game is still working on the press
     draw_text(s, 4, SY, "Working...", F6x12, LOUPE);
     int x0 = 74, x1 = strip_x1 - 6, w = 40, span = x1 - x0 - w;
@@ -1627,6 +1639,50 @@ Redraw frame(const TextScreen& ts, uint16_t* top, uint16_t* bottom) {
     else { press(K_ESC); view_esc++; view_next = t + 900; }
   }
 
+  // Rule 14: watch the flight screens for alert lights coming on and new COMMS lines.
+  {
+    static uint32_t flight_since = 0, light_last[8];
+    static uint8_t light_at[8];
+    static std::vector<std::string> comms_seen; static std::string comms_pending; static uint32_t comms_t = 0;
+    static const int starts[8] = {2, 12, 22, 32, 42, 52, 62, 72};
+    if (ts.text_mode && in_flight(ts)) {
+      if (!flight_since) {
+        flight_since = t; comms_seen.clear(); comms_pending.clear();
+        for (int i = 0; i < 8; i++) { light_at[i] = ts.at[0][starts[i] + 1]; light_last[i] = 0; }
+      }
+      bool settled = t - flight_since > 1500;   // nothing is announced as the screen first appears
+      for (int i = 0; i < 8; i++) {
+        uint8_t at = ts.at[0][starts[i] + 1];
+        if (at == light_at[i]) continue;
+        bool was_off = light_at[i] == 0x08 || light_at[i] == 0x00;
+        light_at[i] = at;
+        bool on = at != 0x08 && at != 0x00;
+        if (on && was_off && settled && (!light_last[i] || t - light_last[i] > 10000)) {
+          light_last[i] = t;
+          std::string lab = trim(row_str(ts, 0, starts[i], starts[i] + 7));
+          int fg = at & 15, bgc = (at >> 4) & 7;
+          alert_red = fg == 4 || fg == 12 || bgc == 4;
+          alert_text = "ALERT: " + lab; alert_until = t + 3000; dirty();
+        }
+      }
+      if (is_bridge(ts)) {                      // newest COMMS line, once the game has finished printing it
+        std::string line;
+        for (int r = 22; r >= 15 && line.empty(); r--) line = trim(row_str(ts, r, 1, 40));
+        if (line != comms_pending) { comms_pending = line; comms_t = t; }
+        bool known = false;
+        for (auto& k : comms_seen) if (k == line) known = true;
+        if (!line.empty() && !known && t - comms_t >= 700) {
+          comms_seen.push_back(line);
+          if (comms_seen.size() > 24) comms_seen.erase(comms_seen.begin());
+          if (settled && (alert_text.empty() || (int32_t)(alert_until - t) <= 0 || !alert_red)) {
+            alert_text = "MSG: " + line; alert_red = false; alert_until = t + 3000; dirty();
+          }
+        }
+      }
+    } else flight_since = 0;
+    if (!alert_text.empty() && (int32_t)(alert_until - t) <= 0) { alert_text.clear(); dirty(); }
+  }
+
   bool changed = memcmp(&ts, &last, sizeof ts) != 0;
   // Busy feedback: after a press, if the game hasn't changed the screen within 0.35 s, the prompt
   // strip shows a moving "Working" bar until it does (or 60 s pass), so a slow step never looks dead.
@@ -1649,7 +1705,7 @@ Redraw frame(const TextScreen& ts, uint16_t* top, uint16_t* bottom) {
   if (!full && !flash_on && !toast_anim && ts.text_mode && !manual_open && !pause_open) {
     std::string prompt; parse_menu(ts, prompt);
     prompt_strip(ts_bot, ts, prompt);
-    rd.bottom = true; rd.by0 = UP_H; rd.by1 = UP_H + 12;
+    rd.bottom = true; rd.by0 = UP_H; rd.by1 = ROW1_Y0;   // (the alert box reaches down to the menu row)
     return rd;
   }
   bool draw_top = full;      // a button flash or toast only touches the touch screen

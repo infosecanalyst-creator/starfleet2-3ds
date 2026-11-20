@@ -41,6 +41,8 @@ ACTION BUTTONS (right column): PHASERS, TORPS, SHLD+ / SHLD- (5% steps), SPD+ / 
 
 PROMPT LINE: shows what the game is asking. Yes/no questions get YES and NO buttons; "press any key" gets CONTINUE. When the game is not asking anything, the line says (in pale blue) what to do on this screen; the gold strip at the bottom of the top screen says the same.
 
+ALERTS: in flight, when one of the alert lights on the top screen comes on (LOW PWR, HULL PN and the others), the prompt line shows it for 3 seconds in a red box ("ALERT: HULL PN"); a new COMMS message shows the same way in a gold box ("MSG: ..."), so you never have to look up to notice them.
+
 COMMAND MENU: the row of buttons under the prompt is the game's own menu, read live from the screen. The red letter is the item's hotkey; the highlighted button is the current item. When the menu has more items than fit in one row, MORE at the right end shows the next ones.
 
 VIEW TABS: STARS, SYSTEM, WAR, COMBAT, FLEET, ORDERS and LOG jump straight to those displays. This manual is in the START menu (MANUAL).
