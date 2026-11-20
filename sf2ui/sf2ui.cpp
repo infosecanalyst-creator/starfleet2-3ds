@@ -66,6 +66,8 @@ static int tap_x = -1, tap_y = -1;
 // target box driver (closed loop: press an arrow, look where the box went, repeat)
 // START menu (pause): resume, manual, quick save, game settings, exit.
 static bool pause_open = false, quit_confirm = false;
+static bool unsaved_confirm = false;   // the exit question is "Not saved! Exit anyway?" (rule 17)
+static bool exit_ui = false;           // the platform's exit save is running: "Saving..." (rule 17)
 static int pause_focus = 0;            // D-Pad focus in the START menu (confirm: 0 YES, 1 NO)
 // Busy feedback: a button was pressed and the game hasn't answered yet (see frame()).
 static uint32_t busy_since = 0; static bool busy_now = false;
@@ -1565,9 +1567,15 @@ static void pause_bottom(Surf& s, const TextScreen& ts) {
   s.fill(0, 0, BOT_W, BOT_H, BG);
   if (quit_confirm) {
     header_bar(s, "EXIT GAME");
-    fit_text(s, (BOT_W - text_width("Exit Star Fleet II?", F8x16)) / 2, 50, BOT_W, "Exit Star Fleet II?", F8x16, BTN_TXT, "pause");
-    const char* l2 = "Anything since your last save is lost.";
-    fit_text(s, (BOT_W - text_width(l2, F6x12)) / 2, 80, BOT_W, l2, F6x12, HINT, "pause");
+    // rule 17: on the bridge EXIT quick saves first; if that save did not finish, this asks again
+    const bool br = ts.text_mode && is_bridge(ts);
+    const char* l1 = unsaved_confirm ? "Not saved! Exit anyway?" : "Exit Star Fleet II?";
+    const char* l2 = unsaved_confirm ? "The quick save did not finish." :
+                     br ? "Your place is quick saved first." : "Anything since your last save is lost.";
+    const char* l3 = unsaved_confirm ? "NO keeps playing." : br ? "" : "(Quick save works on the bridge.)";
+    fit_text(s, (BOT_W - text_width(l1, F8x16)) / 2, 50, BOT_W - 6, l1, F8x16, unsaved_confirm ? rgb(255, 120, 100) : BTN_TXT, "pause");
+    fit_text(s, (BOT_W - text_width(l2, F6x12)) / 2, 80, BOT_W - 6, l2, F6x12, HINT, "pause");
+    if (*l3) fit_text(s, (BOT_W - text_width(l3, F6x12)) / 2, 96, BOT_W - 6, l3, F6x12, HINT, "pause");
     add_btn(30, 130, 150, 172, "YES", &F8x16, kind_act(A_QUIT_YES));
     btns.back().focus = pause_focus == 0;
     add_btn(170, 130, 290, 172, "NO", &F8x16, kind_act(A_PAUSE));
@@ -1591,7 +1599,43 @@ static void pause_bottom(Surf& s, const TextScreen& ts) {
   hint_strip(s, lefty_on ? "D-Right Select  D-Down Back  ZL Swap" : "A Select  B Back  ZL Swap");
 }
 
+// Rule 17: the platform's exit save is running (the game writes its quick save; then the app closes).
+static void saving_bottom(Surf& s) {
+  s.fill(0, 0, BOT_W, BOT_H, BG);
+  header_bar(s, "EXIT GAME");
+  const char* l1 = "Saving...";
+  fit_text(s, (BOT_W - text_width(l1, F8x16)) / 2, 60, BOT_W - 6, l1, F8x16, TITLE, "saving");
+  const char* l2 = "Quick saving your place on the bridge.";
+  fit_text(s, (BOT_W - text_width(l2, F6x12)) / 2, 92, BOT_W - 6, l2, F6x12, BTN_TXT, "saving");
+  // moving bar (never looks dead, rule 3)
+  int x0 = 40, x1 = BOT_W - 40, w = 48, span = x1 - x0 - w;
+  int pos = (int)((now() / 10) % (uint32_t)(2 * span)); if (pos > span) pos = 2 * span - pos;
+  s.fill(x0, 124, x1, 130, BTN);
+  s.fill(x0 + pos, 122, x0 + pos + w, 132, LOUPE);
+  const char* l3 = "The game closes when the save is";
+  const char* l4 = "on the SD card. Please wait.";
+  fit_text(s, (BOT_W - text_width(l3, F6x12)) / 2, 156, BOT_W - 6, l3, F6x12, HINT, "saving");
+  fit_text(s, (BOT_W - text_width(l4, F6x12)) / 2, 170, BOT_W - 6, l4, F6x12, HINT, "saving");
+}
+
 // ------------------------------------------------------------------ public API
+bool can_quick_save() { return last.text_mode && is_bridge(last); }
+void quick_save() { press(K_Q, M_CTRL); }
+bool keys_pending() { return !queue.empty(); }
+void exit_save_ui(bool on) {
+  if (on == exit_ui) return;
+  exit_ui = on;
+  if (on) { pause_open = false; quit_confirm = false; unsaved_confirm = false; manual_open = false; kb_open = false; focus_mode = false; pressed_id.valid = false; }
+  dirty();
+}
+void exit_unsaved_ask() {
+  exit_ui = false;
+  pause_open = true; quit_confirm = true; unsaved_confirm = true; pause_focus = 1;   // focus on NO
+  manual_open = false; focus_mode = false;
+  dirty();
+}
+bool exit_prompt_open() { return pause_open && quit_confirm && unsaved_confirm; }
+
 void init(const Host* host) {
   H = host;
   next_key_ms = now();
@@ -1653,8 +1697,8 @@ static void fire(const Act& a) {
       typed.clear(); type_text(off_name); press(K_ENTER); autologin = 1; pass_tries = 0; pend_name = off_name; say("Signing on...", 1500);
       break;
     case A_SAVE: press(K_Q, M_CTRL); say("Quick save", 1500); pause_open = false; break;
-    case A_PAUSE: pause_open = false; quit_confirm = false; break;
-    case A_QUIT: quit_confirm = true; pause_focus = 1; break;
+    case A_PAUSE: pause_open = false; quit_confirm = false; unsaved_confirm = false; break;
+    case A_QUIT: quit_confirm = true; unsaved_confirm = false; pause_focus = 1; break;
     case A_QUIT_YES: if (H && H->quit) H->quit(); break;
     case A_SETTINGS: pause_open = false; press(K_C); break;
     case A_MODE:
@@ -1841,14 +1885,14 @@ Redraw frame(const TextScreen& ts, uint16_t* top, uint16_t* bottom) {
   // (-50: keep redrawing a little past the end so the button's released look gets drawn)
   if (flash_on && (int32_t)(flash_until - t) <= -50) flash_on = false;
   bool toast_anim = !toast.empty() && (int32_t)(toast_until - t) > -50;
-  bool scroll_due = (marquee || busy_now) && t - last_anim >= 50;
+  bool scroll_due = (marquee || busy_now || exit_ui) && t - last_anim >= 50;
   bool full = changed || drawn_version != ui_version;
   if (!full && !flash_on && !toast_anim && !scroll_due) return rd;
   if (flash_on || toast_anim || scroll_due) last_anim = t;
 
   Surf ts_top = {top, TOP_W, TOP_H}, ts_bot = {bottom, BOT_W, BOT_H};
   // Only the scrolling prompt moved: redraw just that strip (keeps idle screens cheap).
-  if (!full && !flash_on && !toast_anim && ts.text_mode && !manual_open && !pause_open) {
+  if (!full && !flash_on && !toast_anim && ts.text_mode && !manual_open && !pause_open && !exit_ui) {
     std::string prompt; parse_menu(ts, prompt);
     prompt_strip(ts_bot, ts, prompt);
     rd.bottom = true; rd.by0 = UP_H; rd.by1 = ROW1_Y0;   // (the alert box reaches down to the menu row)
@@ -1857,7 +1901,16 @@ Redraw frame(const TextScreen& ts, uint16_t* top, uint16_t* bottom) {
   bool draw_top = full;      // a button flash or toast only touches the touch screen
   btns.clear();
   sarea.on = false;          // (generic_bottom sets it again for the reader or a long menu)
-  if (manual_open) {
+  if (exit_ui) {
+    // rule 17: "Saving..." on the touch screen; the top keeps the bridge dashboard (the save only
+    // starts on the bridge) or the game's screen
+    if (draw_top && ts.text_mode) {
+      if (is_bridge(ts)) { if (top_w == BOT_W) bridge_top_narrow(ts_top, ts); else bridge_top(ts_top, ts); top_native = true; }
+      else { reader_on = false; analyse(ts); generic_top(ts_top, ts); top_native = false; }
+      rd.top = true;
+    }
+    saving_bottom(ts_bot); rd.bottom = true;
+  } else if (manual_open) {
     if (draw_top) { manual_top(ts_top); top_native = true; }
     manual_bottom(ts_bot); rd.top = draw_top; rd.bottom = true;
   } else if (pause_open) {
@@ -1876,7 +1929,7 @@ Redraw frame(const TextScreen& ts, uint16_t* top, uint16_t* bottom) {
     if (draw_top) { generic_top(ts_top, ts); top_native = false; }
     rd.top = draw_top; rd.bottom = true;
   }
-  if (focus_mode && !manual_open && !pause_open) {     // ring the button nearest the last focus point
+  if (focus_mode && !manual_open && !pause_open && !exit_ui) {     // ring the button nearest the last focus point
     int best = -1, bd = 1 << 30;
     for (int i = 0; i < (int)btns.size(); i++) {
       if (btns[i].off) continue;
@@ -1972,6 +2025,7 @@ static float man_mom = 0;   // manual drag momentum, px per frame (run in button
 static int man_acc = 0;     // drag remainder below one 12 px line
 
 void touch(int x, int y, bool down) {
+  if (exit_ui) { touch_was_down = down; return; }
   // Manual: a touch that moves more than 6 px drags the text (rule 13) and presses nothing.
   if (manual_open) {
     if (down && !touch_was_down) { drag_x = x; drag_y = y; drag_ly = y; dragging = false; man_acc = 0; man_mom = 0; }
@@ -2051,6 +2105,7 @@ static bool repeat_due(uint32_t bit, uint32_t held, uint32_t pressed_now) {
 
 void buttons(uint32_t held, uint32_t pr, uint32_t rel) {
   (void)rel;
+  if (exit_ui) return;                  // rule 17: saving before the app closes; nothing to press
   if (manual_open) {
     // the standard manual controls: sticks scroll, D-Pad sections, L/R prev/next, B/START close
     if (repeat_due(B_CPAD_DOWN, held, pr) || repeat_due(B_CSTICK_DOWN, held, pr)) { man_scroll++; dirty(); }
@@ -2091,12 +2146,12 @@ void buttons(uint32_t held, uint32_t pr, uint32_t rel) {
   if (pause_open) {
     if (pr & (B_B | B_START)) {
       H->click();
-      if (quit_confirm) { quit_confirm = false; pause_focus = 4; } else pause_open = false;
+      if (quit_confirm) { quit_confirm = false; unsaved_confirm = false; pause_focus = 4; } else pause_open = false;
       dirty(); return;
     }
     if (quit_confirm) {
       if (pr & (B_DLEFT | B_DRIGHT)) { pause_focus = !pause_focus; dirty(); }
-      if (pr & B_A) { H->click(); if (pause_focus == 0) fire(kind_act(A_QUIT_YES)); quit_confirm = false; pause_focus = 4; dirty(); }
+      if (pr & B_A) { H->click(); if (pause_focus == 0) fire(kind_act(A_QUIT_YES)); quit_confirm = false; unsaved_confirm = false; pause_focus = 4; dirty(); }
       return;
     }
     bool bridge = is_bridge(last);

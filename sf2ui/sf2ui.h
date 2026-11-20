@@ -95,4 +95,16 @@ std::vector<std::string> fit_problems();
 void fit_clear();     // test harness: start a fresh fit report
 void force_redraw();  // test harness: redraw both screens on the next frame
 
+// Rule 17 (never lose progress): the platform's exit save. The platform asks whether a quick save is
+// possible (the game's own Ctrl+Q works on the bridge only), presses it, and while it waits for the
+// game to write its files shows "Saving..." on the touch screen (input is ignored meanwhile). If the
+// save does not finish, exit_unsaved_ask() opens "Not saved! Exit anyway?" (focus on NO): YES calls
+// Host::quit again, NO or B goes back.
+bool can_quick_save();       // the game is on the bridge
+void quick_save();           // press the game's quick save (Ctrl+Q), as SELECT does
+bool keys_pending();         // injected key events still waiting to go in
+void exit_save_ui(bool on);  // show / hide the "Saving..." panel
+void exit_unsaved_ask();     // ask "Not saved! Exit anyway?"
+bool exit_prompt_open();     // that question is still open
+
 }  // namespace sf2ui

@@ -17,7 +17,7 @@ New to Star Fleet II? This page walks you through your first ten minutes. The ga
 
 6. Questions. When the game asks something, the line just above the buttons shows the question and the buttons become the answers. When nothing is asked, that line says what to do on this screen (the top screen's gold strip says it too).
 
-7. Saving. On the bridge, SELECT (or START, then QUICK SAVE) saves your place.
+7. Saving. On the bridge, SELECT (or START, then QUICK SAVE) saves your place. When you leave with START, then EXIT GAME, while on the bridge, the port quick saves for you first: the touch screen says "Saving..." until the game has written its save, then the game closes. Closing the game from the HOME Menu does the same (as far as the 3DS allows). Away from the bridge the game cannot quick save, so EXIT GAME warns that anything since your last save is lost. If the save does not finish, EXIT GAME asks "Not saved! Exit anyway?" (NO is ringed; NO keeps playing). Pressing HOME by itself only pauses the game; it does not save.
 
 8. Learning more. The Training Manual tutorials further down this manual (Tutorial 1 onward) teach flying, combat and missions step by step: follow them in Practice. The Keyboard Quick Reference lists the game's own keys; you never need them, because the port presses them for you and the row of buttons under the prompt shows the game's current commands.
 
