@@ -688,11 +688,13 @@ static void bridge_top(Surf& s, const TextScreen& ts) {
     uint16_t fg = (at >> 4) & 15 ? VGA[at & 15] : READ_FG[at & 15];
     fit_text(s, a + (b - a - 1 - text_width(lab.c_str(), F6x12)) / 2, 0, b - 1, lab.c_str(), F6x12, fg, "alert light");
   }
-  Box in = tile(s, 0, 12, 238, 138, "COMMS");
+  // P2-2: the left column gives 16 px to the house hint strip (COMMS keeps 12-px rows); the right
+  // column (DAMAGE, DATA, VEL and the two small read-outs) needs all 228 px and runs to the bottom.
+  Box in = tile(s, 0, 12, 238, 124, "COMMS");
   cells_in(s, ts, 1, 15, 39, 22, F6x12, in.x0, in.y0, in.x1, in.y1);
 
   // energy + mission time
-  in = tile(s, 0, 138, 138, 240, "ENERGY");
+  in = tile(s, 0, 124, 138, 224, "ENERGY");
   static const int trow[5] = {18, 19, 20, 21, 22}, erow[4] = {18, 19, 20, 22};
   for (int i = 0; i < 5; i++) {
     uint8_t at = ts.at[trow[i]][41];
@@ -717,8 +719,13 @@ static void bridge_top(Surf& s, const TextScreen& ts) {
   s.hline(in.x0, in.x1, sep, FRAME);
   cells_in(s, ts, 1, 11, 16, 12, F6x12, in.x0, sep + 1, in.x1, in.y1, 12);
 
-  in = tile(s, 138, 138, 238, 240, "LRS");
+  in = tile(s, 138, 124, 238, 224, "LRS");
   cells_in(s, ts, 2, 3, 16, 9, F6x12, in.x0, in.y0, in.x1, in.y1);
+  if (!lefty_loaded) lefty_load();
+  const char* hint = lefty_on ? "D-Lt/Up fire L freeze R tap START menu" : "X/Y fire  L freeze  R tap  START menu";
+  s.fill(0, 224, 238, TOP_H, BTN);
+  s.hline(0, 238, 224, BTN_EDGE);
+  fit_text(s, (238 - text_width(hint, F6x12)) / 2, 226, 236, hint, F6x12, TITLE, "bridge hint");
   in = tile(s, 238, 12, 356, 108, "DAMAGE");
   cells_in(s, ts, 60, 2, 77, 8, F6x12, in.x0, in.y0, in.x1, in.y1);
   in = tile(s, 238, 108, 356, 204, "DATA");
