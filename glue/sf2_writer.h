@@ -15,6 +15,7 @@ void sf2w_start();                                         // start the worker (
 void sf2w_queue(const char* path, const uint8_t* data, size_t n);   // replace the file's contents
 bool sf2w_pending(const char* path, std::vector<uint8_t>& out);     // latest queued contents, if any
 void sf2w_wait(const char* path);                          // until the file's writes have landed (0 = all)
+bool sf2w_flush(int timeout_ms);                           // all writes landed, waiting at most timeout_ms (HOME / sleep)
 void sf2w_cancel(const char* path);                        // the file is being deleted: drop its writes
 int  sf2w_rename(const char* from, const char* to);        // rename on the card; queued writes follow the file
 void sf2w_wait_busy(const char* path);                     // until a write in progress of this file ends

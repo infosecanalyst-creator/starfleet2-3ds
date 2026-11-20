@@ -138,6 +138,22 @@ void sf2w_wait(const char* path) {
   }
 }
 
+// T4: HOME or sleep coming (the APT hook): let the queued writes land, but never hold the system
+// up for more than timeout_ms. True if nothing is left to write.
+bool sf2w_flush(int timeout_ms) {
+  if (!started || !worker) return true;
+  u64 end = svcGetSystemTick() + (u64)timeout_ms * (SYSCLOCK_ARM11 / 1000);
+  for (;;) {
+    LightLock_Lock(&lock);
+    bool b = !busy_path.empty() || !jobs.empty();
+    LightLock_Unlock(&lock);
+    if (!b) return true;
+    if (svcGetSystemTick() >= end) return false;
+    LightEvent_Signal(&wake);
+    block_until_done();
+  }
+}
+
 static void wait_not_busy(const char* path) {
   int n = 0;
   for (;;) {
