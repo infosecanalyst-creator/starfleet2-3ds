@@ -1076,6 +1076,7 @@ static void build_reader(const TextScreen& ts) {
     int ind = first[r] - minc;
     bool join = !blank_before && !paras.empty() && r > 0 && first[r - 1] >= 0 &&
                 first[r - 1] == first[r] && last_c[r - 1] >= minc + (maxe - minc) * 3 / 4 &&
+                last_c[r - 1] - first[r - 1] >= 40 &&   // only long rows were wrapped prose (names, credits stay rows)
                 !table_row(r) && !table_row(r - 1) && (ts.at[r][first[r]] & 15) == (ts.at[r - 1][first[r - 1]] & 15);
     if (!join) paras.push_back(Para{"", "", {}, ind});
     Para& p = paras.back();
@@ -1109,7 +1110,21 @@ static void build_reader(const TextScreen& ts) {
     }
   }
 }
-static bool reader_wanted(const TextScreen& ts) { return glay.kind == G_PLAIN && !kb_open && ts.text_mode && !in_flight(ts); }
+// Only pages that are mostly words: title art drawn with block characters and star fields
+// (the STAR FLEET logo pages) keep the plain controls instead of a reader full of dots.
+static bool mostly_text(const TextScreen& ts) {
+  int letters = 0, art = 0;
+  for (int r = 0; r < 24; r++)
+    for (int c = 0; c < 80; c++) {
+      uint8_t x = ts.ch[r][c];
+      if ((x >= 'A' && x <= 'Z') || (x >= 'a' && x <= 'z')) letters++;
+      else if ((x >= 0xB0 && x <= 0xB2) || (x >= 0xDB && x <= 0xDF) || x == 0xFE || x == 0xF9 || x == 0xFA) art++;
+    }
+  return letters >= 60 && art * 2 < letters;
+}
+static bool reader_wanted(const TextScreen& ts) {
+  return glay.kind == G_PLAIN && !kb_open && ts.text_mode && !in_flight(ts) && mostly_text(ts);
+}
 static void draw_reader(Surf& s, const TextScreen& ts) {
   build_reader(ts);
   uint32_t sig = 2166136261u;          // a different page (its first lines changed) starts at the top
