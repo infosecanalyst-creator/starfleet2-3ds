@@ -7,7 +7,7 @@ New to Star Fleet II? This page walks you through your first ten minutes. The ga
 
 3. Sign-on options. This menu becomes big buttons on the touch screen. For your first time, choose Practice: it is a safe place to learn the bridge. Start a new mission when you are ready for the real thing.
 
-4. Your orders. Before you fly, the game shows your orders and other pages of text. Both sticks scroll a long page; tap CONTINUE or press A to go on. During a mission the ORDERS tab brings your orders back at any time.
+4. Your orders. Before you fly, the game shows your orders and other pages of text. The touch screen shows the text in large letters: drag it with the stylus or use either stick to scroll; tap CONTINUE or press A to go on. During a mission the ORDERS tab brings your orders back at any time.
 
 5. The bridge. The touch screen is your helm: the tactical display (your ship is in the middle), NAV and the action buttons. The top screen is what you watch: alert lights, COMMS messages, ENERGY, the long-range scan (LRS), DAMAGE and DATA.
 - Steer: tap the tactical display where you want to go, or push the Circle Pad left or right.
@@ -45,7 +45,9 @@ COMMAND MENU: the row of buttons under the prompt is the game's own menu, read l
 
 VIEW TABS: STARS, SYSTEM, WAR, COMBAT, FLEET, ORDERS and LOG jump straight to those displays. This manual is in the START menu (MANUAL).
 
-OTHER DISPLAYS: nothing is shown twice. On a menu screen the menu becomes big buttons on the touch screen (tap one to choose it) and the rest of the screen stays on top. On a map (star, system and war maps, combat control) the map goes on the touch screen: tap a star or ship to move the target box there, and tap it again to select. Other screens stay on top, with arrow, page and space keys on the touch screen.
+OTHER DISPLAYS: nothing is shown twice. On a menu screen the menu becomes big buttons on the touch screen (tap one to choose it) and the rest of the screen stays on top; a menu too long for the touch screen shows five rows at a time: drag the list (the bar on the right shows where you are). On a map (star, system and war maps, combat control) the map goes on the touch screen: tap a star or ship to move the target box there, and tap it again to select.
+
+TEXT PAGES (orders, reports, briefings): the touch screen shows the page's text in large letters, joined into paragraphs. Drag it with the stylus, or use the sticks: up/down scroll the text, and at its end they page the game's own text (left/right page up/down). The gold bar at the right edge of the top screen marks the lines you are reading. Tapping a word with a red hotkey letter presses that key. The row under the text keeps the game's own keys: PG UP, the four arrows, PG DN and SPACE. Flight windows keep a larger pad of those keys instead.
 
 KEYBOARD: opens by itself when the game wants typed text (your name, password, notepad). The KEYBOARD button opens it any time (SELECT does too, away from the bridge).
 
@@ -82,7 +84,8 @@ C-Stick      Bridge: review earlier messages (left/right)
 Sticks       Off the bridge (orders, reports, any long
              page of text) both sticks scroll it:
              up/down a line at a time (hold to keep
-             going), left/right a page at a time
+             going; at the end of the text they page
+             the game), left/right a page at a time
 START        Menu: resume, manual, quick save,
              game settings, exit
 SELECT       Bridge: quick save (the game's Ctrl+Q)

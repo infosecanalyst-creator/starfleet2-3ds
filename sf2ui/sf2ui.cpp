@@ -79,6 +79,8 @@ static bool tdb_enter_after = false; static int tdb_best = 9999;
 // button, B or ZR hands them back. (fx, fy): centre of the ringed button.
 static bool focus_mode = false; static int fx = 160, fy = 200;
 static bool lefty_on = false, lefty_loaded = false;   // left-handed play (rule 10)
+static bool reader_on = false;   // the touch screen shows the page's text (P2-1 reader)
+static bool menu_scrolls = false; // a menu too long for the touch screen scrolls there
 static void lefty_load();
 
 static TextScreen last;                // last screen drawn (for change detection)
@@ -480,10 +482,11 @@ static const char* context_hint(const TextScreen& ts) {
     return screen_has(ts, "recruit") ? "First time? Tap YES to enlist as a new recruit" : "Tap YES or NO";
   if (screen_has(ts, "SIGN-ON OPTIONS")) return "New? Choose Practice first. Help: START > MANUAL";
   if (row_mode == R_WINDOW) return "Tap one of the keys below";
-  if (glay_kind() == 1) return "Tap an item to choose it";
+  if (glay_kind() == 1) return menu_scrolls ? "Tap an item to choose it; drag the list for more" : "Tap an item to choose it";
   if (glay_kind() == 2) return "Tap a star or ship to aim, tap it again to select";
   if (row_mode == R_ANYKEY) return lefty_on ? "Read the screen, then tap CONTINUE (or D-Rt)" : "Read the screen, then tap CONTINUE (or A)";
   if (in_flight(ts)) return lefty_on ? "D-Lt/Up fire, Circle Pad steers, D-Dn backs out" : "X/Y fire, Circle Pad steers, B backs out";
+  if (reader_on) return lefty_on ? "Drag or sticks to scroll \xb3 D-Rt: Enter \xb3 D-Dn: back" : "Drag or sticks to scroll \xb3 A: Enter \xb3 B: back";
   return lefty_on ? "Sticks scroll the page \xb3 D-Rt: Enter \xb3 D-Dn: back" : "Sticks scroll the page \xb3 A: Enter \xb3 B: back";
 }
 // Prompt strip (y UP_H..UP_H+12): the game's question, a toast, or the line being typed; scrolls when long.
@@ -963,6 +966,130 @@ static void analyse(const TextScreen& ts) {
   glay.kind = G_PLAIN; glay.r1 = glay.c1 = -1;
 }
 
+// ---- touch-screen scroll area (the text reader, a long menu): drag to scroll, rule 13
+struct ScrollArea { bool on; int x0, y0, x1, y1, step; int* pos; int max; };
+static ScrollArea sarea = {false, 0, 0, 0, 0, 1, 0, 0};
+static bool sdrag = false, sd_maybe = false; static int sd_y = 0, sd_ly = 0, sd_acc = 0; static float sd_mom = 0;
+static void sarea_scroll() {          // move by whole steps; the remainder waits for more drag
+  if (!sarea.on || !sarea.pos) { sd_acc = 0; return; }
+  while (sd_acc >= sarea.step) { sd_acc -= sarea.step; if (*sarea.pos < sarea.max) { (*sarea.pos)++; dirty(); } else { sd_acc = 0; sd_mom = 0; } }
+  while (sd_acc <= -sarea.step) { sd_acc += sarea.step; if (*sarea.pos > 0) { (*sarea.pos)--; dirty(); } else { sd_acc = 0; sd_mom = 0; } }
+}
+static void scroll_bar(Surf& s, int x, int y0, int y1, int pos, int max, int vis) {
+  if (max <= 0) return;
+  int total = max + vis, th = (y1 - y0) * vis / total; if (th < 10) th = 10;
+  int ty = y0 + (y1 - y0 - th) * pos / max;
+  s.fill(x, y0, x + 4, y1, rgb(40, 44, 60));
+  s.fill(x, ty, x + 4, ty + th, BTN_EDGE);
+}
+
+// ---- P2-1 text reader: the page's text on the touch screen in 6x12 (frames dropped, long rows
+// wrapped at 50 columns), dragged or stick-scrolled; the game's own page keys stay in a row below.
+static char hotkey_at(const TextScreen& ts, int col, int row);
+struct RLine { std::string ch, at; std::vector<int16_t> src; };   // src: row * 80 + col per cell, -1 none
+static std::vector<RLine> rlines;
+static int rd_scroll = 0, rd_max = 0;
+static uint32_t rd_sig = 0;
+static const int RD_Y0 = 4, RD_LINES = 11, RD_COLS = 50, RD_X0 = 6;
+static bool frame_cell(uint8_t c) { return c >= 0xB0 && c <= 0xDF; }   // box lines, blocks, shades
+static bool blank_cell(uint8_t c) { return c <= ' ' || c == 0xFF || frame_cell(c); }
+// Rows of prose that the game wrapped itself are joined into one paragraph and wrapped again at 50
+// columns; short rows, indented rows and table rows (with wide gaps) stay rows of their own.
+static void build_reader(const TextScreen& ts) {
+  rlines.clear();
+  int minc = 80, maxe = -1;
+  int first[24], last_c[24];
+  for (int r = 0; r < 24; r++) {
+    first[r] = -1; last_c[r] = -1;
+    for (int c = 0; c < 80; c++) if (!blank_cell(ts.ch[r][c])) { if (first[r] < 0) first[r] = c; last_c[r] = c; }
+    if (first[r] >= 0) { minc = std::min(minc, first[r]); maxe = std::max(maxe, last_c[r]); }
+  }
+  if (maxe < 0) return;
+  auto table_row = [&](int r) {
+    for (int c = first[r]; c + 2 <= last_c[r]; c++)
+      if (blank_cell(ts.ch[r][c]) && blank_cell(ts.ch[r][c + 1]) && blank_cell(ts.ch[r][c + 2])) return true;
+    return false;
+  };
+  struct Para { std::string ch, at; std::vector<int16_t> src; int ind; };
+  std::vector<Para> paras;
+  bool blank_before = true;
+  for (int r = 0; r < 24; r++) {
+    if (first[r] < 0) {
+      if (!blank_before) paras.push_back(Para{"", "", {}, 0});
+      blank_before = true; continue;
+    }
+    int ind = first[r] - minc;
+    bool join = !blank_before && !paras.empty() && r > 0 && first[r - 1] >= 0 &&
+                first[r - 1] == first[r] && last_c[r - 1] >= minc + (maxe - minc) * 3 / 4 &&
+                !table_row(r) && !table_row(r - 1) && (ts.at[r][first[r]] & 15) == (ts.at[r - 1][first[r - 1]] & 15);
+    if (!join) paras.push_back(Para{"", "", {}, ind});
+    Para& p = paras.back();
+    if (join) { p.ch += ' '; p.at += (char)7; p.src.push_back(-1); }
+    int c0 = join ? first[r] : minc + ind;
+    for (int c = c0; c <= last_c[r]; c++) {
+      uint8_t x = ts.ch[r][c];
+      p.ch += (char)(blank_cell(x) ? ' ' : x); p.at += (char)ts.at[r][c]; p.src.push_back((int16_t)(r * 80 + c));
+    }
+    blank_before = false;
+  }
+  while (!paras.empty() && paras.back().ch.empty()) paras.pop_back();
+  for (auto& p : paras) {
+    if (p.ch.empty()) { rlines.push_back(RLine()); continue; }
+    int ind = std::min(p.ind, 20), pos = 0, n = (int)p.ch.size();
+    while (pos < n) {
+      int lead = ind;
+      int room = RD_COLS - lead;
+      int len = n - pos;
+      if (len > room) {
+        int cut = (int)p.ch.rfind(' ', pos + room);
+        len = (cut > pos) ? cut - pos : room;
+      }
+      RLine l;
+      l.ch = std::string(lead, ' ') + p.ch.substr(pos, len);
+      l.at = std::string(lead, (char)7) + p.at.substr(pos, len);
+      l.src.assign(lead, -1); l.src.insert(l.src.end(), p.src.begin() + pos, p.src.begin() + pos + len);
+      rlines.push_back(l);
+      pos += len;
+      while (pos < n && p.ch[pos] == ' ') pos++;   // the space at the break
+    }
+  }
+}
+static bool reader_wanted(const TextScreen& ts) { return glay.kind == G_PLAIN && !kb_open && ts.text_mode && !in_flight(ts); }
+static void draw_reader(Surf& s, const TextScreen& ts) {
+  build_reader(ts);
+  uint32_t sig = 2166136261u;          // a different page (its first lines changed) starts at the top
+  for (int i = 0, k = 0; i < (int)rlines.size() && k < 3; i++) if (!rlines[i].ch.empty()) { for (char c : rlines[i].ch) { sig ^= (uint8_t)c; sig *= 16777619u; } k++; }
+  if (sig != rd_sig) { rd_sig = sig; rd_scroll = 0; }
+  rd_max = (int)rlines.size() - RD_LINES; if (rd_max < 0) rd_max = 0;
+  if (rd_scroll > rd_max) rd_scroll = rd_max;
+  for (int i = 0; i < RD_LINES && rd_scroll + i < (int)rlines.size(); i++) {
+    const RLine& l = rlines[rd_scroll + i];
+    for (size_t k = 0; k < l.ch.size(); k++) {
+      uint8_t a = (uint8_t)l.at[k];
+      int bgc = (a >> 4) & 7;
+      uint16_t bg = bgc ? VGA[bgc] : BG;
+      uint16_t fg = (a & 15) == bgc ? (bgc ? VGA[0] : BTN_TXT) : READ_FG[a & 15];
+      draw_cell(s, RD_X0 + (int)k * 6, RD_Y0 + i * 12, 6, 12, (uint8_t)l.ch[k], fg, bg, F6x12);
+    }
+  }
+  scroll_bar(s, 310, RD_Y0, RD_Y0 + RD_LINES * 12, rd_scroll, rd_max, RD_LINES);
+  sarea = ScrollArea{true, 0, 0, 308, RD_Y0 + RD_LINES * 12, 12, &rd_scroll, rd_max};
+  // the game's own keys for stepping through pages
+  static const char* labs[7] = {"PG UP", "\x1b", "\x18", "\x19", "\x1a", "PG DN", "SPACE"};
+  static const Key keys[7] = {K_PGUP, K_LEFT, K_UP, K_DOWN, K_RIGHT, K_PGDN, K_SPACE};
+  for (int i = 0; i < 7; i++) {
+    int a, b; split_gap(6, BOT_W - 6, 7, i, a, b);
+    add_btn(a, 140, b, 164, labs[i], &F8x16, key_act(keys[i]));
+  }
+}
+// A tap on the reader's text: a word with a red hotkey letter (or an "X  Label" line) sends that key.
+static char reader_hotkey(int x, int y) {
+  int li = rd_scroll + (y - RD_Y0) / 12, k = (x - RD_X0) / 6;
+  if (y < RD_Y0 || li < 0 || li >= (int)rlines.size() || k < 0) return 0;
+  const RLine& l = rlines[li];
+  if (k >= (int)l.ch.size() || l.ch[k] == ' ' || l.src[k] < 0) return 0;
+  return hotkey_at(last, l.src[k] % 80, l.src[k] / 80);
+}
 static void generic_top(Surf& s, const TextScreen& ts) {
   s.fill(0, 0, TOP_W, TOP_H, BG);
   cells(s, ts, 0, 0, 79, 24, F5x9, 0, 0, 5, 9);
@@ -978,6 +1105,12 @@ static void generic_top(Surf& s, const TextScreen& ts) {
     int tw = text_width(note, *nf);
     if (tw <= x1 - x0 - 4 && y1 - y0 >= nf->h + 2)
       draw_text(s, x0 + (x1 - x0 - tw) / 2, y0 + (y1 - y0 - nf->h) / 2, note, *nf, HINT);
+  }
+  if (reader_on && !rlines.empty()) {   // gold bar at the right edge beside the rows the reader shows
+    int a = 24, b = -1;
+    for (int i = rd_scroll; i < rd_scroll + RD_LINES && i < (int)rlines.size(); i++)
+      for (int16_t sr : rlines[i].src) if (sr >= 0) { a = std::min(a, sr / 80); b = std::max(b, sr / 80); }
+    if (b >= a) s.fill(397, a * 9, 400, (b + 1) * 9, TITLE);
   }
   // (y 225, one pixel lower than the house 224: the game's row 24 ends at y 224)
   s.fill(0, 225, TOP_W, TOP_H, BTN);
@@ -1024,8 +1157,10 @@ static bool frame_changes(const TextScreen& ts, const TextScreen& before) {
   lx = w <= LP_COLS ? c0 - (LP_COLS - w) / 2 : c0;
   return true;
 }
+static int menu_top = 0;               // first row shown of a menu too long for the touch screen
 static void generic_bottom(Surf& s, const TextScreen& ts) {
   s.fill(0, 0, BOT_W, UP_H, BG);
+  reader_on = false; menu_scrolls = false;
   if (glay.kind == G_MENU) {
     int n = (int)glay.items.size();
     int cols = n > 6 ? 2 : 1, rows = (n + cols - 1) / cols;
@@ -1036,23 +1171,52 @@ static void generic_bottom(Surf& s, const TextScreen& ts) {
       for (auto& l : glay.items) if (text_width((std::string("X ") + l.label).c_str(), F6x12) > half) { cols = 1; rows = n; break; }
     }
     bool small = cols == 2 || rows > 7;
+    // Rule 11: rows at least 24 px. A menu with more rows than that allows shows 5 rows of 28 px at a
+    // time and scrolls (drag, scroll bar; the game's own highlight is kept in view).
+    bool scroll = (UP_H - 10 - 4 * (rows - 1)) / rows < 24;
+    const int VIS = 5, PITCH = 32;
+    if (scroll) {
+      static std::string seen_first; static int seen_sel = -1;
+      int sel = -1;
+      for (int i = 0; i < n; i++) if (glay.items[i].sel) sel = i % rows;
+      if (glay.items[0].label != seen_first) { seen_first = glay.items[0].label; menu_top = 0; seen_sel = -1; }
+      if (sel >= 0 && sel != seen_sel) {
+        seen_sel = sel;
+        if (sel < menu_top) menu_top = sel;
+        if (sel >= menu_top + VIS) menu_top = sel - VIS + 1;
+      }
+      if (menu_top > rows - VIS) menu_top = rows - VIS;
+      if (menu_top < 0) menu_top = 0;
+      scroll_bar(s, 310, 6, 6 + VIS * PITCH - 4, menu_top, rows - VIS, VIS);
+      sarea = ScrollArea{true, 0, 0, 308, 6 + VIS * PITCH, PITCH, &menu_top, rows - VIS};
+      menu_scrolls = true;
+    }
     for (int i = 0; i < n; i++) {
       int col = i / rows, row = i % rows;
       int x0, x1, y0, y1;
-      split_gap(6, BOT_W - 6, cols, col, x0, x1);
-      split_gap(6, UP_H - 4, rows, row, y0, y1);   // (split_gap works for rows too)
+      if (scroll) {
+        if (row < menu_top || row >= menu_top + VIS) continue;
+        split_gap(6, 306, cols, col, x0, x1);
+        y0 = 6 + (row - menu_top) * PITCH; y1 = y0 + PITCH - 4;
+      } else {
+        split_gap(6, BOT_W - 6, cols, col, x0, x1);
+        split_gap(6, UP_H - 4, rows, row, y0, y1);   // (split_gap works for rows too)
+      }
       const GLine& l = glay.items[i];
       int hot = -1;
       for (size_t k = 0; k < l.label.size(); k++)
         if (toupper((unsigned char)l.label[k]) == l.key) { hot = (int)k; break; }
       std::string lab = l.label;
       if (hot < 0) { lab = std::string(1, l.key) + " " + l.label; hot = 0; }
-      add_btn(x0, y0, x1, y1, lab, small ? &F6x12 : &F8x16, key_act(key_for_char(l.key)), hot, l.sel);
+      add_btn(x0, y0, x1, y1, lab, small && !scroll ? &F6x12 : &F8x16, key_act(key_for_char(l.key)), hot, l.sel);
     }
   } else if (glay.kind == G_MAP) {
     cells(s, ts, glay.c0, glay.r0, glay.c1, glay.r1, *glay.f, glay.ox, glay.oy, glay.cw, glay.lh);
+  } else if (reader_wanted(ts) && (build_reader(ts), !rlines.empty())) {
+    reader_on = true;
+    draw_reader(s, ts);
   } else {
-    // keys for screens that are read or stepped through: arrows, page keys, space
+    // keys for screens that are read or stepped through (flight windows): arrows, page keys, space
     static const char* labs[9] = {"PG UP", "\x18", "PG DN", "\x1b", "SPACE", "\x1a", "HOME", "\x19", "END"};
     static const Key keys[9] = {K_PGUP, K_UP, K_PGDN, K_LEFT, K_SPACE, K_RIGHT, K_NONE, K_DOWN, K_NONE};
     for (int i = 0; i < 9; i++) {
@@ -1453,6 +1617,7 @@ Redraw frame(const TextScreen& ts, uint16_t* top, uint16_t* bottom) {
   }
   bool draw_top = full;      // a button flash or toast only touches the touch screen
   btns.clear();
+  sarea.on = false;          // (generic_bottom sets it again for the reader or a long menu)
   if (manual_open) {
     if (draw_top) { manual_top(ts_top); top_native = true; }
     manual_bottom(ts_bot); rd.top = draw_top; rd.bottom = true;
@@ -1582,6 +1747,18 @@ void touch(int x, int y, bool down) {
       if (dragging) { touch_was_down = down; return; }
     } else if (!down && touch_was_down && dragging) { dragging = false; touch_was_down = down; return; }
   }
+  // Reader text or a long menu: a touch that moves more than 6 px up or down drags the list and
+  // presses nothing (rule 12/13).
+  if (sarea.on && !manual_open && !pause_open) {
+    if (down && !touch_was_down) {
+      sd_maybe = x >= sarea.x0 && x < sarea.x1 && y >= sarea.y0 && y < sarea.y1;
+      sdrag = false; sd_y = y; sd_ly = y; sd_acc = 0; sd_mom = 0;
+    } else if (down && touch_was_down && sd_maybe) {
+      if (!sdrag && abs(y - sd_y) > 6) { sdrag = true; pressed_id.valid = false; tap_kind = 0; dirty(); }
+      if (sdrag) { sd_acc += sd_ly - y; sd_mom = (float)(sd_ly - y); sd_ly = y; sarea_scroll(); touch_was_down = down; return; }
+      sd_ly = y;
+    } else if (!down && touch_was_down && sdrag) { sdrag = false; sd_maybe = false; tap_kind = 0; touch_was_down = down; return; }
+  }
   if (down && !touch_was_down) {
     tap_kind = 0;
     int i = hit(x, y);
@@ -1592,6 +1769,7 @@ void touch(int x, int y, bool down) {
     } else if (!manual_open && !pause_open && !kb_open && last.text_mode) {
       if (is_bridge(last) && x < 180 && y < UP_H) { tap_kind = 1; tap_x = x; tap_y = y; }
       else if (!is_bridge(last) && y < UP_H && glay.kind == G_MAP) { tap_kind = 2; tap_x = x; tap_y = y; }
+      else if (reader_on && y < RD_Y0 + RD_LINES * 12) { tap_kind = 3; tap_x = x; tap_y = y; }
     }
   } else if (down && touch_was_down) {
 
@@ -1609,6 +1787,9 @@ void touch(int x, int y, bool down) {
       tactical_tap(tap_x, tap_y);
     } else if (tap_kind == 2) {
       map_tap(tap_x, tap_y);
+    } else if (tap_kind == 3) {
+      char k = reader_hotkey(tap_x, tap_y);
+      if (k) { Key kk = key_for_char(k); if (kk != K_NONE) { press(kk); busy_since = now(); } }
     }
     tap_kind = 0;
   }
@@ -1693,6 +1874,9 @@ void buttons(uint32_t held, uint32_t pr, uint32_t rel) {
     }
     return;
   }
+  if (sarea.on && !sdrag && (sd_mom > 0.5f || sd_mom < -0.5f)) {   // a dragged list coasts a little
+    sd_acc += (int)(sd_mom * 2.0f); sd_mom *= 0.88f; sarea_scroll();
+  } else if (!sdrag) sd_mom = 0;
   if (pr & B_START) { pause_open = true; quit_confirm = false; pause_focus = 0; focus_mode = false; H->click(); dirty(); return; }
   if (pr & B_ZR) {
     focus_mode = !focus_mode;
@@ -1743,9 +1927,14 @@ void buttons(uint32_t held, uint32_t pr, uint32_t rel) {
   // Off the flight screens (orders, reports, long text pages) the sticks read, like the manual:
   // up/down scroll the page a line at a time (hold to keep going), left/right page up/down.
   // They never send the helm keys there.
+  // With the text reader up they scroll it first, and only page the game when it is at its end.
   if (last.text_mode && !in_flight(last)) {
-    if (repeat_due(B_CPAD_DOWN, held, pr) || repeat_due(B_CSTICK_DOWN, held, pr)) press(K_DOWN);
-    if (repeat_due(B_CPAD_UP, held, pr) || repeat_due(B_CSTICK_UP, held, pr)) press(K_UP);
+    if (repeat_due(B_CPAD_DOWN, held, pr) || repeat_due(B_CSTICK_DOWN, held, pr)) {
+      if (reader_on && rd_scroll < rd_max) { rd_scroll++; dirty(); } else press(K_DOWN);
+    }
+    if (repeat_due(B_CPAD_UP, held, pr) || repeat_due(B_CSTICK_UP, held, pr)) {
+      if (reader_on && rd_scroll > 0) { rd_scroll--; dirty(); } else press(K_UP);
+    }
     if (repeat_due(B_CPAD_RIGHT, held, pr) || repeat_due(B_CSTICK_RIGHT, held, pr)) press(K_PGDN);
     if (repeat_due(B_CPAD_LEFT, held, pr) || repeat_due(B_CSTICK_LEFT, held, pr)) press(K_PGUP);
     return;
