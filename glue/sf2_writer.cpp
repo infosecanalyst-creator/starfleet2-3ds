@@ -18,7 +18,7 @@
 // (as created vs. as found in its directory cache): compare paths without case.
 static bool same_path(const std::string& a, const char* b) { return b && strcasecmp(a.c_str(), b) == 0; }
 
-struct Job { std::string path; std::vector<uint8_t> data; };
+struct Job { std::string path; std::vector<uint8_t> data; bool own = false, del = false; };
 static std::deque<Job> jobs;          // queued writes, oldest first (at most one per file)
 static std::string busy_path;         // the write in progress
 static Job cur;                       // its contents: the worker only reads them while busy_path is set
@@ -28,9 +28,56 @@ static Thread worker = 0;
 static bool started = false;
 static bool trace = false;                 // log what the writer does (slowsd.txt test mode)
 static int slow_ms = 0;                    // test mode: make every write as slow as the real SD card
+static std::string fail_name;              // SF-01: the last write that failed, for a toast (under lock)
+static bool lock_ready = false;
+static void ensure_lock() { if (!lock_ready) { LightLock_Init(&lock); lock_ready = true; } }   // main thread, before the worker
+
+static void note_failure(const std::string& path) {
+  size_t s = path.find_last_of('/');
+  ensure_lock();
+  LightLock_Lock(&lock); fail_name = s == std::string::npos ? path : path.substr(s + 1); LightLock_Unlock(&lock);
+}
+
+// SF-01: the port's own files are written to <name>.tmp (every write and the close checked) and
+// swapped in through <name>.bak: rename over an existing file fails on the 3DS SD card. On any
+// failure the old file stays (or is put back). A delete job just removes the file.
+static bool write_own(const Job& j) {
+  if (j.del) {
+    if (remove(j.path.c_str()) == 0 || errno == ENOENT) return true;
+    sf2ctr_log("delete failed: %s (errno %d)", j.path.c_str(), errno);
+    return false;
+  }
+  std::string tmp = j.path + ".tmp", bak = j.path + ".bak";
+  FILE* f = fopen(tmp.c_str(), "wb");
+  if (!f) { sf2ctr_log("write failed (open): %s (errno %d)", tmp.c_str(), errno); return false; }
+  bool ok = j.data.empty() || fwrite(j.data.data(), 1, j.data.size(), f) == j.data.size();
+  if (fflush(f) != 0) ok = false;
+  if (fclose(f) != 0) ok = false;
+  if (!ok) { sf2ctr_log("write failed: %s", tmp.c_str()); remove(tmp.c_str()); return false; }
+  FILE* old = fopen(j.path.c_str(), "rb");
+  bool had = old != 0;
+  if (old) fclose(old);
+  if (had) {
+    remove(bak.c_str());
+    if (rename(j.path.c_str(), bak.c_str()) != 0) { sf2ctr_log("write failed (old aside): %s", j.path.c_str()); remove(tmp.c_str()); return false; }
+  }
+  if (rename(tmp.c_str(), j.path.c_str()) != 0) {
+    sf2ctr_log("write failed (rename): %s", j.path.c_str());
+    if (had) rename(bak.c_str(), j.path.c_str());
+    remove(tmp.c_str());
+    return false;
+  }
+  if (had) remove(bak.c_str());
+  return true;
+}
 
 static void write_file(const Job& j) {
   u64 t0 = svcGetSystemTick();
+  if (j.own) {
+    if (!write_own(j)) note_failure(j.path);
+    if (slow_ms) svcSleepThread((s64)slow_ms * 1000000);
+    return;
+  }
   // Rewrite in place ("r+b") rather than truncating to zero first: freeing and re-allocating the
   // file's clusters is the slow part on the 3DS.
   // The real 3DS refuses to open a file the game has open: try again for a few seconds.
@@ -40,14 +87,15 @@ static void write_file(const Job& j) {
     if (!f) f = fopen(j.path.c_str(), "wb");
     if (!f) { if (tries == 0) sf2ctr_log("write refused, retrying: %s (errno %d)", j.path.c_str(), errno); svcSleepThread(200 * 1000 * 1000); }
   }
-  if (!f) { sf2ctr_log("write failed: %s", j.path.c_str()); return; }
+  if (!f) { sf2ctr_log("write failed: %s", j.path.c_str()); note_failure(j.path); return; }
   fseek(f, 0, SEEK_END);
   long old = ftell(f);
   fseek(f, 0, SEEK_SET);
-  if (!j.data.empty()) fwrite(j.data.data(), 1, j.data.size(), f);
-  fflush(f);
-  if (old > (long)j.data.size()) { if (ftruncate(fileno(f), (off_t)j.data.size()) != 0) {} }
-  fclose(f);
+  bool ok = j.data.empty() || fwrite(j.data.data(), 1, j.data.size(), f) == j.data.size();
+  if (fflush(f) != 0) ok = false;
+  if (old > (long)j.data.size() && ftruncate(fileno(f), (off_t)j.data.size()) != 0) ok = false;
+  if (fclose(f) != 0) ok = false;
+  if (!ok) { sf2ctr_log("write failed: %s", j.path.c_str()); note_failure(j.path); }
   if (slow_ms) svcSleepThread((s64)slow_ms * 1000000);
   unsigned ms = (unsigned)((svcGetSystemTick() - t0) / (SYSCLOCK_ARM11 / 1000));
   if (ms > 300) sf2ctr_log("slow write: %s (%u bytes) %u ms", j.path.c_str(), (unsigned)j.data.size(), ms);
@@ -82,7 +130,7 @@ static void block_until_done() { LightEvent_WaitTimeout(&done, 50LL * 1000 * 100
 void sf2w_start() {
   if (started) return;
   started = true;
-  LightLock_Init(&lock);
+  ensure_lock();
   LightEvent_Init(&wake, RESET_ONESHOT);
   LightEvent_Init(&done, RESET_PULSE);
   // On the game's own core, one step above the game's priority: it wakes as soon as a write is
@@ -98,24 +146,36 @@ void sf2w_start() {
   atexit(drain_at_exit);
 }
 
-void sf2w_queue(const char* path, const uint8_t* data, size_t n) {
-  if (trace) sf2ctr_log("wq %s %u", path, (unsigned)n);
-  if (!started || !worker) {                 // no worker: write now
-    Job j; j.path = path; j.data.assign(data, data + n); write_file(j); return;
-  }
+static void queue_job(const char* path, const uint8_t* data, size_t n, bool own) {
+  if (trace) sf2ctr_log("wq %s %u%s", path, (unsigned)n, own ? (data ? " own" : " delete") : "");
+  Job nj; nj.path = path; nj.own = own; nj.del = own && !data;
+  if (data) nj.data.assign(data, data + n);
+  if (!started || !worker) { write_file(nj); return; }   // no worker: write now
   LightLock_Lock(&lock);
   bool replaced = false;
-  for (auto& j : jobs) if (same_path(j.path, path)) { j.data.assign(data, data + n); replaced = true; break; }
-  if (!replaced) { Job j; j.path = path; j.data.assign(data, data + n); jobs.push_back(std::move(j)); }
+  for (auto& j : jobs) if (same_path(j.path, path)) { j = std::move(nj); replaced = true; break; }
+  if (!replaced) jobs.push_back(std::move(nj));
   LightLock_Unlock(&lock);
   LightEvent_Signal(&wake);
+}
+
+void sf2w_queue(const char* path, const uint8_t* data, size_t n) { queue_job(path, data, n, false); }
+void sf2w_queue_own(const char* path, const uint8_t* data, size_t n) { queue_job(path, data, n, true); }
+
+bool sf2w_take_failure(char* name, size_t cap) {
+  ensure_lock();
+  LightLock_Lock(&lock);
+  bool any = !fail_name.empty();
+  if (any) { snprintf(name, cap, "%s", fail_name.c_str()); fail_name.clear(); }
+  LightLock_Unlock(&lock);
+  return any;
 }
 
 bool sf2w_pending(const char* path, std::vector<uint8_t>& out) {
   if (!started) return false;
   bool found = false;
   LightLock_Lock(&lock);
-  for (auto& j : jobs) if (same_path(j.path, path)) { out = j.data; found = true; }
+  for (auto& j : jobs) if (same_path(j.path, path) && !j.del) { out = j.data; found = true; }
   // Being written right now: the card holds a half-written file, so serve what is being written.
   if (!found && same_path(busy_path, path)) { out = cur.data; found = true; }
   LightLock_Unlock(&lock);

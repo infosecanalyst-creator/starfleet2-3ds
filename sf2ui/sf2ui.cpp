@@ -182,6 +182,7 @@ static void pump_keys() {
 }
 
 static void say(const char* msg, uint32_t ms = 2200) { toast = msg; toast_until = now() + ms; dirty(); }
+void notify(const char* msg) { say(msg, 3000); }
 
 // ---- remembered officer (one-tap sign-on). Saved after a successful sign-on.
 static std::string typed;                       // characters typed on the on-screen keyboard

@@ -13,6 +13,10 @@
 
 void sf2w_start();                                         // start the worker (once)
 void sf2w_queue(const char* path, const uint8_t* data, size_t n);   // replace the file's contents
+// The port's own small files (settings.txt, lefty.txt, officer.txt, .swapped): written crash-safe
+// (.tmp, every write and the close checked, swapped in through .bak). data == 0: delete the file.
+void sf2w_queue_own(const char* path, const uint8_t* data, size_t n);
+bool sf2w_take_failure(char* name, size_t cap);           // a write that failed since the last call
 bool sf2w_pending(const char* path, std::vector<uint8_t>& out);     // latest queued contents, if any
 void sf2w_wait(const char* path);                          // until the file's writes have landed (0 = all)
 void sf2w_cancel(const char* path);                        // the file is being deleted: drop its writes

@@ -68,6 +68,8 @@ void init(const Host* host);
 // (the game's own graphics) and only draws the touch screen.
 struct Redraw { bool top, bottom; int by0, by1; };  // by0..by1: touch-screen rows that changed
 Redraw frame(const TextScreen& ts, uint16_t* top, uint16_t* bottom);
+// A short message in the prompt strip for a couple of seconds (e.g. "Couldn't save lefty.txt").
+void notify(const char* msg);
 
 // Input. Touch coordinates are touch-screen pixels; down=false on release.
 void touch(int x, int y, bool down);

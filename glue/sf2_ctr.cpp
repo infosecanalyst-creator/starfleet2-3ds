@@ -32,9 +32,10 @@ static void swap_load() {
   struct stat sb;
   if (stat(kSwapFile, &sb) == 0) { swapped = true; swap_force = true; }
 }
+// Through the background writer like the other settings (SF-01): never blocks, and a failure shows a toast.
 static void swap_save() {
-  if (swapped) { FILE *f = fopen(kSwapFile, "w"); if (f) fclose(f); }
-  else remove(kSwapFile);
+  if (swapped) sf2w_queue_own(kSwapFile, (const uint8_t*)"1\n", 2);
+  else sf2w_queue_own(kSwapFile, 0, 0);       // delete the marker
 }
 static uint16_t top_img[sf2ui::TOP_W * sf2ui::TOP_H];
 static uint16_t bot_img[sf2ui::BOT_W * sf2ui::BOT_H];
@@ -141,7 +142,8 @@ static void key_logged(sf2ui::Key k, bool down) {
   if (keys_logged < 300) { keys_logged++; sf2ctr_log("key %d %s", (int)k, down ? "down" : "up"); }
   sf2_key(k, down);
 }
-static void save_bg(const char* path, const char* data, unsigned n) { sf2w_queue(path, (const uint8_t*)data, n); }
+// The port's own files (settings.txt, lefty.txt, officer.txt): crash-safe, in the background (SF-01).
+static void save_bg(const char* path, const char* data, unsigned n) { sf2w_queue_own(path, (const uint8_t*)data, n); }
 static bool quit_req = false;                  // START menu > EXIT GAME
 static void quit_app() { sf2ctr_log("exit chosen in the START menu"); quit_req = true; }
 static void ui_log(const char* line) { sf2ctr_log("%s", line); }
@@ -395,6 +397,14 @@ void sf2ctr_events() {
   bool can_swap = owns_top && sf2ui::swap_ok(ts);
   sf2ui::set_swapped(swapped);
   sf2ui::set_top_width(swapped && can_swap ? sf2ui::BOT_W : sf2ui::TOP_W);
+  {   // SF-01: a write that failed is shown, never silent (the game carries on)
+    char failed[64];
+    if (sf2w_take_failure(failed, sizeof failed)) {
+      char msg[96];
+      snprintf(msg, sizeof msg, "Couldn't save %.40s (SD card)", failed);
+      sf2ui::notify(msg);
+    }
+  }
   sf2ui::Redraw rd = sf2ui::frame(ts, top_img, bot_img);
   { bool eff = swapped && can_swap;
     if (eff != swap_eff || swap_force) {            // layout changed: show both screens afresh
