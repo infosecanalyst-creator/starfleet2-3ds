@@ -23,7 +23,7 @@ The PC game is keyboard-only. On the 3DS:
   (it presses the course keys for you, 15 degrees and 1 degree at a time).
 - **Tap to target:** when the game's target box is up, a tap drives it onto the star, planet or ship
   you touched (closed loop, snapping to the nearest object); tap it again to select.
-- **One-tap sign-on:** the officer you sign on with is remembered (`/3ds/starfleet2/officer.txt`).
+- **One-tap sign-on:** the officer you sign on with is remembered (`/3ds/starfleet2/officer.txt`), but only after the game accepts the sign-on, so a wrong password is never kept. The password in that file is lightly scrambled (obfuscated, not encrypted: the key is in the source). It is only the old DOS game's officer password, not a secret; don't reuse a real password here.
 - **Tap menus:** every command menu, `[M]: menu`-style key hint, `C  Change settings`-style menu
   line and yes/no question becomes a button.
 - **Keyboard only when needed:** it opens by itself for your name, password and notepad.

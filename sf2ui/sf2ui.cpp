@@ -61,9 +61,7 @@ static bool manual_open = false, kb_open = false, kb_forced = false, kb_user_hid
 static std::string toast; static uint32_t toast_until = 0;
 static bool marquee = false;      // prompt strip is scrolling (needs regular redraws)
 
-// loupe (generic views): top-left cell of the magnified window
-static int lx = 13, ly = 5; static bool follow = true;
-static bool dragging = false; static int drag_x, drag_y, drag_lx, drag_ly, drag_moved;
+static bool dragging = false; static int drag_x, drag_y, drag_ly;
 static int tap_x = -1, tap_y = -1;
 
 // target box driver (closed loop: press an arrow, look where the box went, repeat)
@@ -148,13 +146,7 @@ static uint32_t now() { return H && H->ms ? H->ms() : 0; }
 
 // ------------------------------------------------------------------ keys
 static void push(Key k, bool d) { queue.push_back(Ev{k, d}); }
-// The screen as it was when the player last sent a key: the magnifier frames everything that
-// changed since then (the game prints slowly, so frame-to-frame changes are only the latest few
-// characters).
-static TextScreen base_ts; static bool base_ok = false;
-static void mark_base();
 static void press(Key k, uint8_t mods = 0) {
-  mark_base();
   if (mods & M_SHIFT) push(K_LSHIFT, true);
   if (mods & M_CTRL) push(K_LCTRL, true);
   if (mods & M_ALT) push(K_LALT, true);
@@ -195,19 +187,38 @@ static std::string off_name, off_pass;          // remembered officer
 static std::string pend_name, pend_pass;        // typed at this sign-on, saved once it succeeds
 static int autologin = 0;                       // 1 = name sent, waiting for the password prompt; 2 = password sent
 static uint32_t pass_sent = 0; static int pass_tries = 0; static uint32_t pass_sig = 0;
+// SF-09: the officer's password is not written to officer.txt as readable text. It is XORed with a
+// key made from the name and hex-encoded ("enc1:..."). This is obfuscation only, so a glance at the
+// file on the SD card does not show it; it is NOT encryption. It is the game's own DOS sign-on
+// password (it protects nothing but your officer file) and the key is in this source.
+static std::string pass_key(const std::string& name) { return "SF2-3DS|" + name; }
+static std::string pass_encode(const std::string& name, const std::string& pw) {
+  const std::string k = pass_key(name); std::string o = "enc1:"; char h[3];
+  for (size_t i = 0; i < pw.size(); i++) { snprintf(h, sizeof h, "%02x", (unsigned)((unsigned char)pw[i] ^ (unsigned char)k[i % k.size()])); o += h; }
+  return o;
+}
+static std::string pass_decode(const std::string& name, const std::string& line) {
+  if (line.compare(0, 5, "enc1:") != 0) return line;           // an older file with a plain password: still read
+  const std::string k = pass_key(name); std::string o;
+  for (size_t i = 5, n = 0; i + 1 < line.size(); i += 2, n++) {
+    unsigned v = 0; if (sscanf(line.c_str() + i, "%2x", &v) != 1) return "";
+    o += (char)(v ^ (unsigned char)k[n % k.size()]);
+  }
+  return o;
+}
 static void load_officer() {
   off_name.clear(); off_pass.clear();
   FILE* f = H && H->profile_path ? fopen(H->profile_path, "rb") : 0;
   if (!f) return;
-  char a[64] = "", b[64] = "";
+  char a[64] = "", b[160] = "";
   if (fgets(a, sizeof a, f) && !fgets(b, sizeof b, f)) b[0] = 0;
   fclose(f);
   for (char* p : {a, b}) { size_t n = strlen(p); while (n && (p[n - 1] == '\n' || p[n - 1] == '\r')) p[--n] = 0; }
-  off_name = a; off_pass = b;
+  off_name = a; off_pass = pass_decode(a, b);
 }
 static void save_officer(const std::string& n, const std::string& p) {
   if (!H || !H->profile_path) return;
-  std::string text = n + "\n" + p + "\n";
+  std::string text = n + "\n" + pass_encode(n, p) + "\n";
   if (H->save) H->save(H->profile_path, text.data(), (unsigned)text.size());   // (3DS: in the background)
   else {
     FILE* f = fopen(H->profile_path, "wb");
@@ -944,13 +955,6 @@ static void steer_to(const TextScreen& ts, int px, int py) {
 }
 
 // ------------------------------------------------------------------ generic views
-static const int LP_COLS = 53, LP_ROWS = 15;
-static void clamp_loupe() {
-  if (lx < 0) lx = 0;
-  if (lx > 80 - LP_COLS) lx = 80 - LP_COLS;
-  if (ly < 0) ly = 0;
-  if (ly > 25 - LP_ROWS) ly = 25 - LP_ROWS;
-}
 // ------------------------------------------------------------------ other displays
 // Every screen apart from the bridge is split by its content, so nothing appears on both
 // screens: a menu becomes big buttons on the touch screen, a map goes on the touch screen to
@@ -1313,45 +1317,10 @@ static void generic_top(Surf& s, const TextScreen& ts) {
   s.hline(0, TOP_W, 225, BTN_EDGE);
   fit_text(s, (TOP_W - text_width(hint, F6x12)) / 2, 227, TOP_W - 2, hint, F6x12, TITLE, "top hint");
 }
-static uint32_t user_pan_ms = 0;
 static uint32_t screen_sig(const TextScreen& ts) {   // changes when a different screen appears
   uint32_t h = 2166136261u;
   for (int r = 0; r < 24; r++) for (int c = 0; c < 80; c++) { h ^= ts.ch[r][c]; h *= 16777619u; }
   return h;
-}
-static void frame_content(const TextScreen& ts) {
-  int r0 = 25, r1 = -1, c0 = 80, c1 = -1;
-  for (int r = 0; r < 25; r++)
-    for (int c = 0; c < 80; c++)
-      if (ts.ch[r][c] > ' ' && ts.ch[r][c] != 0xFF) {
-        if (r < r0) r0 = r;
-        if (r > r1) r1 = r;
-        if (c < c0) c0 = c;
-        if (c > c1) c1 = c;
-      }
-  if (r1 < 0) return;
-  ly = (r1 - r0 + 1 <= LP_ROWS) ? r0 - (LP_ROWS - (r1 - r0 + 1)) / 2 : r0;
-  lx = (c1 - c0 + 1 <= LP_COLS) ? c0 - (LP_COLS - (c1 - c0 + 1)) / 2 : c0;
-}
-// Aim at the cells that changed since the previous screen (a dialog that popped up, a panel
-// that was replaced); fall back to framing the whole content when most of the screen changed.
-static void mark_base() { if (!base_ok || queue.empty()) { base_ts = last; base_ok = true; } }
-static bool frame_changes(const TextScreen& ts, const TextScreen& before) {
-  int r0 = 25, r1 = -1, c0 = 80, c1 = -1, n = 0;
-  for (int r = 0; r < 24; r++)                 // row 24 is the prompt line, shown separately
-    for (int c = 0; c < 80; c++)
-      if (ts.ch[r][c] != before.ch[r][c] || ts.at[r][c] != before.at[r][c]) {
-        n++;
-        if (r < r0) r0 = r;
-        if (r > r1) r1 = r;
-        if (c < c0) c0 = c;
-        if (c > c1) c1 = c;
-      }
-  if (n == 0 || n > 80 * 24 * 6 / 10) return false;   // nothing, or a whole new screen
-  int h = r1 - r0 + 1, w = c1 - c0 + 1;
-  ly = h <= LP_ROWS ? r0 - (LP_ROWS - h) / 2 : r0;
-  lx = w <= LP_COLS ? c0 - (LP_COLS - w) / 2 : c0;
-  return true;
 }
 static int menu_top = 0;               // first row shown of a menu too long for the touch screen
 static void generic_bottom(Surf& s, const TextScreen& ts) {
@@ -1802,8 +1771,11 @@ Redraw frame(const TextScreen& ts, uint16_t* top, uint16_t* bottom) {
   }
   if (autologin && ts.text_mode && (screen_has(ts, "SIGN-ON OPTIONS") || (autologin == 2 && pass_tries >= 3 && t - pass_sent > 5000)))
     autologin = 0;
+  // SF-06: the name prompt is back after a password was sent: that sign-on failed (wrong password).
+  // Forget what was typed, so a wrong password is never remembered.
+  if (ts.text_mode && !pend_pass.empty() && at_name_prompt(ts)) { pend_name.clear(); pend_pass.clear(); }
   // a successful sign-on with a newly typed officer: remember it
-  if (ts.text_mode && screen_has(ts, "SIGN-ON OPTIONS") && !pend_name.empty() && !pend_pass.empty()) {
+  if (ts.text_mode && screen_has(ts, "SIGN-ON OPTIONS") && !screen_has(ts, "ncorrect") && !screen_has(ts, "nvalid") && !screen_has(ts, "Wrong") && !pend_name.empty() && !pend_pass.empty()) {
     if (pend_name != off_name || pend_pass != off_pass) { save_officer(pend_name, pend_pass); say("Officer remembered for one-tap sign-on"); }
     pend_name.clear(); pend_pass.clear();
   }
