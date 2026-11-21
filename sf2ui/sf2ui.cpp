@@ -1825,7 +1825,7 @@ static void load_library_cards() {
     flush();
     if (c->see && *c->see) {
       sec.paras.push_back("");
-      std::string see = c->see; for (auto& ch : see) if (ch == '|') ch = ';';
+      std::string see; for (const char* q = c->see; *q; q++) { if (*q == '|') see += "; "; else see += *q; }
       sec.paras.push_back("More in BOOKS: " + see);
     }
     manual.push_back(sec);
@@ -2196,7 +2196,9 @@ static void fire(const Act& a) {
       if (kb_open) { kb_open = false; kb_user_hidden = true; kb_forced = false; }
       else { kb_open = true; kb_forced = true; kb_user_hidden = false; }
       break;
-    case A_SECTION: man_sel = a.arg; man_scroll = 0; man_focus = 0; break;
+    case A_SECTION:      // (a card that is off the list, e.g. picked by its shelf tab, goes to the top row)
+      if (a.arg < man_list_top || a.arg >= man_list_top + 4) man_list_top = a.arg;
+      man_sel = a.arg; man_scroll = 0; man_focus = 0; break;
     case A_SECLIST: man_list_top += a.arg; break;   // (clamped when the list is drawn)
     case A_ROWPAGE: row_page++; break;              // (wraps when the row is laid out)
     case A_MENUSCROLL: menu_top += a.arg; break;     // (clamped when the menu is laid out)
