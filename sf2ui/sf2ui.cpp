@@ -34,7 +34,7 @@ static std::vector<Ev> queue;          // pending key events
 static uint32_t next_key_ms = 0;
 static const uint32_t KEY_GAP_MS = 35; // spacing between injected key events
 
-enum ActKind { A_NONE, A_KEY, A_MODE, A_MANUAL, A_KB, A_SECTION, A_CLOSE, A_TYPE, A_SIGNON, A_SAVE, A_VIEW, A_PAUSE, A_QUIT, A_QUIT_YES, A_SETTINGS, A_LEFTY, A_SECLIST, A_ROWPAGE, A_RDLINE, A_MENUSCROLL, A_LAUNCH, A_ENGINES, A_MISSION };
+enum ActKind { A_NONE, A_KEY, A_MODE, A_MANUAL, A_KB, A_SECTION, A_CLOSE, A_TYPE, A_SIGNON, A_SAVE, A_VIEW, A_PAUSE, A_QUIT, A_QUIT_YES, A_SETTINGS, A_LEFTY, A_SECLIST, A_ROWPAGE, A_RDLINE, A_MENUSCROLL, A_LAUNCH, A_ENGINES, A_MISSION, A_COACH };
 struct Act { ActKind kind; Key key; uint8_t mods; int arg; };
 enum { M_SHIFT = 1, M_CTRL = 2, M_ALT = 4 };
 
@@ -1831,11 +1831,11 @@ static void pause_bottom(Surf& s, const TextScreen& ts) {
   bool menu = ts.text_mode && screen_has(ts, "Change default settings", 0, 24);
   // (Saving is the game's own: its command menu on the touch screen; the port does not drive it.
   // Hardware, Nov 20: at mission start every injected key only advanced the XO's COMMS messages.)
-  const char* lab[5] = {"RESUME", "MISSION", "MANUAL", "GAME SETTINGS", "EXIT GAME"};
-  Act act[5] = {kind_act(A_PAUSE), kind_act(A_MISSION), kind_act(A_MANUAL), kind_act(A_SETTINGS), kind_act(A_QUIT)};
-  for (int i = 0; i < 5; i++) {
-    add_btn(50, 30 + i * 34, 270, 58 + i * 34, lab[i], &F8x16, act[i]);   // 28 px tall, 6 px apart
-    if ((i == 1 && mis_goal.empty()) || (i == 3 && !menu) || (i == 4 && !(H && H->quit))) btns.back().off = true;
+  const char* lab[6] = {"RESUME", "MISSION", "MANUAL", coach_on ? "COACH: ON" : "COACH: OFF", "GAME SETTINGS", "EXIT GAME"};
+  Act act[6] = {kind_act(A_PAUSE), kind_act(A_MISSION), kind_act(A_MANUAL), kind_act(A_COACH), kind_act(A_SETTINGS), kind_act(A_QUIT)};
+  for (int i = 0; i < 6; i++) {
+    add_btn(50, 28 + i * 28, 270, 52 + i * 28, lab[i], &F8x16, act[i]);   // 24 px tall, 4 px apart
+    if ((i == 1 && mis_goal.empty()) || (i == 4 && !menu) || (i == 5 && !(H && H->quit))) btns.back().off = true;
     btns.back().focus = i == pause_focus;
   }
   const char* note = bridge ? "Save: the game's command menu; SELECT re-saves." :
@@ -1910,6 +1910,7 @@ static void fire(const Act& a) {
       if (autologin != 0 || !at_name_prompt(last)) break;
       typed.clear(); type_text(off_name); press(K_ENTER); autologin = 1; pass_tries = 0; pend_name = off_name; say("Signing on...", 1500);
       break;
+    case A_COACH: coach_on = !coach_on; if (coach_on) coach_seen = 0; save_settings(); break;
     case A_MISSION:
       pause_open = false;
       if (!mis_goal.empty()) { explain(mis_title.empty() ? "MISSION" : mis_title.c_str(), mission_text().c_str()); explain_until = now() + 12000; }
@@ -2404,25 +2405,25 @@ void buttons(uint32_t held, uint32_t pr, uint32_t rel) {
   if (pause_open) {
     if (pr & (B_B | B_START)) {
       H->click();
-      if (quit_confirm) { quit_confirm = false; pause_focus = 4; } else pause_open = false;
+      if (quit_confirm) { quit_confirm = false; pause_focus = 5; } else pause_open = false;
       dirty(); return;
     }
     if (quit_confirm) {
       if (pr & (B_DLEFT | B_DRIGHT)) { pause_focus = !pause_focus; dirty(); }
-      if (pr & B_A) { H->click(); if (pause_focus == 0) fire(kind_act(A_QUIT_YES)); quit_confirm = false; pause_focus = 4; dirty(); }
+      if (pr & B_A) { H->click(); if (pause_focus == 0) fire(kind_act(A_QUIT_YES)); quit_confirm = false; pause_focus = 5; dirty(); }
       return;
     }
     bool bridge = is_bridge(last);
     bool menu = last.text_mode && screen_has(last, "Change default settings", 0, 24);
     (void)bridge;
-    bool usable[5] = {true, !mis_goal.empty(), true, menu, H && H->quit};
-    int step = repeat_due(B_DDOWN, held, pr) ? 1 : repeat_due(B_DUP, held, pr) ? 4 : 0;
+    bool usable[6] = {true, !mis_goal.empty(), true, true, menu, H && H->quit};
+    int step = repeat_due(B_DDOWN, held, pr) ? 1 : repeat_due(B_DUP, held, pr) ? 5 : 0;
     if (step) {
-      do pause_focus = (pause_focus + step) % 5; while (!usable[pause_focus]);
+      do pause_focus = (pause_focus + step) % 6; while (!usable[pause_focus]);
       dirty();
     }
     if ((pr & B_A) && usable[pause_focus]) {
-      static const ActKind k[5] = {A_PAUSE, A_MISSION, A_MANUAL, A_SETTINGS, A_QUIT};
+      static const ActKind k[6] = {A_PAUSE, A_MISSION, A_MANUAL, A_COACH, A_SETTINGS, A_QUIT};
       H->click(); fire(kind_act(k[pause_focus])); dirty();
     }
     return;

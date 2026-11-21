@@ -2,5 +2,5 @@ kind: bridge
 hint: Tap YES or NO
 buttons: [PHASERS] [TORPS] [SHLD+] [SHLD-] [SPD+] [SPD-] [STOP] [STARFORT] [YES] [NO] [STARS] [SYSTEM] [WAR] [COMBAT] [FLEET] [ORDERS] [LOG]
 explain cards: 17/17
-start menu: [RESUME] [MISSION] [MANUAL] [GAME SETTINGS (grey)] [EXIT GAME (grey)]
+start menu: [RESUME] [MISSION] [MANUAL] [COACH: ON] [GAME SETTINGS (grey)] [EXIT GAME (grey)]
 mission card: Reconnaissance Mission into Region #1-A | Discover at least one mineral-rich planet in UGA or neutral space. You have 10 days (Time left on the top screen). Orders again: ORDERS on the bridge, or START > MISSION.

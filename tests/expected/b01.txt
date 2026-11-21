@@ -2,4 +2,4 @@ kind: reader
 hint: Read the screen, then tap CONTINUE (or A)
 buttons: [PG UP] [] [] [] [] [PG DN] [SPACE] [CONTINUE] [BACK] [KEYBOARD] [STARS (grey)] [SYSTEM (grey)] [WAR (grey)] [COMBAT (grey)] [FLEET (grey)] [ORDERS (grey)] [LOG (grey)]
 explain cards: 17/17
-start menu: [RESUME] [MISSION (grey)] [MANUAL] [GAME SETTINGS (grey)] [EXIT GAME (grey)]
+start menu: [RESUME] [MISSION (grey)] [MANUAL] [COACH: ON] [GAME SETTINGS (grey)] [EXIT GAME (grey)]

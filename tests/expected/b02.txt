@@ -2,4 +2,4 @@ kind: reader
 hint: Drag or sticks to scroll ³ A: Enter ³ B: back
 buttons: [PG UP] [] [] [] [] [PG DN] [SPACE] [ENTER] [BACK] [KEYBOARD] [STARS (grey)] [SYSTEM (grey)] [WAR (grey)] [COMBAT (grey)] [FLEET (grey)] [ORDERS (grey)] [LOG (grey)]
 explain cards: 17/17
-start menu: [RESUME] [MISSION (grey)] [MANUAL] [GAME SETTINGS (grey)] [EXIT GAME (grey)]
+start menu: [RESUME] [MISSION (grey)] [MANUAL] [COACH: ON] [GAME SETTINGS (grey)] [EXIT GAME (grey)]
