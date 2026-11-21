@@ -690,13 +690,20 @@ unsigned int sf2_save_writes = 0;                 // ... of those, to files that
 char sf2_game_write_path[CROSS_LEN] = "";         // the file last written
 char sf2_save_write_path[CROSS_LEN] = "";         // the save-type file last written
 char sf2_exit_files[512] = "";                    // distinct files written since sf2_exit_files_mark() (debug log)
-static bool sf2_not_save(const char* path) {      // logs, scan and planet files: never the save itself
+// Never the save itself: logs, scan and planet files, temp / overlay hand-off files (*.TMP, e.g.
+// OVER_OUT.TMP written when the game switches overlays) and the game's bookkeeping files (PLT_ID,
+// SEQ.NUM, SF2.DAT), all seen written on hardware without any save.
+static bool sf2_not_save(const char* path) {
 	const char* b = strrchr(path, '/'); b = b ? b + 1 : path;
 	char u[64]; size_t i = 0;
 	for (; b[i] && i < sizeof u - 1; i++) u[i] = (char)toupper((unsigned char)b[i]);
 	u[i] = 0;
 	if (strstr(u, "LOG.") || strstr(u, "LOG_")) return true;          // RPTLOG, CMBLOG, MSGLOG, PLOG, SPD_LOG
-	return !strncmp(u, "SPD", 3) || !strncmp(u, "SCANFAIL", 8) || !strncmp(u, "PAF", 3);
+	const char* ext = strrchr(u, '.');
+	if (ext && (!strcmp(ext, ".TMP") || !strcmp(ext, ".EXE") || !strcmp(ext, ".OVL") || !strcmp(ext, ".$$$"))) return true;
+	if (!strcmp(u, "SEQ.NUM") || !strcmp(u, "SF2.DAT")) return true;
+	return !strncmp(u, "SPD", 3) || !strncmp(u, "SCANFAIL", 8) || !strncmp(u, "PAF", 3) ||
+	       !strncmp(u, "PLT_ID", 6) || !strncmp(u, "OVER_", 5);
 }
 void sf2_exit_files_mark() { sf2_exit_files[0] = 0; }
 void sf2_game_wrote(const char* path) {

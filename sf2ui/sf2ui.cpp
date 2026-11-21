@@ -1705,6 +1705,7 @@ std::string exit_save_screen_changes() {
 }
 const char* exit_save_note() { return es_note.c_str(); }
 bool exit_save_refused() { return exit_cant; }
+void exit_save_extend() { if (es_phase != ES_OFF) { es_t = now(); es_note += " (program switch)"; } }
 int exit_save_step(bool save_written, bool save_quiet) {
   if (es_phase == ES_OFF) return ES_NOTHING;
   if (!queue.empty()) return ES_RUNNING;

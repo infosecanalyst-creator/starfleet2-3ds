@@ -113,6 +113,7 @@ int exit_save_step(bool save_written, bool save_quiet);
 const char* exit_save_note();   // what the sequence did (for the debug log)
 std::string exit_save_screen_changes();   // game screen rows changed since the last call (debug log)
 bool exit_save_refused();       // the game already said this mission can't be saved
+void exit_save_extend();        // the game switched programs: give the current step its full time again
 void exit_save_ui(bool on);  // show / hide the "Saving..." panel
 void exit_unsaved_ask(int reason);   // ask "Not saved! Exit anyway?" (reason 1: the game refused)
 bool exit_prompt_open();     // that question is still open

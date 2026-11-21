@@ -164,6 +164,8 @@ static void quit_app() { sf2ctr_log("exit chosen in the START menu"); quit_req =
 // game refuses (Practice) or nothing is saved, START > EXIT asks "Not saved! Exit anyway?" (focus on
 // NO); a system close just exits.
 extern unsigned int sf2_game_writes, sf2_save_writes;   // drive_local.cpp
+extern unsigned int sf2_program_ends;           // dos_execute.cpp
+static unsigned ex_prog0 = 0;
 extern char sf2_save_write_path[], sf2_exit_files[], sf2_game_write_path[];
 void sf2_flush_open_files();                    // drive_local.cpp
 void sf2_exit_files_mark();
@@ -223,7 +225,7 @@ static void exit_begin(bool home) {
   if (!home) sf2ui::exit_save_ui(true);
   ex_state = EX_SAVING; ex_home = home;
   ex_ms = ex_last_ms = 0;
-  ex_io_last = sf2_game_writes; ex_save0 = sf2_save_writes;
+  ex_io_last = sf2_game_writes; ex_save0 = sf2_save_writes; ex_prog0 = sf2_program_ends;
   ex_start = ex_prev = ex_logged = osGetTime();
   ex_watch_start();
   quit_req = false;
@@ -239,6 +241,9 @@ static void exit_step() {
   // SD card, or the HOME Menu): say so, with the last file the game wrote.
   if (d > 1000) sf2ctr_log("exit save: %u ms since the last poll (emulation held up); last file %s", d, sf2_game_write_path);
   if (sf2_game_writes != ex_io_last) { ex_io_last = sf2_game_writes; ex_last_ms = ex_ms; }
+  // A program ending is the game moving to another overlay (perhaps its save screen): not an end,
+  // keep watching, with the current step's full time again (the overall cap still applies).
+  if (sf2_program_ends != ex_prog0) { ex_prog0 = sf2_program_ends; sf2ui::exit_save_extend(); ex_last_ms = ex_ms; }
   if (t - ex_logged >= 1000) {                   // what the game shows, as it changes, and the steps taken
     ex_logged = t;
     std::string ch = sf2ui::exit_save_screen_changes();
