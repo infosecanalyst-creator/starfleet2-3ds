@@ -8,6 +8,7 @@
 // into the game's own keystrokes through the Host callbacks.
 #pragma once
 #include <stdint.h>
+#include <string>
 
 namespace sf2ui {
 
@@ -110,6 +111,7 @@ enum { ES_RUNNING = 0, ES_SAVED = 1, ES_CANT = -1, ES_NOTHING = -2 };
 void exit_save_begin();
 int exit_save_step(bool save_written, bool save_quiet);
 const char* exit_save_note();   // what the sequence did (for the debug log)
+std::string exit_save_screen_changes();   // game screen rows changed since the last call (debug log)
 bool exit_save_refused();       // the game already said this mission can't be saved
 void exit_save_ui(bool on);  // show / hide the "Saving..." panel
 void exit_unsaved_ask(int reason);   // ask "Not saved! Exit anyway?" (reason 1: the game refused)

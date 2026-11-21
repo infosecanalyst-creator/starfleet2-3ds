@@ -1659,20 +1659,42 @@ bool can_quick_save() { return last.text_mode && is_bridge(last); }
 void quick_save() { press(K_Q, M_CTRL); }
 
 // The exit save sequence (rule 17). Ctrl+Q saves under the name last given in Save Mission; with no
-// name yet it may do nothing or ask for one. So: Ctrl+Q; if no save file is written within 2.5 s,
-// the full save (Ctrl+V, then Alt+V if Ctrl+V changed nothing). A file-name prompt gets EXITSAVE +
-// Enter, an overwrite / save question gets Y, and a "cannot be saved" message (Practice) ends it.
-// Later exits then find the name set, and Ctrl+Q is enough.
-enum EsPhase { ES_OFF, ES_QUICK, ES_FULL, ES_FULL_ALT };
+// name yet it may do nothing or ask for one. So: first dismiss a "press any key" prompt the game has
+// up (hardware, Nov 20: Ctrl+Q only dismissed one); then Ctrl+Q; if no save file is written within
+// 2.5 s, the game's own menu path to Save Mission ([C], [S], [S], ~0.7 s apart, as on its command
+// row). A file-name prompt gets EXITSAVE + Enter, an overwrite / save question gets Y, and a
+// "cannot be saved" message (Practice) ends it. Later exits then find the name set, and Ctrl+Q is
+// enough. (Ctrl+V, tried in 41bdfda, is no longer pressed.)
+enum EsPhase { ES_OFF, ES_PRE, ES_QUICK, ES_MENU1, ES_MENU2, ES_MENU3 };
 static EsPhase es_phase = ES_OFF;
 static uint32_t es_t = 0, es_y_at = 0; static uint32_t es_sig = 0; static bool es_name_sent = false;
 static std::string es_note;
 static TextScreen es_ts0;              // the screen when the sequence began (only new text is read)
 static std::string lower(std::string x) { for (auto& c : x) c = (char)tolower((unsigned char)c); return x; }
+static TextScreen es_logged;           // the screen as last reported to the debug log
+static bool anykey_up(const TextScreen& ts) {
+  return ts.text_mode && (screen_has(ts, "PRESS ANY KEY", 0, 24) || screen_has(ts, "PRESS KEY", 0, 24) ||
+                          screen_has(ts, "Press any key", 0, 24) || row_mode == R_ANYKEY);
+}
 void exit_save_begin() {
-  press(K_Q, M_CTRL);
-  es_phase = ES_QUICK; es_t = now(); es_sig = screen_sig(last); es_name_sent = false; es_y_at = 0; es_ts0 = last;
-  es_note = "Ctrl+Q";
+  es_t = now(); es_name_sent = false; es_y_at = 0; es_logged = last;
+  if (anykey_up(last)) { press(K_SPACE); es_phase = ES_PRE; es_note = "SPACE (press-any-key prompt up)"; }
+  else { press(K_Q, M_CTRL); es_phase = ES_QUICK; es_note = "Ctrl+Q"; }
+  es_sig = screen_sig(last); es_ts0 = last;
+}
+// Rows of the game's screen that changed since the last call (for the debug log), "r12: text|...".
+std::string exit_save_screen_changes() {
+  std::string out;
+  int n = 0;
+  for (int r = 0; r < 25; r++) {
+    if (!memcmp(last.ch[r], es_logged.ch[r], 80)) continue;
+    std::string row = trim(row_str(last, r, 0, 80));
+    for (auto& c : row) if ((uint8_t)c < 32 || (uint8_t)c > 126) c = '.';
+    if (n++ < 8) { char h[8]; snprintf(h, sizeof h, "r%d: ", r); out += (out.empty() ? "" : " | ") + std::string(h) + row; }
+  }
+  if (n > 8) out += " | (+" + std::to_string(n - 8) + " rows)";
+  es_logged = last;
+  return out;
 }
 const char* exit_save_note() { return es_note.c_str(); }
 bool exit_save_refused() { return exit_cant; }
@@ -1715,11 +1737,17 @@ int exit_save_step(bool save_written, bool save_quiet) {
   }
   if (save_written) return ES_RUNNING;            // writing: wait until it goes quiet
   uint32_t el = t - es_t;
-  if (es_phase == ES_QUICK && el > 2500 && !es_name_sent) {
-    press(K_V, M_CTRL); es_phase = ES_FULL; es_t = t; es_sig = screen_sig(ts); es_note += " -> nothing, Ctrl+V";
-  } else if (es_phase == ES_FULL && el > 1500 && !es_name_sent && screen_sig(ts) == es_sig) {
-    press(K_V, M_ALT); es_phase = ES_FULL_ALT; es_t = t; es_sig = screen_sig(ts); es_note += " -> no change, Alt+V";
-  } else if ((es_phase == ES_FULL || es_phase == ES_FULL_ALT || es_name_sent) && el > 6000) {
+  if (es_phase == ES_PRE && el > 700) {
+    if (anykey_up(ts) && el < 2000) return ES_RUNNING;
+    press(K_Q, M_CTRL); es_phase = ES_QUICK; es_t = t; es_ts0 = ts; es_note += " -> Ctrl+Q";
+  } else if (es_phase == ES_QUICK && el > 2500 && !es_name_sent) {
+    if (anykey_up(ts)) { press(K_SPACE); es_note += " -> SPACE"; es_t = t - 1500; return ES_RUNNING; }
+    press(K_C); es_phase = ES_MENU1; es_t = t; es_note += " -> nothing, menu C";
+  } else if (es_phase == ES_MENU1 && el > 700 && !es_name_sent) {
+    press(K_S); es_phase = ES_MENU2; es_t = t; es_note += " S";
+  } else if (es_phase == ES_MENU2 && el > 700 && !es_name_sent) {
+    press(K_S); es_phase = ES_MENU3; es_t = t; es_note += " S";
+  } else if ((es_phase == ES_MENU3 || es_name_sent) && el > 6000) {
     es_note += " -> nothing written"; es_phase = ES_OFF; return ES_NOTHING;
   }
   return ES_RUNNING;
@@ -1753,7 +1781,7 @@ bool modal() { return manual_open; }
 void set_swapped(bool on) { if (on != swap_wanted) { swap_wanted = on; dirty(); } }
 // Principle (Ryan, Nov 17 2026): everything has to be readable. Only screens with a readable
 // 320-px layout swap (the bridge and the manual); other 80-column text screens stay unswapped.
-bool swap_ok(const TextScreen& ts) { return manual_open || (ts.text_mode && is_bridge(ts)); }
+bool swap_ok(const TextScreen& ts) { return !exit_ui && (manual_open || (ts.text_mode && is_bridge(ts))); }
 void set_top_width(int w) { if (w != top_w) { top_w = w; for (auto& sec : manual) sec.wrap = 0; dirty(); } }
 static bool top_native = false;   // the last top panel was laid out at top_w (manual, bridge)
 int top_width() { return top_native ? top_w : TOP_W; }
@@ -2015,10 +2043,16 @@ Redraw frame(const TextScreen& ts, uint16_t* top, uint16_t* bottom) {
   if (exit_ui) {
     // rule 17: "Saving..." on the touch screen; the top keeps the bridge dashboard (the save only
     // starts on the bridge) or the game's screen
+    // the top shows the game's own whole screen while it saves, so its windows and prompts (a file
+    // name, a refusal) are seen (hardware, Nov 20: the dashboard hid what the game drew)
     if (draw_top && ts.text_mode) {
-      if (is_bridge(ts)) { if (top_w == BOT_W) bridge_top_narrow(ts_top, ts); else bridge_top(ts_top, ts); top_native = true; }
-      else { reader_on = false; analyse(ts); generic_top(ts_top, ts); top_native = false; }
-      rd.top = true;
+      ts_top.fill(0, 0, TOP_W, TOP_H, BG);
+      cells(ts_top, ts, 0, 0, 79, 24, F5x9, 0, 0, 5, 9);
+      const char* hint = "Saving: this is the game's own screen";
+      ts_top.fill(0, 225, TOP_W, TOP_H, BTN);
+      ts_top.hline(0, TOP_W, 225, BTN_EDGE);
+      fit_text(ts_top, (TOP_W - text_width(hint, F6x12)) / 2, 227, TOP_W - 2, hint, F6x12, TITLE, "top hint");
+      top_native = false; rd.top = true;
     }
     saving_bottom(ts_bot); rd.bottom = true;
   } else if (manual_open) {

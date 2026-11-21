@@ -159,20 +159,52 @@ static void quit_app() { sf2ctr_log("exit chosen in the START menu"); quit_req =
 // Only a save-type file counts (drive_local.cpp leaves out the game's logs, scan and planet files,
 // which it writes anyway: hardware, Nov 20, a Ctrl+Q that saved nothing still wrote RPTLOG.5,
 // CMBLOG.5 and PAF0.006). Done = such a write, then EX_QUIET_MS without any game write; then every
-// file the game still holds open is queued too. The whole wait is capped at EX_TOTAL_MS. If the
+// file the game still holds open is queued too. The whole wait is capped at EX_TOTAL_MS of real time
+// (41bdfda counted at most 100 ms per poll, so polls that came seconds apart never reached it). If the
 // game refuses (Practice) or nothing is saved, START > EXIT asks "Not saved! Exit anyway?" (focus on
 // NO); a system close just exits.
 extern unsigned int sf2_game_writes, sf2_save_writes;   // drive_local.cpp
-extern char sf2_save_write_path[], sf2_exit_files[];
+extern char sf2_save_write_path[], sf2_exit_files[], sf2_game_write_path[];
 void sf2_flush_open_files();                    // drive_local.cpp
 void sf2_exit_files_mark();
 static const unsigned EX_QUIET_MS = 700, EX_TOTAL_MS = 15000;
 enum ExitState { EX_NONE, EX_SAVING, EX_ASKED };
 static ExitState ex_state = EX_NONE;
 static bool ex_home = false;                    // the system is closing the app: no screens, no question
-static unsigned ex_ms = 0, ex_last_ms = 0;      // run time of the wait (HOME pauses excluded)
+static unsigned ex_ms = 0, ex_last_ms = 0;      // real time since the start of the wait
 static unsigned ex_io_last = 0, ex_save0 = 0;
-static u64 ex_prev = 0;
+static u64 ex_start = 0, ex_prev = 0, ex_logged = 0;
+
+// Watchdog for the exit wait (diagnostic only): if the emulation thread stops polling for more than
+// 5 s, a separate thread appends one line straight to exitwatch.log (the normal log goes through the
+// writer and is lost if the app is killed while stuck). It touches nothing else and is stopped and
+// joined in sf2ctr_shutdown(), so it never outlives the app.
+static volatile u64 ex_watch_poll = 0; static volatile bool ex_watch_run = false; static Thread ex_watch = 0;
+static void ex_watch_main(void*) {
+  u64 told = 0;
+  while (ex_watch_run) {
+    svcSleepThread(500LL * 1000 * 1000);
+    u64 t = osGetTime(), p = ex_watch_poll;
+    if (p && t - p > 5000 && p != told) {
+      told = p;
+      if (FILE* f = fopen("sdmc:/3ds/starfleet2/exitwatch.log", "a")) {
+        fprintf(f, "%llu emulation thread has not polled for %llu ms during the exit save; last game file %s\n",
+                (unsigned long long)(t % 100000000ull), (unsigned long long)(t - p), sf2_game_write_path);
+        fclose(f);
+      }
+    }
+  }
+}
+static void ex_watch_start() {
+  if (ex_watch) return;
+  ex_watch_poll = osGetTime(); ex_watch_run = true;
+  s32 prio = 0x30; svcGetThreadPriority(&prio, CUR_THREAD_HANDLE);
+  ex_watch = threadCreate(ex_watch_main, 0, 16 * 1024, prio > 0x19 ? prio - 1 : prio, -2, false);
+}
+static void ex_watch_stop() {
+  if (!ex_watch) return;
+  ex_watch_run = false; threadJoin(ex_watch, U64_MAX); threadFree(ex_watch); ex_watch = 0;
+}
 
 static void exit_now(const char* why) {
   sf2ctr_log("exit: %s", why);
@@ -192,15 +224,29 @@ static void exit_begin(bool home) {
   ex_state = EX_SAVING; ex_home = home;
   ex_ms = ex_last_ms = 0;
   ex_io_last = sf2_game_writes; ex_save0 = sf2_save_writes;
-  ex_prev = osGetTime();
+  ex_start = ex_prev = ex_logged = osGetTime();
+  ex_watch_start();
   quit_req = false;
-  sf2ctr_log("exit save: started (%s)", home ? "closed by the system" : "EXIT GAME");
+  sf2ctr_log("exit save: started (%s): %s", home ? "closed by the system" : "EXIT GAME", sf2ui::exit_save_note());
+  sf2ctr_log_flush(false);
 }
 static void exit_step() {
   u64 t = osGetTime();
   unsigned d = (unsigned)(t - ex_prev); ex_prev = t;
-  ex_ms += d > 100 ? 100 : d;                   // (time spent suspended in the HOME Menu does not count)
+  ex_ms = (unsigned)(t - ex_start);
+  ex_watch_poll = t;
+  // A poll that comes late means the emulation thread was held up (a file operation waiting on the
+  // SD card, or the HOME Menu): say so, with the last file the game wrote.
+  if (d > 1000) sf2ctr_log("exit save: %u ms since the last poll (emulation held up); last file %s", d, sf2_game_write_path);
   if (sf2_game_writes != ex_io_last) { ex_io_last = sf2_game_writes; ex_last_ms = ex_ms; }
+  if (t - ex_logged >= 1000) {                   // what the game shows, as it changes, and the steps taken
+    ex_logged = t;
+    std::string ch = sf2ui::exit_save_screen_changes();
+    if (!ch.empty()) sf2ctr_log("exit save +%u ms screen: %s", ex_ms, ch.c_str());
+    static std::string note_seen;
+    if (note_seen != sf2ui::exit_save_note()) { note_seen = sf2ui::exit_save_note(); sf2ctr_log("exit save +%u ms steps: %s", ex_ms, note_seen.c_str()); }
+    sf2ctr_log_flush(false);                    // (hand the log to the writer often while exiting)
+  }
   bool saved = sf2_save_writes != ex_save0;
   bool quiet = saved && ex_ms - ex_last_ms >= EX_QUIET_MS;
   int st = sf2ui::exit_save_step(saved, quiet);
@@ -232,6 +278,7 @@ bool sf2ctr_owns_top() { return owns_top; }
 
 // main(), after DOSBox has stopped and before SDL_Quit(): release what this layer set up.
 void sf2ctr_shutdown() {
+  ex_watch_stop();
   click_exit();
 }
 
@@ -357,7 +404,7 @@ void sf2ctr_events() {
   // aptMainLoop() too) are not touched again, the screens are not drawn, and no input is read: the
   // emulation only runs until the quick save is written.
   if (ex_state == EX_SAVING && ex_home) {
-    exit_step();
+    exit_step();                                // (throws when done or at the cap)
     static u64 last_keys = 0;                   // keep feeding the queued keys to the game
     u64 nt = osGetTime();
     if (nt - last_keys >= 33) { last_keys = nt; sf2ui::TextScreen ts; sf2_read_screen(ts); sf2ui::frame(ts, top_img, bot_img); }
