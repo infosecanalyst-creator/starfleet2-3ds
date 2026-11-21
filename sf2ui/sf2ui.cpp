@@ -1959,6 +1959,26 @@ static void reader_top(Surf& s, const char* hint) {
   s.hline(0, TOP_W, 224, BTN_EDGE);
   fit_text(s, (TOP_W - text_width(hint, F6x12)) / 2, 226, TOP_W - 2, hint, F6x12, TITLE, "top hint");
 }
+// A titled window the game opened over the map (Targeter, Probes Control): the map moved to the
+// touch screen, where the window is too small to read, so the top screen shows it at full size.
+static bool find_window_over(const TextScreen& ts, int mr0, int mc0, int mr1, int mc1, int& wr0, int& wc0, int& wr1, int& wc1) {
+  int best = 0;
+  for (int r = mr0 > 2 ? mr0 - 2 : 0; r <= mr1 && r < 22; r++)
+    for (int c = mc0 > 4 ? mc0 - 4 : 0; c <= mc1 && c < 66; c++) {
+      if (ts.ch[r][c] != 0xC9) continue;
+      int c2 = c + 1, line = 0, letters = 0;
+      while (c2 < 80 && ts.ch[r][c2] != 0xBB) { if (ts.ch[r][c2] == 0xCD) line++; else if (isalpha(ts.ch[r][c2]) && ts.ch[r][c2] < 127) letters++; c2++; }
+      if (c2 >= 80 || c2 - c < 14 || line < 8 || letters < 4) continue;
+      if (r == mr0 && c <= mc0 + 3 && c2 >= mc1 - 3) continue;                 // the map's own frame
+      int r2 = r + 1;
+      while (r2 < 24 && (ts.ch[r2][c] == 0xBA || ts.ch[r2][c] == 0xCC || ts.ch[r2][c] == 0xC7)) r2++;
+      if (r2 < 24 && ts.ch[r2][c] != 0xC8) r2--;                               // (it runs off under another panel)
+      if (r2 - r < 2) continue;
+      int area = (c2 - c) * (r2 - r);
+      if (area > best) { best = area; wr0 = r; wc0 = c; wr1 = r2; wc1 = c2; }
+    }
+  return best > 0;
+}
 static void generic_top(Surf& s, const TextScreen& ts) {
   // house hint strip (look-and-feel: gold on the header colour): what to do on this screen
   const char* hint = swap_wanted ? "ZL swap is on: it applies on the bridge and in the manual."
@@ -1966,11 +1986,22 @@ static void generic_top(Surf& s, const TextScreen& ts) {
   if (reader_on && !rlines.empty()) { reader_top(s, hint); return; }
   s.fill(0, 0, TOP_W, TOP_H, BG);
   cells(s, ts, 0, 0, 79, 24, F5x9, 0, 0, 5, 9);
+  bool return_after_window = false;
   if (glay.kind != G_PLAIN) {        // the part on the touch screen is not repeated here
     int x0 = glay.c0 * 5, y0 = glay.r0 * 9, x1 = (glay.c1 + 1) * 5, y1 = (glay.r1 + 1) * 9;
     s.fill(x0, y0, x1, y1, BG);
     s.rect(x0, y0, x1, y1, BTN_EDGE);
+    int wr0, wc0, wr1, wc1;
+    if (glay.kind == G_MAP && find_window_over(ts, glay.r0, glay.c0, glay.r1, glay.c1, wr0, wc0, wr1, wc1)) {
+      int cols = wc1 - wc0 + 1, rows = wr1 - wr0 + 1;
+      const Font* wf = cols * 8 <= x1 - x0 - 4 && rows * 14 <= y1 - y0 - 4 ? &F8x14 : cols * 6 <= x1 - x0 - 4 && rows * 12 <= y1 - y0 - 4 ? &F6x12 : &F5x9;
+      if (cols * wf->w <= x1 - x0 - 2 && rows * wf->h <= y1 - y0 - 2) {
+        cells(s, ts, wc0, wr0, wc1, wr1, *wf, x0 + (x1 - x0 - cols * wf->w) / 2, y0 + (y1 - y0 - rows * wf->h) / 2, wf->w, wf->h);
+        return_after_window = true;
+      }
+    }
     const char* note = glay.kind == G_MENU ? "Menu on the touch screen" : "Map on the touch screen";
+    if (return_after_window) note = "";
     const Font* nf = text_width(note, F6x12) <= x1 - x0 - 4 ? &F6x12 : &F5x9;
     int tw = text_width(note, *nf);
     if (tw <= x1 - x0 - 4 && y1 - y0 >= nf->h + 2)
