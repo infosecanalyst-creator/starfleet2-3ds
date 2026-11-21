@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 # SPDX-License-Identifier: GPL-2.0-or-later
 # Copyright (C) 2026 the starfleet2-3ds authors
-# Stage the manual and your GOG game files in sd/3ds/starfleet2/, then upload the whole folder
-# to the 3DS over Wi-Fi (ftpd, port 5000) and check every file's size on the 3DS.
+# Stage the manual and your GOG game files in sd/3ds/starfleet2/, then upload sd/3ds (the app,
+# sd/3ds/starfleet2.3dsx -> /3ds/starfleet2.3dsx, and the starfleet2 folder) to the 3DS over Wi-Fi (ftpd, port 5000) and check every file's size on the 3DS.
 #   ./install-3ds.sh <3DS-IP> "/path/to/STAR FLEET II - Krellan Commander Version 2.0"
 # (or set THREEDS_IP and pass "" as the address; the IP is shown by ftpd on the 3DS)
 set -euo pipefail

@@ -63,10 +63,11 @@ Needs devkitPro with `3ds-dev` and `3ds-sdl` (SDL 1.2), plus Python 3 with `pdfp
 ./build-3ds.sh
 ./install-3ds.sh <3DS-IP> "/path/to/STAR FLEET II - Krellan Commander Version 2.0"
 ```
-`sd/3ds/starfleet2/` is the one place the app lives: the build moves `starfleet2.3dsx` there, next
-to `starfleet2.conf`; the installer adds `manual.txt` and `game/` (the contents of the GOG install's
-`base` folder; the game itself is not part of this repository) and uploads the folder over Wi-Fi
-to ftpd (port 5000), checking every file's size on the 3DS.
+`sd/3ds/` mirrors the SD card. The build moves the app to `sd/3ds/starfleet2.3dsx` (on the card it
+lives directly in `/3ds`, as `sdmc:/3ds/starfleet2.3dsx`); `sd/3ds/starfleet2/` holds
+`starfleet2.conf`, and the installer adds `manual.txt` and `game/` there (the contents of the GOG
+install's `base` folder; the game itself is not part of this repository). It uploads both over
+Wi-Fi to ftpd (port 5000), checking every file's size on the 3DS.
 
 Logs on the 3DS: `/3ds/starfleet2/debug.log` (speed, audio underruns, text-fit problems every
 10 s) and `/3ds/starfleet2/error.log` (fatal errors).

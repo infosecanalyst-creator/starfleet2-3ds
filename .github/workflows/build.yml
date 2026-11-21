@@ -19,12 +19,12 @@ jobs:
           git config --global --add safe.directory '*'
       - uses: actions/checkout@v4
       - name: Build
-        run: bash ./build-3ds.sh 2>&1 | tee build.log; test -f sd/3ds/starfleet2/starfleet2.3dsx
+        run: bash ./build-3ds.sh 2>&1 | tee build.log; test -f sd/3ds/starfleet2.3dsx
       - name: Collect
         if: always()
         run: |
           mkdir -p out
-          cp sd/3ds/starfleet2/starfleet2.3dsx out/ 2>/dev/null || true
+          cp sd/3ds/starfleet2.3dsx out/ 2>/dev/null || true
           cp build.log out/ 2>/dev/null || true
           echo "$GITHUB_SHA" > out/SOURCE_COMMIT
       - name: Publish to builds branch
