@@ -78,7 +78,7 @@ static std::string explain_title, explain_text; static uint32_t explain_until = 
 static uint32_t busy_since = 0; static bool busy_now = false;
 // Jumping straight to another view: close what's open (Esc) until the game is back at a view, then switch.
 static int view_goal = -1, view_esc = 0; static uint32_t view_next = 0;
-static bool tdb_drive = false; static int tdb_tc, tdb_tr, tdb_steps; static uint32_t tdb_next = 0;
+static bool tdb_drive = false; static int tdb_tc, tdb_tr, tdb_steps; static uint32_t tdb_next = 0; static uint32_t tdb_show_until = 0;
 static bool tdb_enter_after = false; static int tdb_best = 9999;
 
 // ZR focus mode (rule 6): on the game screens the D-Pad and A belong to the game (arrow keys, Enter),
@@ -2411,9 +2411,12 @@ Redraw frame(const TextScreen& ts, uint16_t* top, uint16_t* bottom) {
   // drive the target box toward a tapped cell, one arrow at a time
   if (tdb_drive && queue.empty() && (int32_t)(t - tdb_next) >= 0) {
     int c, r;
-    if (!find_tdb(ts, c, r) || ++tdb_steps > 80) {
+    if (!find_tdb(ts, c, r) && (int32_t)(tdb_show_until - t) > 0) {
+      tdb_next = t + 150;                 // the first arrow only brings the box up: wait for it
+    } else if (!find_tdb(ts, c, r) || ++tdb_steps > 80) {
       tdb_drive = false;
     } else {
+      tdb_show_until = 0;
       int dc = tdb_tc - c, dr = tdb_tr - r, dist = abs(dc) + abs(dr) * 2;
       bool stuck = dist >= tdb_best && tdb_steps > 1;     // the last press did not bring it closer
       if (dist < tdb_best) tdb_best = dist;
@@ -2675,8 +2678,16 @@ static void map_tap(int x, int y) {
   int col = glay.c0 + (x - glay.ox) / glay.cw, row = glay.r0 + (y - glay.oy) / glay.lh;
   if (col < glay.c0 || col > glay.c1 || row < glay.r0 || row > glay.r1) return;
   int c, r;
-  if (!find_tdb(last, c, r)) { say("No target box: choose a targeting option first"); return; }
   snap_to_object(last, col, row, glay.c0, glay.r0, glay.c1, glay.r1);
+  if (!find_tdb(last, c, r)) {
+    // The maps hide the target box until an arrow key is pressed (seen in Tutorial 1): bring it
+    // up, then drive it to the tapped spot.
+    if (!in_flight(last)) { say("No target box: choose a targeting option first"); return; }
+    press(K_RIGHT);
+    tdb_drive = true; tdb_tc = col; tdb_tr = row; tdb_steps = 0; tdb_best = 9999; tdb_enter_after = false;
+    tdb_show_until = now() + 2500; tdb_next = now() + 300;
+    return;
+  }
   start_drive(col, row, c, r);
 }
 
