@@ -34,7 +34,7 @@ static std::vector<Ev> queue;          // pending key events
 static uint32_t next_key_ms = 0;
 static const uint32_t KEY_GAP_MS = 35; // spacing between injected key events
 
-enum ActKind { A_NONE, A_KEY, A_MODE, A_MANUAL, A_KB, A_SECTION, A_CLOSE, A_TYPE, A_SIGNON, A_SAVE, A_VIEW, A_PAUSE, A_QUIT, A_QUIT_YES, A_SETTINGS, A_LEFTY, A_SECLIST, A_ROWPAGE, A_RDLINE, A_MENUSCROLL };
+enum ActKind { A_NONE, A_KEY, A_MODE, A_MANUAL, A_KB, A_SECTION, A_CLOSE, A_TYPE, A_SIGNON, A_SAVE, A_VIEW, A_PAUSE, A_QUIT, A_QUIT_YES, A_SETTINGS, A_LEFTY, A_SECLIST, A_ROWPAGE, A_RDLINE, A_MENUSCROLL, A_LAUNCH, A_ENGINES };
 struct Act { ActKind kind; Key key; uint8_t mods; int arg; };
 enum { M_SHIFT = 1, M_CTRL = 2, M_ALT = 4 };
 
@@ -512,7 +512,14 @@ static bool cursor_question(const TextScreen& ts);
 // buttons). A short line that ends in '?' (or '?' then a [Y]/[N] hint) and asks Do/Are you / want to.
 static std::string dialog_question(const TextScreen& ts) {
   for (int r = 1; r < 24; r++) {
-    std::string row = trim(row_str(ts, r, 0, 80));
+    // a question in a window over another screen (the bridge's "Do you wish to go to nearest
+    // starfort?") shares its row with panel text: look at each stretch between frame lines
+    std::string full = row_str(ts, r, 0, 80);
+    std::vector<std::string> parts; std::string cur;
+    for (char c : full) { uint8_t u = (uint8_t)c; if (u >= 0xB0 && u <= 0xDF) { parts.push_back(cur); cur.clear(); } else cur += c; }
+    parts.push_back(cur);
+    for (auto& part : parts) {
+    std::string row = trim(part);
     size_t q = row.rfind('?');
     if (q == std::string::npos || row.size() > 70) continue;
     std::string tail = row.substr(q + 1);
@@ -521,8 +528,10 @@ static std::string dialog_question(const TextScreen& ts) {
     if (!end_ok) continue;
     if (row.find("Do you") != std::string::npos || row.find("Are you") != std::string::npos ||
         row.find("want to") != std::string::npos || row.find("Overwrite") != std::string::npos ||
-        row.find("overwrite") != std::string::npos || row.find("Replace") != std::string::npos)
+        row.find("overwrite") != std::string::npos || row.find("Replace") != std::string::npos ||
+        row.find("Do you wish") != std::string::npos)
       return row;
+    }
   }
   return "";
 }
@@ -534,15 +543,22 @@ static RowMode row_mode = R_DEFAULT;
 static int row_page = 0;   // page of the game's menu row shown (MORE moves on; P2-6)
 // Newcomer guidance: one short line saying what to do on this screen (at most 52 characters so it
 // fits the touch screen's prompt strip without scrolling; the top screen's hint strip shows it too).
+enum Situation { SIT_UNKNOWN, SIT_DOCKED, SIT_CRUISE, SIT_ALERT, SIT_ORBIT };
+static Situation bridge_situation(const TextScreen& ts);
 static const char* context_hint(const TextScreen& ts) {
   if (!lefty_loaded) lefty_load();
   if (focus_mode) return lefty_on ? "Ring: ABXY move, D-Rt press, D-Dn or ZR done" : "Ring: D-Pad move, A press, B or ZR done";
   if (!ts.text_mode) return lefty_on ? "Tap CONTINUE or press D-Right" : "Tap CONTINUE or press A";
-  if (is_bridge(ts)) {
+  if (is_bridge(ts) && row_mode != R_YESNO) {
     int c, r;
     bool box = find_tdb(ts, c, r, 29, 2, 49, 13);
     bool target = tap_mode == TM_TARGET || (tap_mode == TM_AUTO && box);
     if (target) return box ? "Tap a target, tap it again to lock on" : "No target box (Weapons: Manual)";
+    switch (bridge_situation(ts)) {   // the next step for this situation (plan item 4)
+      case SIT_DOCKED: return "Docked: LAUNCH leaves the starfort";
+      case SIT_ALERT: return lefty_on ? "Alert! D-Lt phasers, D-Up torps, ECM" : "Alert! X phasers, Y torpedoes, ECM";
+      default: break;
+    }
     return lefty_on ? "Tap display: steer \xb3 D-Lt/D-Up: fire" : "Tap display: steer \xb3 X/Y: fire";
   }
   if (kb_open) {
@@ -591,6 +607,10 @@ static void prompt_strip(Surf& s, const TextScreen& ts, const std::string& promp
   bool showing_toast = !toast.empty() && (int32_t)(toast_until - now()) > 0;
   std::string line = showing_toast ? toast : prompt;
   if (!showing_toast && kb_open && ts.cursor_y >= 0 && ts.cursor_y < 25) line = trim(row_str(ts, ts.cursor_y, 0, 80));
+  if (!showing_toast && row_mode == R_YESNO) {    // the question itself, readable beside YES/NO
+    std::string q = dialog_question(ts);           // (on the bridge its window is cut by the tiles)
+    if (!q.empty()) line = q;
+  }
   uint16_t pc = showing_toast ? LOUPE : READ_FG[ts.at[24][0] & 15 ? ts.at[24][0] & 15 : 14];
   if (line.empty()) { line = context_hint(ts); pc = HINT; }   // nothing asked: say what to do here
   int lw = text_width(line.c_str(), F6x12);
@@ -893,6 +913,26 @@ static void bridge_top_narrow(Surf& s, const TextScreen& ts) {
 // under it; the cells start one pixel into the title band so the 12 rows end above the frame)
 static const int TAC_X = 2, TAC_Y = 9, TAC_CW = 8, TAC_LH = 13;
 
+// ------------------------------------------------------------------ bridge situation (plan item 3)
+// The bridge status box (rows 15-16, columns 40-51) reads "STATUS:" over the ship's condition:
+// DOCKED, GREEN, YELLOW, ORANGE, RED (and ORBIT). "s:" / "c:" beside it are the set and current
+// sublight speeds. ECM's indicator (row 18, col 41) has a coloured background while it is on.
+static Situation bridge_situation(const TextScreen& ts) {
+  if (row_str(ts, 15, 40, 52).find("STATUS") == std::string::npos) return SIT_UNKNOWN;
+  std::string w = row_str(ts, 16, 40, 52);
+  if (w.find("DOCKED") != std::string::npos) return SIT_DOCKED;
+  if (w.find("ORBIT") != std::string::npos) return SIT_ORBIT;
+  if (w.find("RED") != std::string::npos || w.find("ORANGE") != std::string::npos) return SIT_ALERT;
+  if (w.find("GREEN") != std::string::npos || w.find("YELLOW") != std::string::npos) return SIT_CRUISE;
+  return SIT_UNKNOWN;
+}
+static float bridge_speed(const TextScreen& ts, int row) {   // row 15: set ("s:"), row 16: current ("c:")
+  std::string r = row_str(ts, row, 52, 60);
+  size_t p = r.find(':');
+  return p == std::string::npos ? -1.0f : (float)atof(r.c_str() + p + 1);
+}
+static bool ecm_on(const TextScreen& ts) { return row_str(ts, 18, 40, 44).find("ECM") != std::string::npos && (ts.at[18][41] >> 4) != 0; }
+
 static void bridge_bottom(Surf& s, const TextScreen& ts) {
   std::string t1 = row_str(ts, 1, 29, 50), title;
   for (char c : t1) { if ((uint8_t)c == 0xCD) c = ' '; title += c; }
@@ -922,8 +962,24 @@ static void bridge_bottom(Surf& s, const TextScreen& ts) {
   add_btn(AXM + GAP, ry(2), AX1, ry(2) + 24, "SHLD-", &F6x12, key_act((Key)(K_F1 + 6)));
   add_btn(AX0, ry(3), AXM, ry(3) + 24, "SPD+", &F6x12, key_act((Key)(K_F1 + 3)));
   add_btn(AXM + GAP, ry(3), AX1, ry(3) + 24, "SPD-", &F6x12, key_act((Key)(K_F1 + 2)));
-  add_btn(AX0, ry(4), AX1, ry(4) + 24, TAP_LABEL[tap_mode], &F8x16, kind_act(A_MODE), 0, true);
-  add_btn(AX0, ry(5), AX1, ry(5) + 24, "FREEZE", &F8x16, key_act(K_F, M_CTRL));
+  // The last two rows follow the situation (plan item 3), so the next sensible action is one tap:
+  // docked: LAUNCH / ORDERS; cruising: STOP or ENGINES / STARFORT (the game's own autopilot to the
+  // nearest starfort, Alt+J); alert: ECM / FREEZE; orbit: TELEPORT / ENGINES. Otherwise the tap
+  // mode and FREEZE as before. L still freezes and R still changes the tap mode everywhere.
+  Situation sit = bridge_situation(ts);
+  float cur = bridge_speed(ts, 16);
+  auto row = [&](int r, const char* lab, Act a) { add_btn(AX0, ry(r), AX1, ry(r) + 24, lab, &F8x16, a); };
+  switch (sit) {
+    case SIT_DOCKED: row(4, "LAUNCH", kind_act(A_LAUNCH)); row(5, "ORDERS", key_act(K_O, M_CTRL)); break;
+    case SIT_CRUISE:
+      if (cur > 0.0f) row(4, "STOP", key_act(K_F10)); else row(4, "ENGINES", kind_act(A_ENGINES));
+      row(5, "STARFORT", key_act(K_J, M_ALT)); break;
+    case SIT_ALERT: row(4, ecm_on(ts) ? "ECM OFF" : "ECM ON", key_act(K_E, M_ALT)); row(5, "FREEZE", key_act(K_F, M_CTRL)); break;
+    case SIT_ORBIT: row(4, "TELEPORT", key_act(K_P, M_ALT)); row(5, "ENGINES", kind_act(A_ENGINES)); break;
+    default:
+      add_btn(AX0, ry(4), AX1, ry(4) + 24, TAP_LABEL[tap_mode], &F8x16, kind_act(A_MODE), 0, true);
+      row(5, "FREEZE", key_act(K_F, M_CTRL));
+  }
 }
 
 // heading under the ship ("TACTICAL  n DISPLAY") and the course setting ("set: n")
@@ -1673,6 +1729,14 @@ static void fire(const Act& a) {
       if (autologin != 0 || !at_name_prompt(last)) break;
       typed.clear(); type_text(off_name); press(K_ENTER); autologin = 1; pass_tries = 0; pend_name = off_name; say("Signing on...", 1500);
       break;
+    case A_LAUNCH: case A_ENGINES: {
+      // the helm refuses to start the engines with no speed set ("Velocity must be set"):
+      // set 0.5 sublight first when it is 0, then start them (F9)
+      if (bridge_speed(last, 15) <= 0.0f) for (int i = 0; i < 5; i++) press((Key)(K_F1 + 3));
+      press(K_F9); busy_since = now();
+      say(a.kind == A_LAUNCH ? "Launching: engines on at sublight 0.5" : "Engines on");
+      break;
+    }
     case A_SAVE: press(K_Q, M_CTRL); say("Quick save (needs a named save first)", 2500); pause_open = false; break;
     case A_PAUSE: pause_open = false; quit_confirm = false; break;
     case A_QUIT: quit_confirm = true; pause_focus = 1; break;
