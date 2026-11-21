@@ -19,7 +19,7 @@ if [ ! -f "$DEVKITPRO/portlibs/3ds/lib/libSDL.a" ]; then
   (pacman -S --noconfirm --needed 3ds-sdl || dkp-pacman -S --noconfirm --needed 3ds-sdl)
 fi
 echo "== SDL: $(ls "$DEVKITPRO/portlibs/3ds/lib/libSDL.a")"
-if command -v python3 >/dev/null 2>&1; then python3 tools/mkfont.py; else echo "== python3 not found: using the generated sf2ui/fonts.h"; fi
+if command -v python3 >/dev/null 2>&1; then python3 tools/mkfont.py; python3 tools/mklibrary.py; else echo "== python3 not found: using the generated sf2ui/fonts.h"; fi
 JOBS=$(nproc 2>/dev/null || echo 4)
 echo "== building with $JOBS jobs"
 make -C dosbox -f Makefile.ctr PORT_VERSION="$PORT_VERSION" -j"$JOBS"

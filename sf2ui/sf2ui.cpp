@@ -97,7 +97,11 @@ static uint32_t ui_version = 1, drawn_version = 0;
 static bool last_text_mode = false;
 
 // manual
-struct Section { std::string title; std::vector<std::string> paras, lines; int wrap = 0; };
+#include "library_data.h"
+// shelf: 0 START, 1 BRIDGE, 2 PROCEDURES, 3 PROBLEMS, 4 REFERENCE (the port's own Library cards,
+// built into the app from assets/library-port.txt), 5 BOOKS (manual.txt: the port's guide and the
+// game's manuals from the player's own GOG files).
+struct Section { std::string title; std::vector<std::string> paras, lines; int wrap = 0; int shelf = 5; };
 static std::vector<Section> manual;
 static int man_sel = 0, man_scroll = 0, man_list_top = 0;
 static int man_focus = 0;   // D-Pad focus in the manual: 0 the section list, -1 LEFT HAND, -2 CLOSE MANUAL (rule 6)
@@ -1712,8 +1716,32 @@ static void generic_bottom(Surf& s, const TextScreen& ts) {
 }
 
 // ------------------------------------------------------------------ manual
+static void load_library_cards() {
+  for (const LibCard* c = LIBCARDS; c->title; c++) {
+    Section sec; sec.title = c->title; sec.shelf = c->shelf;
+    std::string line;
+    auto flush = [&]() {
+      if (line.compare(0, 5, "STEP ") == 0) {            // checklist step: "STEP button | what | done text"
+        std::string rest = line.substr(5), btn, what;
+        size_t a = rest.find('|'), b = a == std::string::npos ? a : rest.find('|', a + 1);
+        btn = trim(rest.substr(0, a)); what = a == std::string::npos ? "" : trim(rest.substr(a + 1, b == std::string::npos ? b : b - a - 1));
+        line = "[ ] " + what + (btn.empty() || btn == "-" ? "" : "  (" + btn + ")");
+      }
+      sec.paras.push_back(line); line.clear();
+    };
+    for (const char* p = c->text; *p; p++) { if (*p == '\n') flush(); else line += *p; }
+    flush();
+    if (c->see && *c->see) {
+      sec.paras.push_back("");
+      std::string see = c->see; for (auto& ch : see) if (ch == '|') ch = ';';
+      sec.paras.push_back("More in BOOKS: " + see);
+    }
+    manual.push_back(sec);
+  }
+}
 static void load_manual() {
   manual.clear();
+  load_library_cards();
   FILE* f = H && H->manual_path ? fopen(H->manual_path, "rb") : 0;
   Section cur; cur.title = "About";
   if (!f) {
@@ -1822,6 +1850,16 @@ static void manual_bottom(Surf& s) {
   // Manual, the Training Manual or the tutorials; the tab of the section being read is lit.
   static const char* SHELF[5] = {"GUIDE", "KEYS", "OPS", "TRAIN", "TUTOR"};
   static const char* SHELF_PRE[5] = {"", "Keyboard Quick Reference", "Ops ", "Training ", "Tutorial "};
+  static const char* LSHELF[6] = {"START", "BRIDGE", "HOW TO", "FIX IT", "REF", "BOOKS"};
+  if (LIBCARDS[0].title) {         // the Library's own shelves, then the books
+    int first[6] = {-1, -1, -1, -1, -1, -1};
+    for (int i = (int)manual.size() - 1; i >= 0; i--) first[manual[i].shelf] = i;
+    for (int k = 0; k < 6; k++) {
+      int a, b; split_gap(6, BOT_W - 6, 6, k, a, b, 4);
+      add_btn(a, 6, b, 30, LSHELF[k], &F8x16, kind_act(A_SECTION, first[k] < 0 ? 0 : first[k]), -1, k == manual[man_sel].shelf);
+      if (first[k] < 0) btns.back().off = true;
+    }
+  } else {
   int shelf_first[5] = {0, -1, -1, -1, -1}, cur_shelf = 0;
   for (int i = 0; i < (int)manual.size(); i++)
     for (int k = 1; k < 5; k++)
@@ -1834,6 +1872,7 @@ static void manual_bottom(Surf& s) {
     int a, b; split_gap(6, BOT_W - 6, 5, k, a, b, 4);
     add_btn(a, 6, b, 30, SHELF[k], &F8x16, kind_act(A_SECTION, shelf_first[k] < 0 ? 0 : shelf_first[k]), -1, k == cur_shelf);
     if (shelf_first[k] < 0) btns.back().off = true;
+  }
   }
   const int rows = 4;  // section buttons visible; the list follows the highlight, and the arrows page it
   int n = (int)manual.size();

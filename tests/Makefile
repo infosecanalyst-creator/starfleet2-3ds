@@ -5,7 +5,7 @@
 CXX ?= g++
 CXXFLAGS ?= -std=c++14 -O1 -Wall -Wno-unused-function -Wno-unused-variable
 
-screentest: screentest.cpp ../sf2ui/sf2ui.cpp ../sf2ui/sf2ui.h ../sf2ui/draw.cpp ../sf2ui/draw.h ../sf2ui/fonts.h
+screentest: screentest.cpp ../sf2ui/sf2ui.cpp ../sf2ui/sf2ui.h ../sf2ui/draw.cpp ../sf2ui/draw.h ../sf2ui/fonts.h ../sf2ui/library_data.h
 	$(CXX) $(CXXFLAGS) -I../sf2ui -o $@ screentest.cpp ../sf2ui/draw.cpp
 
 check: screentest
