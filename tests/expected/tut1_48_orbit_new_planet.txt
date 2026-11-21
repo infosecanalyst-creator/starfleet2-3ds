@@ -1,7 +1,7 @@
-kind: plain
-hint: X/Y fire, Circle Pad steers, B backs out
-buttons: [PG UP] [] [PG DN] [] [SPACE] [] [] [SYSTEM MAP] [NAV MAP] [WAR MAP] [HELM] [STARS] [SYSTEM] [WAR] [COMBAT] [FLEET] [ORDERS] [LOG]
-explain cards: 18/18
-quick reference: QUICK REFERENCE: THIS VIEW
-start menu: [RESUME] [WHAT NOW?] [MANUAL] [COACH: ON] [SAVE (grey)] [GAME SETTINGS (grey)] [EXIT GAME (grey)]
-what now: Goal: Discover at least one mineral-rich planet in UGA or neutral space. This is one of the ship's pages. The buttons below are its keys; B goes back to the bridge.
+kind: bridge
+hint: Tap display: steer ³ X/Y: fire
+buttons: [PHASERS] [TORPS] [SHLD+] [SHLD-] [SPD+] [SPD-] [TELEPORT] [ENGINES] [SYSTEM MAP] [NAV MAP] [WAR MAP] [HELM] [STARS] [SYSTEM] [WAR] [COMBAT] [FLEET] [ORDERS] [LOG]
+explain cards: 19/19
+quick reference: QUICK REFERENCE: BRIDGE
+start menu: [RESUME] [WHAT NOW?] [MANUAL] [COACH: ON] [SAVE] [GAME SETTINGS (grey)] [EXIT GAME (grey)]
+what now: Goal: Discover at least one mineral-rich planet in UGA or neutral space. 1) You are in orbit. TELEPORT sends a landing party down to explore. 2) ENGINES leaves orbit. [ring TELEPORT]

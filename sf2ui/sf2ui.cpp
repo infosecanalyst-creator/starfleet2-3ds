@@ -286,7 +286,7 @@ static bool is_bridge(const TextScreen& ts) {
   std::string r0 = row_str(ts, 0, 0, 80), r1 = row_str(ts, 1, 0, 80), r2 = row_str(ts, 2, 0, 20);
   std::string r9 = row_str(ts, 9, 59, 79), r14 = row_str(ts, 14, 40, 52), r17 = row_str(ts, 17, 40, 60);
   auto has = [](const std::string& h, const char* n) { return h.find(n) != std::string::npos; };
-  return has(r0, "LOW PWR") && has(r1, "NAV") && has(r1, "TACTICAL") && has(r1, "VEL") &&
+  return has(r0, "LOW PWR") && has(r1, "NAV") && (has(r1, "TACTICAL") || has(r1, "ORBITAL")) && has(r1, "VEL") &&
          has(r1, "DAMAGE") && has(r2, "LRS") && has(r9, "DATA") && has(r14, "ss") && has(r17, "ENERGY");
 }
 // Any flight screen (the bridge and its variants: Damage Control, overlay windows) keeps the
@@ -1480,6 +1480,7 @@ static int coach_step(const TextScreen& ts) {
 static Situation bridge_situation(const TextScreen& ts) {
   if (row_str(ts, 15, 40, 52).find("STATUS") == std::string::npos) return SIT_UNKNOWN;
   std::string w = row_str(ts, 16, 40, 52);
+  if (row_str(ts, 1, 26, 50).find("ORBITAL") != std::string::npos) return SIT_ORBIT;     // the display shows the planet below
   if (w.find("DOCKED") != std::string::npos) return SIT_DOCKED;
   if (w.find("ORBIT") != std::string::npos) return SIT_ORBIT;
   if (w.find("RED") != std::string::npos || w.find("ORANGE") != std::string::npos) return SIT_ALERT;
@@ -1554,6 +1555,7 @@ static int course_set(const TextScreen& ts) {
   return p == std::string::npos ? -1 : parse_int_after(r, p + 4);
 }
 static void steer_to(const TextScreen& ts, int px, int py) {
+  if (row_str(ts, 1, 26, 50).find("ORBITAL") != std::string::npos) { say("In orbit: ENGINES leaves orbit first", 2500); return; }
   // tap -> grid units from the ship (centre cell col 39, row 7); x step is 2 columns
   float col = 28 + (px - TAC_X) / (float)TAC_CW, row = 2 + (py - TAC_Y) / (float)TAC_LH;
   float dx = (col - 39.5f) / 2.0f, dy = row - 7.5f;
