@@ -31,6 +31,13 @@
 #include "cross.h"
 #ifdef SF2_3DS
 extern unsigned int sf2_io_ops, sf2_io_disk;
+// real time spent in the file layer (shown in the 10 s performance log line): while the game is
+// in here no emulated time passes, so this is what slows the simulation when it is large
+extern "C" unsigned long long svcGetSystemTick(void);
+unsigned long long sf2_io_ticks = 0;
+struct Sf2IoTimer { unsigned long long t0; Sf2IoTimer() : t0(svcGetSystemTick()) {} ~Sf2IoTimer() { sf2_io_ticks += svcGetSystemTick() - t0; } };
+#define SF2_IO_TIMER Sf2IoTimer sf2_io_timer_
+
 // Time spent in each kind of DOS file call (printed in the 3DS debug log).
 unsigned long long sf2_now_us();
 const char* sf2_prof_name[12] = {"open", "create", "findfirst", "findnext", "attr", "exists", "stat", "unlink", "rename", "close", "dirscan", "other"};
@@ -71,6 +78,9 @@ static void sf2_stat_size(const char*, Bit32u) {}
 
 
 bool localDrive::FileCreate(DOS_File * * file,char * name,Bit16u /*attributes*/) {
+#ifdef SF2_3DS
+	SF2_IO_TIMER;
+#endif
 	SF2_PROF(1);
 //TODO Maybe care for attributes but not likely
 	char newname[CROSS_LEN];
@@ -111,6 +121,9 @@ bool localDrive::FileCreate(DOS_File * * file,char * name,Bit16u /*attributes*/)
 }
 
 bool localDrive::FileOpen(DOS_File * * file,char * name,Bit32u flags) {
+#ifdef SF2_3DS
+	SF2_IO_TIMER;
+#endif
 	SF2_PROF(0);
 	const char* type;
 	switch (flags&0xf) {
@@ -199,6 +212,9 @@ bool localDrive::GetSystemFilename(char *sysName, char const * const dosName) {
 }
 
 bool localDrive::FileUnlink(char * name) {
+#ifdef SF2_3DS
+	SF2_IO_TIMER;
+#endif
 	SF2_PROF(7);
 	char newname[CROSS_LEN];
 	strcpy(newname,basedir);
@@ -257,6 +273,9 @@ bool localDrive::FileUnlink(char * name) {
 }
 
 bool localDrive::FindFirst(char * _dir,DOS_DTA & dta,bool fcb_findfirst) {
+#ifdef SF2_3DS
+	SF2_IO_TIMER;
+#endif
 	SF2_PROF(2);
 	char tempDir[CROSS_LEN];
 	strcpy(tempDir,basedir);
@@ -311,6 +330,9 @@ bool localDrive::FindFirst(char * _dir,DOS_DTA & dta,bool fcb_findfirst) {
 }
 
 bool localDrive::FindNext(DOS_DTA & dta) {
+#ifdef SF2_3DS
+	SF2_IO_TIMER;
+#endif
 	SF2_PROF(3);
 
 	char * dir_ent;
@@ -368,6 +390,9 @@ again:
 }
 
 bool localDrive::GetFileAttr(char * name,Bit16u * attr) {
+#ifdef SF2_3DS
+	SF2_IO_TIMER;
+#endif
 	SF2_PROF(4);
 	char newname[CROSS_LEN];
 	strcpy(newname,basedir);
@@ -462,6 +487,9 @@ bool localDrive::AllocationInfo(Bit16u * _bytes_sector,Bit8u * _sectors_cluster,
 }
 
 bool localDrive::FileExists(const char* name) {
+#ifdef SF2_3DS
+	SF2_IO_TIMER;
+#endif
 	SF2_PROF(5);
 	char newname[CROSS_LEN];
 	strcpy(newname,basedir);
@@ -475,6 +503,9 @@ bool localDrive::FileExists(const char* name) {
 }
 
 bool localDrive::FileStat(const char* name, FileStat_Block * const stat_block) {
+#ifdef SF2_3DS
+	SF2_IO_TIMER;
+#endif
 	SF2_PROF(6);
 	char newname[CROSS_LEN];
 	strcpy(newname,basedir);
@@ -633,6 +664,9 @@ bool localFile::Seek(Bit32u * pos,Bit32u type) {
 }
 
 bool localFile::Close() {
+#ifdef SF2_3DS
+	SF2_IO_TIMER;
+#endif
 	SF2_PROF(9);
 	// only close if one reference left
 	if (refCtr==1) {

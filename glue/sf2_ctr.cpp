@@ -421,7 +421,10 @@ void sf2ctr_events() {
                speed, sf2_mixer_underruns - perf_under, draws, draws ? (unsigned int)(draw_us / draws) : 0);
     { char st[128]; sf2_debug_state(st, sizeof st); sf2ctr_log("state %s", st); }
     { extern unsigned int sf2_io_ops, sf2_io_disk; static unsigned int o0 = 0, d0 = 0;
-      if (sf2_io_ops != o0) sf2ctr_log("files: %u operations, %u on the SD card", sf2_io_ops - o0, sf2_io_disk - d0);
+      extern unsigned long long sf2_io_ticks; static unsigned long long t0 = 0;
+      if (sf2_io_ops != o0) sf2ctr_log("files: %u operations, %u on the SD card, %u ms in the file layer", sf2_io_ops - o0, sf2_io_disk - d0,
+                                       (unsigned)((sf2_io_ticks - t0) / (SYSCLOCK_ARM11 / 1000)));
+      t0 = sf2_io_ticks;
       o0 = sf2_io_ops; d0 = sf2_io_disk; }
     { extern const char* sf2_prof_name[12]; extern unsigned long long sf2_prof_us[12]; extern unsigned int sf2_prof_n[12];
       char line[240]; int n = 0;
