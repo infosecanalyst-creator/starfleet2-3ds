@@ -315,6 +315,40 @@ static bool at_name_prompt(const TextScreen& ts) {
   return screen_has(ts, "SIGN-ON SCREEN") && screen_has(ts, "Enter your name") && !screen_has(ts, "password");
 }
 static bool at_pass_prompt(const TextScreen& ts) { return screen_has(ts, "password:"); }
+static std::string lower_str(std::string v) { for (auto& c : v) c = (char)tolower((unsigned char)c); return v; }
+// The commander list (shown first when the game knows more than one commander): is the remembered
+// officer on it, and how many rows below (+) or above (-) the highlighted row?
+static bool signon_list(const TextScreen& ts, int* moves) {
+  if (off_name.empty() || !ts.text_mode || !screen_has(ts, "Select Commander", 24, 24)) return false;
+  int mine = -1, sel = -1, firstrow = -1;
+  for (int r = 1; r <= 22; r++) {
+    std::string row; int numcol = -1;
+    for (int c = 0; c < 80; c++) {
+      uint8_t ch = ts.ch[r][c]; row += (ch > 32 && ch < 127) ? (char)ch : ' ';
+      if (numcol < 0 && ch >= '0' && ch <= '9') numcol = c;
+    }
+    int num = 0; char nm[40] = "";
+    if (sscanf(row.c_str(), " %d %39s", &num, nm) != 2 || num < 1) continue;
+    if (firstrow < 0) firstrow = r;
+    if (lower_str(nm) == lower_str(off_name)) mine = r;
+    if (numcol >= 0 && (ts.at[r][numcol] >> 4) != 0) sel = r;      // the highlighted number
+  }
+  if (mine < 0) return false;
+  if (sel < 0) sel = firstrow;
+  if (moves) *moves = mine - sel;
+  return true;
+}
+// The password prompt is up, still empty, and the name above it is the remembered officer's.
+static bool pass_waiting(const TextScreen& ts);
+static bool signon_pass(const TextScreen& ts) {
+  if (off_name.empty() || !ts.text_mode || !at_pass_prompt(ts) || !pass_waiting(ts)) return false;
+  for (int r = 0; r < 25; r++) {
+    std::string row = lower_str(row_str(ts, r, 0, 80));
+    size_t q = row.find("enter your name:");
+    if (q != std::string::npos) return trim(row.substr(q + 16)) == lower_str(off_name);
+  }
+  return false;
+}
 // The password prompt is still waiting: its field holds no '*' yet and no answer has come up.
 // (Nov 18 2026: after a good sign-on the prompt line stays on screen under "Welcome aboard", and
 // re-sending the password there typed "poop" into the next screens - "p" chose Practice.)
@@ -626,9 +660,11 @@ static const char* context_hint(const TextScreen& ts) {
     }
     return lefty_on ? "Tap display: steer \xb3 D-Lt/D-Up: fire" : "Tap display: steer \xb3 X/Y: fire";
   }
+  if (!kb_open && autologin == 0 && signon_list(ts, 0)) return "Tap SIGN ON AS, or pick a commander, then ENTER";
   if (kb_open) {
     if (at_name_prompt(ts)) return off_name.empty() ? "Type your officer name, then tap ENTER"
                                                     : "Tap SIGN ON AS, or type a new name and ENTER";
+    if (signon_pass(ts)) return "Tap SIGN ON AS, or type the password and ENTER";
     if (at_pass_prompt(ts)) return "Type a password (new recruits choose one), ENTER";
     return "Type on the keyboard, then tap ENTER";
   }
@@ -773,7 +809,7 @@ static void bottom_rows(Surf& s, const TextScreen& ts) {
     int a, b;
     split_gap(6, rx1, 2, 0, a, b); add_btn(a, ROW1_Y0, b, ROW1_Y1, "YES", &F8x16, key_act(K_Y), 0);
     split_gap(6, rx1, 2, 1, a, b); add_btn(a, ROW1_Y0, b, ROW1_Y1, "NO", &F8x16, key_act(K_N), 0);
-  } else if (kb_open && at_name_prompt(ts) && !off_name.empty() && autologin == 0) {
+  } else if (kb_open && (at_name_prompt(ts) || signon_pass(ts)) && !off_name.empty() && autologin == 0) {
     std::string up = off_name;
     for (auto& ch2 : up) if (ch2 >= 'a' && ch2 <= 'z') ch2 -= 32;
     std::string lab = "SIGN ON AS " + up;
@@ -781,6 +817,16 @@ static void bottom_rows(Surf& s, const TextScreen& ts) {
     if (text_width(lab.c_str(), F8x16) > hx0 - GAP - 6 - 4) lab = "SIGN ON";
     add_btn(6, ROW1_Y0, hx0 - GAP, ROW1_Y1, lab, &F8x16, kind_act(A_SIGNON), -1, true);
     add_btn(hx0, ROW1_Y0, rx1, ROW1_Y1, "HIDE KEYS", &F8x16, kind_act(A_KB));
+  } else if (!kb_open && autologin == 0 && signon_list(ts, 0)) {
+    // the commander list: one tap signs the remembered officer on; ENTER picks the highlighted one
+    std::string up = off_name; for (auto& ch2 : up) if (ch2 >= 'a' && ch2 <= 'z') ch2 -= 32;
+    int a, b; split_gap(6, rx1, 3, 0, a, b);
+    std::string lab = "SIGN ON AS " + up; const Font* lf = &F8x16;
+    if (text_width(lab.c_str(), *lf) > b - a - 8) lf = &F6x12;
+    if (text_width(lab.c_str(), *lf) > b - a - 8) { lab = "SIGN ON"; lf = &F8x16; }
+    add_btn(a, ROW1_Y0, b, ROW1_Y1, lab, lf, kind_act(A_SIGNON), -1, true);
+    split_gap(6, rx1, 3, 1, a, b); add_btn(a, ROW1_Y0, b, ROW1_Y1, "ENTER", &F8x16, key_act(K_ENTER));
+    split_gap(6, rx1, 3, 2, a, b); add_btn(a, ROW1_Y0, b, ROW1_Y1, "BACK", &F8x16, key_act(K_ESC));
   } else {
     int a, b;
     split_gap(6, rx1, 3, 0, a, b); add_btn(a, ROW1_Y0, b, ROW1_Y1, anykey ? "CONTINUE" : "ENTER", &F8x16, key_act(K_ENTER));
@@ -2152,7 +2198,15 @@ static void fire(const Act& a) {
       // A second tap before the screen redraws (or a tap that lands after sign-on) would type the
       // name and password again into the next screen, where the letters pick menu items
       // (seen Nov 18 2026: the "p" of a password chose Practice). Only sign on once, at the prompt.
-      if (autologin != 0 || !at_name_prompt(last)) break;
+      if (autologin != 0) break;
+      { int mv = 0;
+        if (signon_list(last, &mv)) {        // commander list: go to the officer's row, pick it; the password follows
+          for (int i = 0; i < (mv < 0 ? -mv : mv); i++) press(mv < 0 ? K_UP : K_DOWN);
+          press(K_ENTER); autologin = 1; pass_tries = 0; pend_name = off_name; say("Signing on...", 1500); break;
+        }
+        if (signon_pass(last)) { autologin = 1; pass_tries = 0; pend_name = off_name; say("Signing on...", 1500); break; }
+      }
+      if (!at_name_prompt(last)) break;
       typed.clear(); type_text(off_name); press(K_ENTER); autologin = 1; pass_tries = 0; pend_name = off_name; say("Signing on...", 1500);
       break;
     case A_FOLLOW:

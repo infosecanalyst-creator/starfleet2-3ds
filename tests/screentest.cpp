@@ -128,6 +128,7 @@ int main(int argc, char** argv) {
   }
   std::sort(names.begin(), names.end());
   init(&test_host);
+  off_name = "ryan"; off_pass = "x";      // (a remembered officer, so the sign-on buttons are covered)
   int bad = 0, fits = 0;
   for (auto& n : names) {
     TextScreen ts;
