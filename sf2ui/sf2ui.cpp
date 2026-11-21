@@ -44,6 +44,7 @@ struct Btn {
   const Font* font; Act act; bool on_top;
   bool off;                            // can't be used on this screen: greyed out, taps do nothing
   bool focus;                          // D-Pad focus (gold ring)
+  bool coach;                          // the coach points at this button (blinking cyan ring)
 };
 static std::vector<Btn> btns;          // buttons drawn on the touch screen this frame
 struct BtnId { int x0, y0, x1, y1; std::string label; bool valid; };
@@ -111,6 +112,10 @@ static std::string set_written;         // the file's contents as last read or w
 // Mission card (plan item 7): read from the orders screen, remembered in settings.txt
 static std::string mis_title, mis_goal; static int mis_days = 0;
 static bool mis_show_pending = false;    // show the card on the next bridge screen
+// Coach (plan item 8): step-by-step help through a first mission. On until switched off in the
+// START menu (remembered as coach=0 in settings.txt).
+static bool coach_on = true;
+static int coach_seen = 0;               // bit per coach step already shown
 static void load_settings() {
   FILE* f = H && H->settings_path ? fopen(H->settings_path, "rb") : 0;
   if (!f) return;
@@ -124,6 +129,7 @@ static void load_settings() {
     else if (!strncmp(line, "mission=", 8)) mis_title = line + 8;
     else if (!strncmp(line, "goal=", 5)) mis_goal = line + 5;
     else if (!strncmp(line, "days=", 5)) mis_days = atoi(line + 5);
+    else if (!strncmp(line, "coach=", 6)) coach_on = atoi(line + 6) != 0;
   }
   fclose(f);
 }
@@ -135,6 +141,7 @@ static void save_settings() {
   std::string text = std::string("tapmode=") + TAP_LABEL[tap_mode] + "\n";
   if (!set_manual.empty()) text += "manual=" + set_manual + "\n";
   if (!mis_goal.empty()) text += "mission=" + mis_title + "\ngoal=" + mis_goal + "\ndays=" + std::to_string(mis_days) + "\n";
+  if (!coach_on) text += "coach=0\n";
   if (text == set_written) return;     // nothing changed: no SD write
   set_written = text;
   if (H->save) H->save(H->settings_path, text.data(), (unsigned)text.size());   // (3DS: in the background)
@@ -362,7 +369,7 @@ static Box tile(Surf& s, int x0, int y0, int x1, int y1, const char* title) {
 static void add_btn(int x0, int y0, int x1, int y1, const std::string& label, const Font* f, Act a,
                     int hot = -1, bool sel = false) {
   Btn b; b.x0 = x0; b.y0 = y0; b.x1 = x1; b.y1 = y1; b.label = label; b.hot = hot; b.sel = sel;
-  b.font = f; b.act = a; b.on_top = false; b.off = false; b.focus = false;
+  b.font = f; b.act = a; b.on_top = false; b.off = false; b.focus = false; b.coach = false;
   btns.push_back(b);
 }
 static Act key_act(Key k, uint8_t mods = 0) { Act a; a.kind = A_KEY; a.key = k; a.mods = mods; a.arg = 0; return a; }
@@ -388,6 +395,9 @@ static void draw_btn(Surf& s, int i) {
   if (b.focus && !b.off) {
     s.rect(b.x0, b.y0, b.x1, b.y1, FOCUS);
     s.rect(b.x0 + 1, b.y0 + 1, b.x1 - 1, b.y1 - 1, FOCUS);
+  } else if (b.coach && !b.off && (now() / 500) % 2) {
+    s.rect(b.x0, b.y0, b.x1, b.y1, rgb(80, 230, 255));
+    s.rect(b.x0 + 1, b.y0 + 1, b.x1 - 1, b.y1 - 1, rgb(80, 230, 255));
   }
   int tx = b.x0 + (b.x1 - b.x0 - text_width(lab.c_str(), *f)) / 2 + (down ? 1 : 0);
   int ty = b.y0 + (b.y1 - b.y0 - f->h) / 2 + (down ? 1 : 0);
@@ -1053,6 +1063,35 @@ static void explain_card(Surf& s) {
   s.rect(x0, y0, x1, y1, TITLE);
   fit_text(s, x0 + 6, y0 + 4, x1 - 6, explain_title.c_str(), F8x16, TITLE, "explain card");
   for (size_t i = 0; i < lines.size(); i++) fit_text(s, x0 + 6, y0 + 22 + (int)i * 12, x1 - 6, lines[i].c_str(), F6x12, BTN_TXT, "explain card");
+}
+
+// ------------------------------------------------------------------ coach (plan item 8)
+// One card per situation, the first time it comes up, with the next button ringed in blinking
+// cyan while the coach is on. The ring stays (the card goes after 9 s) until the situation changes.
+enum CoachStep { CS_MENU, CS_ORDERS, CS_DOCKED, CS_CRUISE, CS_ALERT, CS_SYSMAP, CS_COUNT };
+static const char* COACH_TITLE[CS_COUNT] = {"COACH: START HERE", "COACH: YOUR ORDERS", "COACH: LEAVE THE STARFORT",
+                                           "COACH: FLYING", "COACH: ENEMY!", "COACH: SYSTEM MAP"};
+static const char* COACH_TEXT[CS_COUNT] = {
+  "New to Star Fleet II? Choose Practice (demo) mission: nothing counts against your career. Hold R and tap anything to learn what it does. START > COACH switches me off.",
+  "These are your orders: read them, then tap CONTINUE. START > MISSION shows them again later.",
+  "You are docked at a starfort. Tap LAUNCH: it sets a speed and starts the engines.",
+  "You are under way. Tap the tactical display to steer, SPD+/SPD- for speed. Tap SYSTEM to see the planets nearby; STARFORT flies you home.",
+  "Red alert! SHLD+ raises the shields, X fires phasers, Y torpedoes, ECM jams their aim. FREEZE pauses while you think.",
+  "Planets, ships and bases in this star system. Tap one to aim at it, tap it again to pick it. B goes back to the bridge."};
+static const char* COACH_BUTTON[CS_COUNT] = {"Practice (demo) mission", "CONTINUE", "LAUNCH", "SYSTEM", "SHLD+", 0};
+static int coach_step(const TextScreen& ts) {
+  if (!ts.text_mode) return -1;
+  if (screen_has(ts, "SIGN-ON OPTIONS")) return CS_MENU;
+  if (screen_has(ts, "FLEET HEADQUARTERS") && screen_has(ts, "Mission #")) return CS_ORDERS;
+  if (is_bridge(ts)) {
+    Situation st = bridge_situation(ts);
+    if (st == SIT_DOCKED) return CS_DOCKED;
+    if (st == SIT_ALERT) return CS_ALERT;
+    if (st == SIT_CRUISE) return CS_CRUISE;
+    return -1;
+  }
+  if (in_flight(ts) && glay_kind() == 2 && screen_has(ts, "PLANETS")) return CS_SYSMAP;
+  return -1;
 }
 
 // ------------------------------------------------------------------ bridge situation (plan item 3)
@@ -2123,6 +2162,17 @@ Redraw frame(const TextScreen& ts, uint16_t* top, uint16_t* bottom) {
     bottom_rows(ts_bot, ts);      // (before the top: it decides row_mode, which the top's hint reads)
     if (draw_top) { generic_top(ts_top, ts); top_native = false; }
     rd.top = draw_top; rd.bottom = true;
+  }
+  if (coach_on && !manual_open && !pause_open && !kb_open) {
+    int cs = coach_step(ts);
+    if (cs >= 0) {
+      if (!(coach_seen & (1 << cs)) && !mis_show_pending) {
+        coach_seen |= 1 << cs;
+        explain(COACH_TITLE[cs], COACH_TEXT[cs]); explain_until = t + 9000;
+        if (!draw_top) dirty();     // the next frame redraws the top with the card
+      }
+      if (COACH_BUTTON[cs]) for (auto& b : btns) if (b.label == COACH_BUTTON[cs]) b.coach = true;
+    }
   }
   if (draw_top && explain_until && ts.text_mode && !manual_open && !pause_open) { explain_card(ts_top); rd.top = true; }
   if (focus_mode && !manual_open && !pause_open) {     // ring the button nearest the last focus point
