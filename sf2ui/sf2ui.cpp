@@ -1419,6 +1419,9 @@ static std::string advise(const TextScreen& ts, const char** button) {
   } else if (screen_has(ts, "SIGN-ON OPTIONS")) {
     add("New here? Tap Practice (demo) mission, answer YES, pick a mission, then Start a new mission.", "Practice (demo) mission");
     add("Tutorials (lower in the list) teach flying step by step.", 0);
+  } else if (in_flight(ts) && screen_has(ts, "enter target") && screen_has(ts, "TARGETER")) {
+    add("The Targeter is open: SPD- and SPD+ change the speed it offers, ENTER loads the target, EXIT cancels.", "ENTER");
+    add("Then B for the bridge and ENGINES to go.", 0);
   } else if (in_flight(ts) && glay_kind() == 2 && row_str(ts, 24, 0, 80).find("argeter") == std::string::npos) {
     add("A window or submenu is open on this map: use the buttons below, or B to close it.", 0);
   } else if (screen_has(ts, "MAP OF STAR SYSTEM")) {
@@ -1740,7 +1743,15 @@ static void analyse(const TextScreen& ts) {
   glay.kind = G_PLAIN; glay.items.clear(); glay.r0 = glay.c0 = 0; glay.r1 = glay.c1 = -1;
   if (kb_open) return;
   if (!dialog_question(ts).empty()) return;   // a question is up: YES/NO, not the menu behind it
-  if (find_map(ts, glay)) return;
+  // The Targeter window opens over a corner of the star maps, which hides the frame the map is
+  // found by: keep the map where it was while that window is up (emulator, Nov 21).
+  static GLayout last_map; static bool have_map = false;
+  if (find_map(ts, glay)) { last_map = glay; have_map = true; return; }
+  if (have_map && in_flight(ts) && screen_has(ts, "enter target") && screen_has(ts, "TARGETER")) {
+    int line = 0; for (int c = last_map.c0; c <= last_map.c1; c++) if (is_box(ts.ch[last_map.r1][c])) line++;
+    if (line >= 10) { glay = last_map; return; }       // (its bottom edge is still there)
+  }
+  if (!in_flight(ts)) have_map = false;
   if (find_menu(ts, glay)) return;
   glay.kind = G_PLAIN; glay.r1 = glay.c1 = -1;
 }
