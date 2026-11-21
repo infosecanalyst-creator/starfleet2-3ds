@@ -660,6 +660,10 @@ static bool cursor_question(const TextScreen& ts);
 // its colours (hardware, Nov 20: the Practice question came up inside the menu screen with no YES/NO
 // buttons). A short line that ends in '?' (or '?' then a [Y]/[N] hint) and asks Do/Are you / want to.
 static std::string dialog_question(const TextScreen& ts) {
+  // On the bridge an answered question stays in COMMS; the game is only asking while its prompt
+  // field says so (harness, Nov 21: YES/NO stayed up after "Do you wish to be resupplied?" was answered).
+  // (a question in a message box, like the starfort autopilot's, is still a question)
+  if (is_bridge(ts) && trim(row_str(ts, 24, 0, 24)).compare(0, 13, "Select option") == 0) { find_popup(ts); if (pop_r0 < 0) return ""; }
   for (int r = 1; r < 24; r++) {
     // a question in a window over another screen (the bridge's "Do you wish to go to nearest
     // starfort?") shares its row with panel text: look at each stretch between frame lines
@@ -1745,11 +1749,13 @@ static void analyse(const TextScreen& ts) {
   if (!dialog_question(ts).empty()) return;   // a question is up: YES/NO, not the menu behind it
   // The Targeter window opens over a corner of the star maps, which hides the frame the map is
   // found by: keep the map where it was while that window is up (emulator, Nov 21).
-  static GLayout last_map; static bool have_map = false;
-  if (find_map(ts, glay)) { last_map = glay; have_map = true; return; }
+  static GLayout last_map; static bool have_map = false; static uint8_t map_edge[80];
+  if (find_map(ts, glay)) { last_map = glay; have_map = true; memcpy(map_edge, ts.ch[glay.r1], 80); return; }
   if (have_map && in_flight(ts) && screen_has(ts, "enter target") && screen_has(ts, "TARGETER")) {
-    int line = 0; for (int c = last_map.c0; c <= last_map.c1; c++) if (is_box(ts.ch[last_map.r1][c])) line++;
-    if (line >= 10) { glay = last_map; return; }       // (its bottom edge is still there)
+    // (the same map: its bottom edge is where it was, cell for cell)
+    int same = 0, n = last_map.c1 - last_map.c0 + 1;
+    for (int c = last_map.c0; c <= last_map.c1; c++) if (ts.ch[last_map.r1][c] == map_edge[c]) same++;
+    if (same * 10 >= n * 9) { glay = last_map; return; }
   }
   if (!in_flight(ts)) have_map = false;
   if (find_menu(ts, glay)) return;
@@ -2783,6 +2789,9 @@ static int hit(int x, int y) {
 // Snap a tapped cell to the nearest visible symbol within 2 columns / 1 row (map cells are
 // two columns wide and a stylus tap is rarely exact). Grid dots and box lines don't count.
 static void snap_to_object(const TextScreen& ts, int& col, int& row, int c0, int r0, int c1, int r1) {
+  // A tap on the target box's own frame moves the box that way by one: whatever lies under the
+  // frame (a star next to your ship on the star map) can only be reached like that.
+  if (row >= 0 && row < 25 && col >= 0 && col < 80 && (ts.at[row][col] & 15) == 5 && is_box(ts.ch[row][col])) return;
   int best = 99, bc = col, br = row;
   for (int dr = -1; dr <= 1; dr++)
     for (int dc = -2; dc <= 2; dc++) {

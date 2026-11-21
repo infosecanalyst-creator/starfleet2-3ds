@@ -1,7 +1,7 @@
 kind: bridge
-hint: Tap YES or NO
-buttons: [PHASERS] [TORPS] [SHLD+] [SHLD-] [SPD+] [SPD-] [TELEPORT] [ENGINES] [YES] [NO] [STARS] [SYSTEM] [WAR] [COMBAT] [FLEET] [ORDERS] [LOG]
-explain cards: 17/17
+hint: Tap display: steer ³ X/Y: fire
+buttons: [PHASERS] [TORPS] [SHLD+] [SHLD-] [SPD+] [SPD-] [TELEPORT] [ENGINES] [NAV] [ENG] [CMB] [CMP] [SEC] [MORE] [STARS] [SYSTEM] [WAR] [COMBAT] [FLEET] [ORDERS] [LOG]
+explain cards: 21/21
 quick reference: QUICK REFERENCE: BRIDGE
 start menu: [RESUME] [WHAT NOW?] [MANUAL] [COACH: ON] [SAVE] [GAME SETTINGS (grey)] [EXIT GAME (grey)]
 what now: Goal: Discover at least one mineral-rich planet in UGA or neutral space. 1) You are in orbit. TELEPORT sends a landing party down to explore. 2) ENGINES leaves orbit. [ring TELEPORT]
