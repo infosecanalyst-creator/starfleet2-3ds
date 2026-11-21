@@ -382,7 +382,10 @@ static void find_popup(const TextScreen& ts) {
       for (int r2 = r + 2; r2 <= r + 8 && r2 <= 23; r2++) {
         if (ts.ch[r2][c] != 0xC8 || ts.ch[r2][c2] != 0xBC) continue;
         bool ok = true;
-        for (int k = c + 1; k < c2; k++) if (ts.ch[r2][k] != 0xCD) ok = false;
+        // (the bottom edge may carry words: "====PRESS KEY====")
+        int edge = 0; std::string edge_text;
+        for (int k = c + 1; k < c2; k++) { if (ts.ch[r2][k] == 0xCD) edge++; else if (ts.ch[r2][k] >= 32 && ts.ch[r2][k] < 127) edge_text += (char)ts.ch[r2][k]; else ok = false; }
+        if (edge * 10 < (c2 - c - 1) * 5) ok = false;
         for (int k = r + 1; k < r2; k++) if (ts.ch[k][c] != 0xBA || ts.ch[k][c2] != 0xBA) ok = false;
         if (!ok) break;
         pop_r0 = r; pop_c0 = c; pop_r1 = r2; pop_c1 = c2;
@@ -392,6 +395,7 @@ static void find_popup(const TextScreen& ts) {
           size_t a = l.find_first_not_of(' '), b = l.find_last_not_of(' ');
           if (a != std::string::npos) { if (!pop_text.empty()) pop_text += ' '; pop_text += l.substr(a, b - a + 1); }
         }
+        if (!trim(edge_text).empty()) pop_text += " " + trim(edge_text);
         return;
       }
     }
