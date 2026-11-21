@@ -422,8 +422,10 @@ void sf2ctr_events() {
     { char st[128]; sf2_debug_state(st, sizeof st); sf2ctr_log("state %s", st); }
     { extern unsigned int sf2_io_ops, sf2_io_disk; static unsigned int o0 = 0, d0 = 0;
       extern unsigned long long sf2_io_ticks; static unsigned long long t0 = 0;
-      if (sf2_io_ops != o0) sf2ctr_log("files: %u operations, %u on the SD card, %u ms in the file layer", sf2_io_ops - o0, sf2_io_disk - d0,
-                                       (unsigned)((sf2_io_ticks - t0) / (SYSCLOCK_ARM11 / 1000)));
+      extern unsigned int sf2_cache_hits; static unsigned int h0 = 0;
+      if (sf2_io_ops != o0) sf2ctr_log("files: %u operations, %u on the SD card, %u opens from RAM, %u ms in the file layer", sf2_io_ops - o0, sf2_io_disk - d0,
+                                       sf2_cache_hits - h0, (unsigned)((sf2_io_ticks - t0) / (SYSCLOCK_ARM11 / 1000)));
+      h0 = sf2_cache_hits;
       t0 = sf2_io_ticks;
       o0 = sf2_io_ops; d0 = sf2_io_disk; }
     { extern const char* sf2_prof_name[12]; extern unsigned long long sf2_prof_us[12]; extern unsigned int sf2_prof_n[12];

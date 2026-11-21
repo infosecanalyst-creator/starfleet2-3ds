@@ -58,7 +58,34 @@ void sf2ctr_log(const char* fmt, ...);
 // stat(), corrected for writes still queued in the background writer (the card has the old size).
 // A file that is queued or being written is answered from the writer's copy without touching the
 // card: on a real 3DS, looking at a file while it is being written stalls both for ~20 s.
+// Whole-file RAM cache. The game runs a small overlay program several times a second in flight and
+// each run opens the same handful of files; on the 3DS every open and read of the SD card is real
+// time in which no emulated time passes (emulator, Nov 21 2026: 6.3 s of every 10 s in the file
+// layer, simulation at 17% speed). A file read once is served from here; writes update it and
+// still go to the card through the background writer.
+#include <vector>
+struct Sf2Cached { std::vector<Bit8u> data; time_t mtime; };
+static std::map<std::string, Sf2Cached> sf2_cache; static size_t sf2_cache_bytes = 0;
+static const size_t SF2_CACHE_MAX = 14u * 1024 * 1024;
+unsigned int sf2_cache_hits = 0;
+static void sf2_cache_drop(const char* path) {
+	if (!path) { sf2_cache.clear(); sf2_cache_bytes = 0; return; }          // (a directory changed: start again)
+	std::map<std::string, Sf2Cached>::iterator it = sf2_cache.find(path);
+	if (it != sf2_cache.end()) { sf2_cache_bytes -= it->second.data.size(); sf2_cache.erase(it); }
+}
+static void sf2_cache_put(const char* path, const Bit8u* d, size_t n, time_t mtime) {
+	sf2_cache_drop(path);
+	if (n > 2u * 1024 * 1024 || sf2_cache_bytes + n > SF2_CACHE_MAX) return;
+	Sf2Cached& c = sf2_cache[path];
+	c.data.assign(d, d + n); c.mtime = mtime; sf2_cache_bytes += n;
+}
 static int sf2_stat(const char* path, struct stat* st) {
+	{ std::map<std::string, Sf2Cached>::iterator it = sf2_cache.find(path);
+	  if (it != sf2_cache.end()) {
+		memset(st, 0, sizeof *st);
+		st->st_mode = S_IFREG | 0666; st->st_size = (off_t)it->second.data.size(); st->st_mtime = it->second.mtime; st->st_nlink = 1;
+		return 0;
+	  } }
 	size_t n;
 	if (sf2w_pending_size(path, &n)) {
 		memset(st, 0, sizeof *st);
@@ -67,7 +94,7 @@ static int sf2_stat(const char* path, struct stat* st) {
 	}
 	return stat(path, st);
 }
-static void sf2_stat_forget(const char*) {}
+static void sf2_stat_forget(const char* p) { sf2_cache_drop(p); }
 static void sf2_stat_size(const char*, Bit32u) {}
 #define SF2_STAT(p, b) sf2_stat(p, b)
 #define SF2_FORGET(p) sf2_stat_forget(p)
@@ -158,6 +185,15 @@ bool localDrive::FileOpen(DOS_File * * file,char * name,Bit32u flags) {
 	}
 
 #ifdef SF2_3DS
+	{ std::map<std::string, Sf2Cached>::iterator it = sf2_cache.find(newname);
+	  if (it != sf2_cache.end()) {               // read before: no need to touch the card
+		localFile* lf = new localFile(name, (FILE*)0);
+		lf->flags = flags;
+		if (lf->sf2_attach_cached(newname, it->second.data.empty() ? 0 : &it->second.data[0], (Bit32u)it->second.data.size(), it->second.mtime)) {
+			*file = lf; sf2_cache_hits++; return true;
+		}
+		delete lf;
+	  } }
 	sf2w_wait_busy(newname);                   // opening a file while it is written stalls ~20 s on a 3DS
 #endif
 	FILE * hand = fopen_wrap(newname,type);
@@ -603,7 +639,7 @@ bool localFile::Write(Bit8u * data,Bit16u * size) {
 			Bit32u cap = mem_cap ? mem_cap : 4096;
 			while (cap < end) cap *= 2;
 			Bit8u* m = (Bit8u*)realloc(mem, cap);
-			if (!m) { mem_writeback(); free(mem); mem = 0; fseek(fhandle, mem_pos, SEEK_SET); goto disk; }
+			if (!m) { if (!fhandle) { DOS_SetError(DOSERR_ACCESS_DENIED); return false; } mem_writeback(); free(mem); mem = 0; fseek(fhandle, mem_pos, SEEK_SET); goto disk; }
 			mem = m; mem_cap = cap;
 		}
 		if (mem_pos > mem_size) memset(mem + mem_size, 0, mem_pos - mem_size);   // gap after a seek past the end
@@ -675,7 +711,7 @@ bool localFile::Close() {
 			// close the card's handle first, then queue the contents: closing a file while the
 			// writer is writing it stalls ~20 s on a real 3DS
 			if (fhandle) { fclose(fhandle); fhandle = 0; }
-			if (mem_dirty) { sf2w_queue(sf2_path, mem, mem_size); mem_dirty = false; }
+			if (mem_dirty) { sf2w_queue(sf2_path, mem, mem_size); sf2_cache_put(sf2_path, mem, mem_size, ::time(0)); mem_dirty = false; }
 			free(mem); mem = 0;
 		}
 		if (mem) { mem_writeback(); free(mem); mem = 0; }
@@ -740,15 +776,29 @@ void localFile::mem_load(void) {
 	if (sz > 0 && fread(m, 1, sz, fhandle) != (size_t)sz) { free(m); fseek(fhandle, cur, SEEK_SET); return; }
 	sf2_io_disk++;
 	mem = m; mem_cap = cap; mem_size = (Bit32u)sz; mem_pos = cur > 0 ? (Bit32u)cur : 0; mem_dirty = false;
+	if (sf2_path[0]) { struct stat sb; time_t mt = fstat(fileno(fhandle), &sb) == 0 ? sb.st_mtime : ::time(0); sf2_cache_put(sf2_path, mem, mem_size, mt); }
+}
+bool localFile::sf2_attach_cached(const char* host_path, const Bit8u* d, Bit32u n, time_t mtime) {
+	Bit32u cap = n ? n : 4096;
+	Bit8u* m = (Bit8u*)malloc(cap);
+	if (!m) return false;
+	if (n) memcpy(m, d, n);
+	safe_strncpy(sf2_path, host_path, sizeof sf2_path);
+	mem = m; mem_cap = cap; mem_size = n; mem_pos = 0; mem_dirty = false;
+	struct tm* lt = localtime(&mtime);
+	if (lt) { time = DOS_PackTime((Bit16u)lt->tm_hour, (Bit16u)lt->tm_min, (Bit16u)lt->tm_sec); date = DOS_PackDate((Bit16u)(lt->tm_year + 1900), (Bit16u)(lt->tm_mon + 1), (Bit16u)lt->tm_mday); }
+	return true;
 }
 void localFile::mem_writeback(void) {
-	if (!mem || !mem_dirty || !fhandle) return;
+	if (!mem || !mem_dirty) return;
 	if (sf2_path[0]) {                         // the background writer puts it on the card
 		sf2w_queue(sf2_path, mem, mem_size);
+		sf2_cache_put(sf2_path, mem, mem_size, ::time(0));
 		sf2_stat_size(sf2_path, mem_size);
 		mem_dirty = false;
 		return;
 	}
+	if (!fhandle) return;
 	fseek(fhandle, 0, SEEK_SET);
 	if (mem_size) fwrite(mem, 1, mem_size, fhandle);
 	fflush(fhandle);
@@ -764,6 +814,9 @@ void localFile::FlagReadOnlyMedium(void) {
 
 bool localFile::UpdateDateTimeFromHost(void) {
 	if(!open) return false;
+#ifdef SF2_3DS
+	if (!fhandle) { if (!mem) { time = 1; date = 1; } return true; }     // served from the RAM cache
+#endif
 	struct stat temp_stat;
 	fstat(fileno(fhandle),&temp_stat);
 	struct tm * ltime;
