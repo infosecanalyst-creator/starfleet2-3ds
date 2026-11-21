@@ -91,6 +91,18 @@ static std::string report(const std::string& name, const TextScreen& ts, const s
     }
     buttons(0, 0, B_R); explain_until = 0; clock_ms += 40; frame(ts, top, bot);
     o << "explain cards: " << cards << "/" << bs.size() << "\n";
+    // START menu on this screen: its items (greyed or not); MISSION shows the mission card
+    buttons(B_START, B_START, 0); clock_ms += 40; frame(ts, top, bot); buttons(0, 0, B_START);
+    o << "start menu:";
+    for (auto& b : btns) o << " [" << b.label << (b.off ? " (grey)" : "") << "]";
+    o << "\n";
+    for (auto& b : btns) if (b.label == "MISSION" && !b.off) {
+      touch((b.x0 + b.x1) / 2, (b.y0 + b.y1) / 2, true); clock_ms += 40; frame(ts, top, bot);
+      touch((b.x0 + b.x1) / 2, (b.y0 + b.y1) / 2, false); clock_ms += 40; frame(ts, top, bot);
+      o << "mission card: " << explain_title << " | " << explain_text << "\n";
+      break;
+    }
+    pause_open = false; explain_until = 0; force_redraw(); clock_ms += 40; frame(ts, top, bot);
   }
   for (auto& p : fit_problems()) o << "FIT: " << p << "\n";
   if (!png_dir.empty()) { save_ppm(png_dir + "/" + name + "_top.ppm", top, TOP_W, TOP_H); save_ppm(png_dir + "/" + name + "_bot.ppm", bot, BOT_W, BOT_H); }

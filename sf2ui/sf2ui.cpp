@@ -34,7 +34,7 @@ static std::vector<Ev> queue;          // pending key events
 static uint32_t next_key_ms = 0;
 static const uint32_t KEY_GAP_MS = 35; // spacing between injected key events
 
-enum ActKind { A_NONE, A_KEY, A_MODE, A_MANUAL, A_KB, A_SECTION, A_CLOSE, A_TYPE, A_SIGNON, A_SAVE, A_VIEW, A_PAUSE, A_QUIT, A_QUIT_YES, A_SETTINGS, A_LEFTY, A_SECLIST, A_ROWPAGE, A_RDLINE, A_MENUSCROLL, A_LAUNCH, A_ENGINES };
+enum ActKind { A_NONE, A_KEY, A_MODE, A_MANUAL, A_KB, A_SECTION, A_CLOSE, A_TYPE, A_SIGNON, A_SAVE, A_VIEW, A_PAUSE, A_QUIT, A_QUIT_YES, A_SETTINGS, A_LEFTY, A_SECLIST, A_ROWPAGE, A_RDLINE, A_MENUSCROLL, A_LAUNCH, A_ENGINES, A_MISSION };
 struct Act { ActKind kind; Key key; uint8_t mods; int arg; };
 enum { M_SHIFT = 1, M_CTRL = 2, M_ALT = 4 };
 
@@ -108,6 +108,9 @@ static void dirty() { ui_version++; }
 // (a tap-mode press, closing the manual), through the same background writer as lefty.txt.
 static std::string set_manual;          // remembered manual section title
 static std::string set_written;         // the file's contents as last read or written
+// Mission card (plan item 7): read from the orders screen, remembered in settings.txt
+static std::string mis_title, mis_goal; static int mis_days = 0;
+static bool mis_show_pending = false;    // show the card on the next bridge screen
 static void load_settings() {
   FILE* f = H && H->settings_path ? fopen(H->settings_path, "rb") : 0;
   if (!f) return;
@@ -118,6 +121,9 @@ static void load_settings() {
     if (!strncmp(line, "tapmode=", 8)) {
       for (int i = 0; i < 3; i++) if (!strcmp(line + 8, TAP_LABEL[i])) tap_mode = (TapMode)i;
     } else if (!strncmp(line, "manual=", 7)) set_manual = line + 7;
+    else if (!strncmp(line, "mission=", 8)) mis_title = line + 8;
+    else if (!strncmp(line, "goal=", 5)) mis_goal = line + 5;
+    else if (!strncmp(line, "days=", 5)) mis_days = atoi(line + 5);
   }
   fclose(f);
 }
@@ -128,6 +134,7 @@ static void save_settings() {
   if (!H || !H->settings_path) return;
   std::string text = std::string("tapmode=") + TAP_LABEL[tap_mode] + "\n";
   if (!set_manual.empty()) text += "manual=" + set_manual + "\n";
+  if (!mis_goal.empty()) text += "mission=" + mis_title + "\ngoal=" + mis_goal + "\ndays=" + std::to_string(mis_days) + "\n";
   if (text == set_written) return;     // nothing changed: no SD write
   set_written = text;
   if (H->save) H->save(H->settings_path, text.data(), (unsigned)text.size());   // (3DS: in the background)
@@ -847,9 +854,16 @@ static void bridge_top(Surf& s, const TextScreen& ts) {
   if (!lefty_loaded) lefty_load();
   const char* hint = lefty_on ? "D-Lt/Up fire  L freeze  R mode  R+tap: explain  START menu"
                               : "X/Y fire  L freeze  R mode  R+tap: explain  START menu";
+  // every other 8 s the strip shows the mission goal instead (plan item 4), when it fits
+  std::string goal_line = mis_goal.empty() ? "" : "Goal: " + mis_goal;
+  const Font* hf = &F6x12;
+  if (!goal_line.empty() && (now() / 8000) % 2) {
+    if (text_width(goal_line.c_str(), F6x12) <= TOP_W - 8) hint = goal_line.c_str();
+    else if (text_width(goal_line.c_str(), F5x9) <= TOP_W - 8) { hint = goal_line.c_str(); hf = &F5x9; }
+  }
   s.fill(0, 224, TOP_W, TOP_H, BTN);
   s.hline(0, TOP_W, 224, BTN_EDGE);
-  fit_text(s, (TOP_W - text_width(hint, F6x12)) / 2, 226, TOP_W - 2, hint, F6x12, TITLE, "bridge hint");
+  fit_text(s, (TOP_W - text_width(hint, *hf)) / 2, 226 + (12 - hf->h) / 2, TOP_W - 2, hint, *hf, TITLE, "bridge hint");
 }
 
 // The bridge dashboard laid out for 320 px, used when the screens are swapped and it sits on the
@@ -916,6 +930,50 @@ static void bridge_top_narrow(Surf& s, const TextScreen& ts) {
 // (13-px rows, down from 14, leave room for the prompt strip and two 24-px button rows 8 px apart
 // under it; the cells start one pixel into the title band so the 12 rows end above the frame)
 static const int TAC_X = 2, TAC_Y = 9, TAC_CW = 8, TAC_LH = 13;
+
+// ------------------------------------------------------------------ mission card (plan item 7)
+// The orders screen ("COMMUNICATION FROM KRELLAN FLEET HEADQUARTERS ... Subject : Orders for
+// Reconnaissance Mission into Region #1-A ... 2. Your primary objective is to discover ... 4. You
+// have 10 days to complete this mission.") gives the mission goal and the days allowed.
+static void read_orders(const TextScreen& ts) {
+  if (!screen_has(ts, "FLEET HEADQUARTERS") || !screen_has(ts, "Subject") || !screen_has(ts, "Mission #")) return;
+  std::string title, text;
+  for (int r = 0; r < 24; r++) {
+    std::string row = trim(row_str(ts, r, 0, 80));
+    size_t k = row.find("Subject");
+    if (k != std::string::npos && row.find(':') != std::string::npos) {
+      title = trim(row.substr(row.find(':') + 1));
+      if (title.rfind("Orders for ", 0) == 0) title = title.substr(11);
+    }
+    if (r > 6) text += row + " ";
+  }
+  // numbered paragraphs: "1. ...", "2. ..."
+  std::string goal; int days = 0;
+  for (size_t i = 0; i < text.size(); i++) {
+    if (!(isdigit((unsigned char)text[i]) && i + 1 < text.size() && text[i + 1] == '.' && (i == 0 || text[i - 1] == ' '))) continue;
+    size_t e = i + 2; while (e < text.size() && !(isdigit((unsigned char)text[e]) && e + 1 < text.size() && text[e + 1] == '.' && text[e - 1] == ' ')) e++;
+    std::string para = trim(text.substr(i + 2, e - i - 2));
+    std::string collapsed; bool sp = false;
+    for (char c : para) { if (c == ' ') { if (!sp) collapsed += c; sp = true; } else { collapsed += c; sp = false; } }
+    size_t o = collapsed.find("objective is to ");
+    if (o != std::string::npos && goal.empty()) goal = collapsed.substr(o + 16);
+    size_t d = collapsed.find("You have ");
+    if (d != std::string::npos) days = atoi(collapsed.c_str() + d + 9);
+    i = e - 1;
+  }
+  if (goal.empty()) return;
+  if (!goal.empty() && goal.back() == '.') goal.pop_back();
+  goal[0] = (char)toupper((unsigned char)goal[0]);
+  if (goal == mis_goal && title == mis_title && days == mis_days) return;
+  mis_title = title; mis_goal = goal; mis_days = days; mis_show_pending = true;
+  save_settings();
+}
+static std::string mission_text() {
+  std::string t = mis_goal + ".";
+  if (mis_days > 0) t += " You have " + std::to_string(mis_days) + " days (Time left on the top screen).";
+  t += " Orders again: ORDERS on the bridge, or START > MISSION.";
+  return t;
+}
 
 // ------------------------------------------------------------------ explain mode (plan item 6)
 struct Gloss { const char* key; const char* title; const char* text; };
@@ -1734,16 +1792,16 @@ static void pause_bottom(Surf& s, const TextScreen& ts) {
   bool menu = ts.text_mode && screen_has(ts, "Change default settings", 0, 24);
   // (Saving is the game's own: its command menu on the touch screen; the port does not drive it.
   // Hardware, Nov 20: at mission start every injected key only advanced the XO's COMMS messages.)
-  const char* lab[4] = {"RESUME", "MANUAL", "GAME SETTINGS", "EXIT GAME"};
-  Act act[4] = {kind_act(A_PAUSE), kind_act(A_MANUAL), kind_act(A_SETTINGS), kind_act(A_QUIT)};
-  for (int i = 0; i < 4; i++) {
-    add_btn(50, 30 + i * 40, 270, 62 + i * 40, lab[i], &F8x16, act[i]);   // 32 px tall, 8 px apart
-    if ((i == 2 && !menu) || (i == 3 && !(H && H->quit))) btns.back().off = true;
+  const char* lab[5] = {"RESUME", "MISSION", "MANUAL", "GAME SETTINGS", "EXIT GAME"};
+  Act act[5] = {kind_act(A_PAUSE), kind_act(A_MISSION), kind_act(A_MANUAL), kind_act(A_SETTINGS), kind_act(A_QUIT)};
+  for (int i = 0; i < 5; i++) {
+    add_btn(50, 30 + i * 34, 270, 58 + i * 34, lab[i], &F8x16, act[i]);   // 28 px tall, 6 px apart
+    if ((i == 1 && mis_goal.empty()) || (i == 3 && !menu) || (i == 4 && !(H && H->quit))) btns.back().off = true;
     btns.back().focus = i == pause_focus;
   }
   const char* note = bridge ? "Save: the game's command menu; SELECT re-saves." :
                      menu ? "Saving works on the bridge." : "Saving: on the bridge. Settings: main menu.";
-  fit_text(s, (BOT_W - text_width(note, F6x12)) / 2, 197, BOT_W, note, F6x12, HINT, "pause");
+  fit_text(s, (BOT_W - text_width(note, F6x12)) / 2, 200, BOT_W, note, F6x12, HINT, "pause");
   hint_strip(s, lefty_on ? "D-Right Select  D-Down Back  ZL Swap" : "A Select  B Back  ZL Swap");
 }
 
@@ -1812,6 +1870,10 @@ static void fire(const Act& a) {
       // (seen Nov 18 2026: the "p" of a password chose Practice). Only sign on once, at the prompt.
       if (autologin != 0 || !at_name_prompt(last)) break;
       typed.clear(); type_text(off_name); press(K_ENTER); autologin = 1; pass_tries = 0; pend_name = off_name; say("Signing on...", 1500);
+      break;
+    case A_MISSION:
+      pause_open = false;
+      if (!mis_goal.empty()) { explain(mis_title.empty() ? "MISSION" : mis_title.c_str(), mission_text().c_str()); explain_until = now() + 12000; }
       break;
     case A_LAUNCH: case A_ENGINES: {
       // the helm refuses to start the engines with no speed set ("Velocity must be set"):
@@ -2015,6 +2077,17 @@ Redraw frame(const TextScreen& ts, uint16_t* top, uint16_t* bottom) {
   bool toast_anim = !toast.empty() && (int32_t)(toast_until - t) > -50;
   bool scroll_due = (marquee || busy_now) && t - last_anim >= 50;
   if (explain_until && (int32_t)(t - explain_until) >= 0) { explain_until = 0; dirty(); }
+  if (ts.text_mode) read_orders(ts);
+  if (mis_show_pending && ts.text_mode && is_bridge(ts) && !manual_open && !pause_open) {   // the card once, on the bridge
+    mis_show_pending = false;
+    explain(mis_title.empty() ? "MISSION" : mis_title.c_str(), mission_text().c_str());
+    explain_until = t + 12000;
+  }
+  {   // the bridge hint strip alternates with the mission goal every 8 s
+    static uint32_t phase = 0;
+    uint32_t ph = t / 8000;
+    if (ph != phase) { phase = ph; if (!mis_goal.empty() && ts.text_mode && is_bridge(ts)) dirty(); }
+  }
   bool full = changed || drawn_version != ui_version;
   if (!full && !flash_on && !toast_anim && !scroll_due) return rd;
   if (flash_on || toast_anim || scroll_due) last_anim = t;
@@ -2281,25 +2354,25 @@ void buttons(uint32_t held, uint32_t pr, uint32_t rel) {
   if (pause_open) {
     if (pr & (B_B | B_START)) {
       H->click();
-      if (quit_confirm) { quit_confirm = false; pause_focus = 3; } else pause_open = false;
+      if (quit_confirm) { quit_confirm = false; pause_focus = 4; } else pause_open = false;
       dirty(); return;
     }
     if (quit_confirm) {
       if (pr & (B_DLEFT | B_DRIGHT)) { pause_focus = !pause_focus; dirty(); }
-      if (pr & B_A) { H->click(); if (pause_focus == 0) fire(kind_act(A_QUIT_YES)); quit_confirm = false; pause_focus = 3; dirty(); }
+      if (pr & B_A) { H->click(); if (pause_focus == 0) fire(kind_act(A_QUIT_YES)); quit_confirm = false; pause_focus = 4; dirty(); }
       return;
     }
     bool bridge = is_bridge(last);
     bool menu = last.text_mode && screen_has(last, "Change default settings", 0, 24);
     (void)bridge;
-    bool usable[4] = {true, true, menu, H && H->quit};
-    int step = repeat_due(B_DDOWN, held, pr) ? 1 : repeat_due(B_DUP, held, pr) ? 3 : 0;
+    bool usable[5] = {true, !mis_goal.empty(), true, menu, H && H->quit};
+    int step = repeat_due(B_DDOWN, held, pr) ? 1 : repeat_due(B_DUP, held, pr) ? 4 : 0;
     if (step) {
-      do pause_focus = (pause_focus + step) % 4; while (!usable[pause_focus]);
+      do pause_focus = (pause_focus + step) % 5; while (!usable[pause_focus]);
       dirty();
     }
     if ((pr & B_A) && usable[pause_focus]) {
-      static const ActKind k[4] = {A_PAUSE, A_MANUAL, A_SETTINGS, A_QUIT};
+      static const ActKind k[5] = {A_PAUSE, A_MISSION, A_MANUAL, A_SETTINGS, A_QUIT};
       H->click(); fire(kind_act(k[pause_focus])); dirty();
     }
     return;
