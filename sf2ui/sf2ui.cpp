@@ -31,7 +31,7 @@ static std::vector<Ev> queue;          // pending key events
 static uint32_t next_key_ms = 0;
 static const uint32_t KEY_GAP_MS = 35; // spacing between injected key events
 
-enum ActKind { A_NONE, A_KEY, A_MODE, A_MANUAL, A_KB, A_SECTION, A_CLOSE, A_TYPE, A_SIGNON, A_SAVE, A_VIEW, A_PAUSE, A_QUIT, A_QUIT_YES, A_SETTINGS, A_LEFTY, A_SECLIST, A_ROWPAGE, A_RDLINE, A_MENUSCROLL, A_SAVEMISSION };
+enum ActKind { A_NONE, A_KEY, A_MODE, A_MANUAL, A_KB, A_SECTION, A_CLOSE, A_TYPE, A_SIGNON, A_SAVE, A_VIEW, A_PAUSE, A_QUIT, A_QUIT_YES, A_SETTINGS, A_LEFTY, A_SECLIST, A_ROWPAGE, A_RDLINE, A_MENUSCROLL };
 struct Act { ActKind kind; Key key; uint8_t mods; int arg; };
 enum { M_SHIFT = 1, M_CTRL = 2, M_ALT = 4 };
 
@@ -1595,12 +1595,12 @@ static void pause_bottom(Surf& s, const TextScreen& ts) {
   if (quit_confirm) {
     header_bar(s, "EXIT GAME");
     // rule 17 (decided Nov 20 after hardware tests): no save is attempted on exit. The game autosaves every
-    // half day of mission time; SAVE MISSION in the START menu keeps the exact place.
+    // half day of mission time; saving from the game's own command menu keeps the exact place.
     const bool br = ts.text_mode && is_bridge(ts);
     const char* l1 = br ? "Exit now?" : "Exit Star Fleet II?";
     const char* l2 = br ? "The game autosaves every half day" : "Anything since your last save is lost.";
     const char* l3 = br ? "of mission time. To keep your exact" : "(The game saves on the bridge only.)";
-    const char* l4 = br ? "place, use SAVE MISSION first." : "";
+    const char* l4 = br ? "place, save from the game's command menu first." : "";
     fit_text(s, (BOT_W - text_width(l1, F8x16)) / 2, 40, BOT_W - 6, l1, F8x16, BTN_TXT, "pause");
     fit_text(s, (BOT_W - text_width(l2, F6x12)) / 2, 70, BOT_W - 6, l2, F6x12, HINT, "pause");
     fit_text(s, (BOT_W - text_width(l3, F6x12)) / 2, 84, BOT_W - 6, l3, F6x12, HINT, "pause");
@@ -1615,14 +1615,16 @@ static void pause_bottom(Surf& s, const TextScreen& ts) {
   header_bar(s, "MENU");
   bool bridge = ts.text_mode && is_bridge(ts);
   bool menu = ts.text_mode && screen_has(ts, "Change default settings", 0, 24);
-  const char* lab[5] = {"RESUME", "MANUAL", "SAVE MISSION", "GAME SETTINGS", "EXIT GAME"};
-  Act act[5] = {kind_act(A_PAUSE), kind_act(A_MANUAL), kind_act(A_SAVEMISSION), kind_act(A_SETTINGS), kind_act(A_QUIT)};
-  for (int i = 0; i < 5; i++) {
-    add_btn(50, 30 + i * 34, 270, 56 + i * 34, lab[i], &F8x16, act[i]);   // 26 px tall, 8 px apart
-    if ((i == 2 && !bridge) || (i == 3 && !menu) || (i == 4 && !(H && H->quit))) btns.back().off = true;
+  // (Saving is the game's own: its command menu on the touch screen; the port does not drive it.
+  // Hardware, Nov 20: at mission start every injected key only advanced the XO's COMMS messages.)
+  const char* lab[4] = {"RESUME", "MANUAL", "GAME SETTINGS", "EXIT GAME"};
+  Act act[4] = {kind_act(A_PAUSE), kind_act(A_MANUAL), kind_act(A_SETTINGS), kind_act(A_QUIT)};
+  for (int i = 0; i < 4; i++) {
+    add_btn(50, 30 + i * 40, 270, 62 + i * 40, lab[i], &F8x16, act[i]);   // 32 px tall, 8 px apart
+    if ((i == 2 && !menu) || (i == 3 && !(H && H->quit))) btns.back().off = true;
     btns.back().focus = i == pause_focus;
   }
-  const char* note = bridge ? "SAVE MISSION names a save; SELECT re-saves." :
+  const char* note = bridge ? "Save: the game's command menu; SELECT re-saves." :
                      menu ? "Saving works on the bridge." : "Saving: on the bridge. Settings: main menu.";
   fit_text(s, (BOT_W - text_width(note, F6x12)) / 2, 197, BOT_W, note, F6x12, HINT, "pause");
   hint_strip(s, lefty_on ? "D-Right Select  D-Down Back  ZL Swap" : "A Select  B Back  ZL Swap");
@@ -1661,81 +1663,9 @@ static void typed_enter() {
   typed.clear();
 }
 
-static bool save_kb = false;   // the keyboard was opened for SAVE MISSION's file name
-// SAVE MISSION, step by step, watching the screen (hardware, Nov 20: Alt+V alone showed nothing while
-// the game's PRESS KEY prompt was up). A press-any-key prompt gets SPACE first; then the game's menu
-// path [C] [S] [S] (0.5 s apart); if C changes nothing on screen, Alt+V instead. The keyboard opens
-// only once a file-name prompt shows (the cursor's row, newly drawn, mentions file / name / save);
-// otherwise, after 3 s, a toast says it did not open. Each step's changed rows go to the debug log.
-enum SmPhase { SM_OFF, SM_PRE, SM_C, SM_S1, SM_WAIT };
-static SmPhase sm_phase = SM_OFF;
-static uint32_t sm_t = 0, sm_sig = 0;
-static TextScreen sm_ts0, sm_logged;
-static void sm_log(const char* fmt, const std::string& a = "") {
-  if (!H || !H->log) return;
-  char line[300]; snprintf(line, sizeof line, fmt, a.c_str()); H->log(line);
-}
-static void sm_log_changes(const char* after) {
-  std::string out; int n = 0;
-  for (int r = 0; r < 25; r++) {
-    if (!memcmp(last.ch[r], sm_logged.ch[r], 80)) continue;
-    std::string row = trim(row_str(last, r, 0, 80));
-    for (auto& c : row) if ((uint8_t)c < 32 || (uint8_t)c > 126) c = '.';
-    if (n++ < 6) { char h[8]; snprintf(h, sizeof h, "r%d: ", r); out += (out.empty() ? "" : " | ") + std::string(h) + row; }
-  }
-  sm_logged = last;
-  char tag[64]; snprintf(tag, sizeof tag, "save mission, after %s: %%s", after);
-  sm_log(tag, out.empty() ? std::string("(screen unchanged)") : out);
-}
-static bool sm_anykey(const TextScreen& ts) {
-  return ts.text_mode && (screen_has(ts, "PRESS ANY KEY", 0, 24) || screen_has(ts, "PRESS KEY", 0, 24) || row_mode == R_ANYKEY);
-}
-static void sm_start() {
-  sm_ts0 = sm_logged = last; sm_t = now();
-  if (sm_anykey(last)) { press(K_SPACE); sm_phase = SM_PRE; sm_log("save mission: SPACE first (press-key prompt up)%s"); }
-  else { press(K_C); sm_sig = screen_sig(last); sm_phase = SM_C; sm_log("save mission: C%s"); }
-  busy_since = now();
-}
-static void sm_step(const TextScreen& ts) {
-  if (sm_phase == SM_OFF || !queue.empty()) return;
-  uint32_t t = now(), el = t - sm_t;
-  if (sm_phase == SM_PRE && el > 700) {
-    sm_log_changes("SPACE");
-    sm_ts0 = ts; press(K_C); sm_sig = screen_sig(ts); sm_phase = SM_C; sm_t = t; sm_log("save mission: C%s");
-  } else if (sm_phase == SM_C && el > 500) {
-    sm_log_changes("C");
-    if (screen_sig(ts) != sm_sig) { press(K_S); sm_phase = SM_S1; sm_log("save mission: S%s"); }
-    else { press(K_V, M_ALT); sm_phase = SM_WAIT; sm_log("save mission: C changed nothing, Alt+V%s"); }
-    sm_t = t;
-  } else if (sm_phase == SM_S1 && el > 500) {
-    sm_log_changes("S");
-    press(K_S); sm_phase = SM_WAIT; sm_t = t; sm_log("save mission: S%s");
-  } else if (sm_phase == SM_WAIT) {
-    int cy = ts.cursor_y;
-    bool prompt = false;
-    if (ts.text_mode && cy >= 0 && cy < 25 && memcmp(ts.ch[cy], sm_ts0.ch[cy], 80)) {
-      std::string cr = row_str(ts, cy, 0, 80);
-      for (auto& c : cr) c = (char)tolower((unsigned char)c);
-      prompt = cr.find("file") != std::string::npos || cr.find("name") != std::string::npos || cr.find("save") != std::string::npos;
-    }
-    if (prompt) {
-      sm_log_changes("the last key");
-      sm_log("save mission: name prompt \"%s\", keyboard opened", trim(row_str(ts, cy, 0, 80)));
-      kb_open = true; kb_forced = true; kb_user_hidden = false; save_kb = true;
-      say("Type a name for the save, then ENTER", 4000);
-      sm_phase = SM_OFF; dirty();
-    } else if (el > 3000) {
-      sm_log_changes("the last key (3 s)");
-      sm_log("save mission: no name prompt seen%s");
-      say("Save Mission didn't open - try again", 4000);
-      sm_phase = SM_OFF; dirty();
-    }
-  }
-}
 static void fire(const Act& a) {
   switch (a.kind) {
     case A_KEY:
-      if (save_kb && a.key == K_ESC && kb_open) { save_kb = false; kb_open = false; kb_forced = false; }
       if (a.key != K_NONE) press(a.key, a.mods);
       if (a.key == K_ENTER) typed_enter();
       busy_since = now();
@@ -1757,7 +1687,6 @@ static void fire(const Act& a) {
       press(a.key, a.mods);
       if (a.arg == 8) { if (!typed.empty()) typed.erase(typed.size() - 1); }
       else if (a.arg == 13) typed_enter();
-      if (save_kb && a.arg == 13) { save_kb = false; kb_open = false; kb_forced = false; }   // name sent: keyboard away
       else typed += (char)(a.arg >= 'A' && a.arg <= 'Z' ? a.arg + 32 : a.arg);
       break;
     case A_SIGNON:
@@ -1767,14 +1696,7 @@ static void fire(const Act& a) {
       if (autologin != 0 || !at_name_prompt(last)) break;
       typed.clear(); type_text(off_name); press(K_ENTER); autologin = 1; pass_tries = 0; pend_name = off_name; say("Signing on...", 1500);
       break;
-    case A_SAVE: press(K_Q, M_CTRL); say("Quick save (last SAVE MISSION name)", 2500); pause_open = false; break;
-    case A_SAVEMISSION:
-      // The game's own Save Mission command (Alt+V; also [C] [S] [S] from its menus): it asks for a
-      // file name, so the keyboard opens and the player types it once. After that SELECT (Ctrl+Q)
-      // saves again under that name.
-      pause_open = false;
-      sm_start();
-      break;
+    case A_SAVE: press(K_Q, M_CTRL); say("Quick save (needs a named save first)", 2500); pause_open = false; break;
     case A_PAUSE: pause_open = false; quit_confirm = false; break;
     case A_QUIT: quit_confirm = true; pause_focus = 1; break;
     case A_QUIT_YES: if (H && H->quit) H->quit(); break;
@@ -1831,7 +1753,6 @@ static void fire(const Act& a) {
 
 Redraw frame(const TextScreen& ts, uint16_t* top, uint16_t* bottom) {
   pump_keys();
-  sm_step(last);     // SAVE MISSION in progress (reads the screen as last drawn)
   uint32_t t = now();
   Redraw rd = {false, false, 0, BOT_H};
 
@@ -2216,24 +2137,25 @@ void buttons(uint32_t held, uint32_t pr, uint32_t rel) {
   if (pause_open) {
     if (pr & (B_B | B_START)) {
       H->click();
-      if (quit_confirm) { quit_confirm = false; pause_focus = 4; } else pause_open = false;
+      if (quit_confirm) { quit_confirm = false; pause_focus = 3; } else pause_open = false;
       dirty(); return;
     }
     if (quit_confirm) {
       if (pr & (B_DLEFT | B_DRIGHT)) { pause_focus = !pause_focus; dirty(); }
-      if (pr & B_A) { H->click(); if (pause_focus == 0) fire(kind_act(A_QUIT_YES)); quit_confirm = false; pause_focus = 4; dirty(); }
+      if (pr & B_A) { H->click(); if (pause_focus == 0) fire(kind_act(A_QUIT_YES)); quit_confirm = false; pause_focus = 3; dirty(); }
       return;
     }
     bool bridge = is_bridge(last);
     bool menu = last.text_mode && screen_has(last, "Change default settings", 0, 24);
-    bool usable[5] = {true, true, bridge, menu, H && H->quit};
-    int step = repeat_due(B_DDOWN, held, pr) ? 1 : repeat_due(B_DUP, held, pr) ? 4 : 0;
+    (void)bridge;
+    bool usable[4] = {true, true, menu, H && H->quit};
+    int step = repeat_due(B_DDOWN, held, pr) ? 1 : repeat_due(B_DUP, held, pr) ? 3 : 0;
     if (step) {
-      do pause_focus = (pause_focus + step) % 5; while (!usable[pause_focus]);
+      do pause_focus = (pause_focus + step) % 4; while (!usable[pause_focus]);
       dirty();
     }
     if ((pr & B_A) && usable[pause_focus]) {
-      static const ActKind k[5] = {A_PAUSE, A_MANUAL, A_SAVEMISSION, A_SETTINGS, A_QUIT};
+      static const ActKind k[4] = {A_PAUSE, A_MANUAL, A_SETTINGS, A_QUIT};
       H->click(); fire(kind_act(k[pause_focus])); dirty();
     }
     return;

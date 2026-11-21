@@ -17,7 +17,7 @@ New to Star Fleet II? This page walks you through your first ten minutes. The ga
 
 6. Questions. When the game asks something, the line just above the buttons shows the question and the buttons become the answers. When nothing is asked, that line says what to do on this screen (the top screen's gold strip says it too).
 
-7. Saving. The game autosaves every half day of mission time, and Resume picks up from there. To keep your exact place, save the mission yourself on the bridge: START, then SAVE MISSION opens the game's own Save Mission command (through its menus), and the keyboard opens when the game asks for a file name; type a name and tap ENTER. If the game does not open it, a message says so: try again. After that, SELECT (the game's quick save) saves again under that name in one press. START, then EXIT GAME, leaves at once (it does not save for you), and closing from the HOME Menu does the same; pressing HOME by itself only pauses the game.
+7. Saving. The game autosaves every half day of mission time, and Resume picks up from there. To save your exact place, use the game's own command menu on the touch screen (the game manual's Save Mission: Computer > Simulation > Save, or Alt+V) once the bridge messages have finished; after you have named a save once, SELECT quick-saves under that name (the game's Ctrl+Q). START, then EXIT GAME, leaves at once (it does not save for you), and closing from the HOME Menu does the same; pressing HOME by itself only pauses the game.
 
 8. Learning more. The Training Manual tutorials further down this manual (Tutorial 1 onward) teach flying, combat and missions step by step: follow them in Practice. The Keyboard Quick Reference lists the game's own keys; you never need them, because the port presses them for you and the row of buttons under the prompt shows the game's current commands.
 
@@ -102,10 +102,10 @@ Sticks       Off the bridge (orders, reports, any long
              up/down a line at a time (hold to keep
              going; at the end of the text they page
              the game), left/right a page at a time
-START        Menu: resume, manual, save mission,
+START        Menu: resume, manual,
              game settings, exit
-SELECT       Bridge: quick save under the last
-             SAVE MISSION name (the game's Ctrl+Q)
+SELECT       Bridge: quick save under the name
+             of your last save (the game's Ctrl+Q)
              Elsewhere: show or hide the keyboard
 
 # Using this manual
