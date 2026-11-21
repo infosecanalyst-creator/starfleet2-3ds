@@ -633,6 +633,15 @@ static std::vector<MenuItem> parse_menu(const TextScreen& ts, std::string& promp
     if (h.size() >= 2 && words) { items = h; break; }
   }
   { std::vector<MenuItem> v = column_hints(ts); if (!v.empty()) items = v; }
+  // The Targeter window: its speed is set with the function keys, which it does not mention.
+  // (keys 1-4 here stand for F3, F4, F1, F2: sublight -/+ and hyperspace -/+)
+  if (screen_has(ts, "TARGETER") && screen_has(ts, "Velocity:") && screen_has(ts, "enter target")) {
+    bool hyper = false;
+    for (int r = 1; r < 24; r++) { std::string row = row_str(ts, r, 0, 80); size_t q = row.find("Max. Vel"); if (q != std::string::npos && atof(row.c_str() + row.find(':', q) + 1) > 1.0) hyper = true; }
+    MenuItem a; a.hot = -1; a.sel = false; a.mods = 0; a.label = "SPD-"; a.key = hyper ? 3 : 1;
+    MenuItem b = a; b.label = "SPD+"; b.key = hyper ? 4 : 2;
+    items.insert(items.begin(), b); items.insert(items.begin(), a);
+  }
   return items;
 }
 static bool window_hints(const TextScreen& ts) {     // a window with its own keys is open
@@ -843,7 +852,8 @@ static void bottom_rows(Surf& s, const TextScreen& ts) {
       int a, b;
       if (even_ok) split_gap(6, rx1, n, i, a, b);
       else { int k = i - from; a = x; b = a + need[i] + extra / m + (k < extra % m ? 1 : 0); x = b + GAP; }
-      Key k = items[i].key == 27 ? K_ESC : items[i].key == 13 ? K_ENTER : key_for_char(items[i].key);
+      Key k = items[i].key == 27 ? K_ESC : items[i].key == 13 ? K_ENTER :
+              items[i].key >= 1 && items[i].key <= 4 ? (Key)(K_F1 + (items[i].key == 1 ? 2 : items[i].key == 2 ? 3 : items[i].key == 3 ? 0 : 1)) : key_for_char(items[i].key);
       add_btn(a, ROW1_Y0, b, ROW1_Y1, items[i].label, &F8x16, key_act(k, items[i].mods), items[i].hot, items[i].sel);
     }
     if (more) add_btn(rx1 - 44, ROW1_Y0, rx1, ROW1_Y1, "MORE", &F8x16, kind_act(A_ROWPAGE));
@@ -2725,6 +2735,11 @@ static void snap_to_object(const TextScreen& ts, int& col, int& row, int c0, int
       int d = abs(dc) + abs(dr) * 2;
       if (d < best) { best = d; bc = c; br = r; }
     }
+  // a planet's letter stands right of the planet itself ("oA"): the box belongs on the planet
+  if (ts.ch[br][bc] >= 'A' && ts.ch[br][bc] <= 'Z' && bc > c0) {
+    uint8_t l = ts.ch[br][bc - 1];
+    if (l > ' ' && !(l >= 'A' && l <= 'Z') && l != 0xF9 && l != 0xFA && l != '.' && !is_box(l) && l != 0xDB) bc--;
+  }
   col = bc; row = br;
 }
 static void start_drive(int col, int row, int c, int r) {

@@ -1,7 +1,7 @@
 kind: map
 hint: Tap one of the keys below
-buttons: [ENTER] [EXIT] [STARS] [SYSTEM] [WAR] [COMBAT] [FLEET] [ORDERS] [LOG]
-explain cards: 9/9
+buttons: [SPD-] [SPD+] [ENTER] [EXIT] [STARS] [SYSTEM] [WAR] [COMBAT] [FLEET] [ORDERS] [LOG]
+explain cards: 11/11
 quick reference: QUICK REFERENCE: THIS VIEW
 start menu: [RESUME] [WHAT NOW?] [MANUAL] [COACH: ON] [SAVE (grey)] [GAME SETTINGS (grey)] [EXIT GAME (grey)]
 what now: Goal: Discover at least one mineral-rich planet in UGA or neutral space. 1) Tap a planet (a letter) or a starfort to put the target box on it. 2) Then TARGETER, choose a speed, ENTER. Back on the bridge (B), tap ENGINES.
