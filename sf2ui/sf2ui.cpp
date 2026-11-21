@@ -2039,11 +2039,15 @@ static void generic_bottom(Surf& s, const TextScreen& ts) {
       static std::string seen_first; static int seen_sel = -1;
       int sel = -1;
       for (int i = 0; i < n; i++) if (glay.items[i].sel) sel = i % rows;
-      if (glay.items[0].label != seen_first || want_practice_view) { seen_first = glay.items[0].label; menu_top = 0; seen_sel = -1;
-        // coach: the sign-on menu opens with Practice (and Start a new mission) in view
-        if (coach_on || want_practice_view) for (int i = 0; i < n; i++) if (glay.items[i].label.compare(0, 8, "Practice") == 0) { menu_top = i - 2 < 0 ? 0 : i - 2; if (menu_top > n - VIS) menu_top = n - VIS; }
-        want_practice_view = false;
-      }
+      static bool practice_shown = false;
+      if (glay.items[0].label != seen_first || want_practice_view) { seen_first = glay.items[0].label; menu_top = 0; seen_sel = -1; practice_shown = false; }
+      // coach: the sign-on menu opens with Practice (and Start a new mission) in view. (Done once the
+      // Practice line is there: a message box can hide it when the menu first comes back.)
+      if (!practice_shown && (coach_on || want_practice_view))
+        for (int i = 0; i < n; i++) if (glay.items[i].label.compare(0, 8, "Practice") == 0) {
+          menu_top = i - 2 < 0 ? 0 : i - 2; if (menu_top > n - VIS) menu_top = n - VIS;
+          practice_shown = true; want_practice_view = false;
+        }
       if (sel >= 0 && sel != seen_sel) {
         seen_sel = sel;
         if (sel < menu_top) menu_top = sel;
