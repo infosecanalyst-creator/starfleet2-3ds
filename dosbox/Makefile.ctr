@@ -112,7 +112,10 @@ CFLAGS      := -g -Wall -O3 -mword-relocations \
 
 # Star Fleet II: frontend on (SF2_3DS); the threaded top-screen flipper is off because the
 # frontend draws the top screen itself while the game is in text mode.
-CFLAGS      += $(INCLUDE) -D__3DS__ -DSF2_3DS
+# PORT_VERSION: git describe of starfleet2-3ds (build-3ds.sh passes it), shown in the START menu
+PORT_VERSION ?= unknown
+export PORT_VERSION
+CFLAGS      += $(INCLUDE) -D__3DS__ -DSF2_3DS -DPORT_VERSION=\"$(PORT_VERSION)\"
 
 CXXFLAGS    := $(CFLAGS) -std=gnu++11 -fpermissive \
                -Wno-unused-parameter -Wno-strict-aliasing

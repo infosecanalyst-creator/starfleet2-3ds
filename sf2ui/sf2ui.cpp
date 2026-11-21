@@ -10,6 +10,9 @@
 #include <string.h>
 #include <string>
 #include <vector>
+#ifndef PORT_VERSION
+#define PORT_VERSION "unknown"
+#endif
 
 namespace sf2ui {
 
@@ -1614,6 +1617,10 @@ static void pause_bottom(Surf& s, const TextScreen& ts) {
     return;
   }
   header_bar(s, "MENU");
+  {   // port version (git describe of starfleet2-3ds), right of the title
+    const char* v = "Build " PORT_VERSION;
+    fit_text(s, BOT_W - 8 - text_width(v, F6x12), 6, BOT_W, v, F6x12, HINT, "version");
+  }
   bool bridge = ts.text_mode && is_bridge(ts);
   bool menu = ts.text_mode && screen_has(ts, "Change default settings", 0, 24);
   // (Saving is the game's own: its command menu on the touch screen; the port does not drive it.

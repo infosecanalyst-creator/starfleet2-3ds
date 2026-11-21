@@ -26,6 +26,7 @@ jobs:
           mkdir -p out
           cp sd/3ds/starfleet2.3dsx out/ 2>/dev/null || true
           cp build.log out/ 2>/dev/null || true
+          cp symbols/starfleet2.elf.gz symbols/starfleet2.sym.gz out/ 2>/dev/null || true
           echo "$GITHUB_SHA" > out/SOURCE_COMMIT
       - name: Publish to builds branch
         if: success()   # never replace the last good build with a failed one; failed-build logs stay in the Actions run
