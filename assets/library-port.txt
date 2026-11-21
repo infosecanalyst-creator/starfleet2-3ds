@@ -551,19 +551,19 @@ IF IT DOESN'T WORK: If time is nearly gone and objectives are open, load your la
 @see Training 2.3 Display Symbols
 HOW: Everything Krellan is green. Your escorts are a brighter green than other destroyers.
 
-Battlecruiser (your ship): a club, like the card suit.
+{05:2} Battlecruiser (your ship): a club, like the card suit.
 
-Destroyer or escort: a horseshoe (omega).
+{EA:10} Destroyer or escort: a horseshoe (omega).
 
-Troop transport: a circle with a bar across it (theta).
+{E9:2} Troop transport: a circle with a bar across it (theta).
 
-Supply ship: a circle with a small cross below it.
+{0C:2} Supply ship: a circle with a small cross below it.
 
-Starfort: joined letters "ae".
+{91:2} Starfort: joined letters "ae".
 
-Probe: a small two-headed arrow.
+{1D:2} Probe: a small two-headed arrow.
 
-Torpedo: a green dot.
+{07:2} Torpedo: a green dot.
 
 Shields up: the symbol sits on a brown background (only when the Krellan shields indicator switch is on).
 
@@ -574,29 +574,29 @@ WHY: Green is safe to approach, dock with or transfer to. The symbols are the sa
 @see Training 2.3 Display Symbols
 HOW: Everything Alliance (UGA) is red.
 
-Heavy cruiser: a Y with two bars across its stem (yen sign).
+{9D:4} Heavy cruiser: a Y with two bars across its stem (yen sign).
 
-Light cruiser: a capital Y.
+{59:4} Light cruiser: a capital Y.
 
-Destroyer: a small w.
+{77:4} Destroyer: a small w.
 
-Frigate: a small v.
+{76:4} Frigate: a small v.
 
-Scout: a solid triangle pointing down.
+{1F:4} Scout: a solid triangle pointing down.
 
-Freighter: a U with two dots above it.
+{9A:4} Freighter: a U with two dots above it.
 
-Starliner: a heart.
+{03:4} Starliner: a heart.
 
-Starbase: a # sign.
+{23:4} Starbase: a # sign.
 
-5th Fleet HQ: a double S (section sign).
+{15:4} 5th Fleet HQ: a double S (section sign).
 
-Orbital fort: a small sun, a circle with rays.
+{0F:4} Orbital fort: a small sun, a circle with rays.
 
-Other UGA ship: an upside-down exclamation mark.
+{AD:4} Other UGA ship: an upside-down exclamation mark.
 
-Torpedo or mine: a small red dot.
+{07:12} Torpedo or mine: a small red dot.
 
 WHY: The shape tells you what you face before you are in range. Freighters and starliners are unarmed prizes; cruisers outgun you; a starbase should never be attacked carelessly.
 
@@ -614,9 +614,9 @@ Yellow symbol: you have it targeted to disable.
 
 Symbol shown in reverse colours: your current phaser target.
 
-Bright red @ sign: a black hole.
+{40:12} Bright red @ sign: a black hole.
 
-Yellow shaded block: an ion storm.
+{B1:14} Yellow shaded block: an ion storm.
 
 WHY: You can board, tow or teleport to a ship only when its shields are down, so the red background is the thing to watch. Passing a black hole in hyperspace throws you off course with damage, and stopping at one destroys the ship. Ion storms blind your sensors.
 
@@ -626,9 +626,9 @@ WHY: You can board, tow or teleport to a ship only when its shields are down, so
 @see Training 2.2 Bridge Display
 HOW: On the STARS map each star system is one character.
 
-A star *: not yet explored.
+{2A:7} A star *: not yet explored.
 
-A plain o: explored, no planets.
+{6F:7} A plain o: explored, no planets.
 
 An o with one mark above: one planet. Two dots above: two planets. A small roof above: three or more.
 

@@ -1726,6 +1726,10 @@ static void load_library_cards() {
         btn = trim(rest.substr(0, a)); what = a == std::string::npos ? "" : trim(rest.substr(a + 1, b == std::string::npos ? b : b - a - 1));
         line = "[ ] " + what + (btn.empty() || btn == "-" ? "" : "  (" + btn + ")");
       }
+      // "{HH:C} text": the game's own symbol (CP437 code HH, VGA colour C) drawn before the text
+      unsigned code = 0, col = 0; int used = 0;
+      if (line[0] == '{' && sscanf(line.c_str(), "{%2x:%u}%n", &code, &col, &used) == 2 && used > 0 && code && col < 16)
+        line = std::string("\x01") + (char)code + (char)(col + 0x30) + line.substr(used);
       sec.paras.push_back(line); line.clear();
     };
     for (const char* p = c->text; *p; p++) { if (*p == '\n') flush(); else line += *p; }
@@ -1812,8 +1816,15 @@ static void manual_top(Surf& s) {
   int maxs = (int)sec.lines.size() - MAN_LINES; if (maxs < 0) maxs = 0;
   if (man_scroll > maxs) man_scroll = maxs;
   if (man_scroll < 0) man_scroll = 0;
-  for (int i = 0; i < MAN_LINES && man_scroll + i < (int)sec.lines.size(); i++)
-    fit_text(s, in.x0 + 8, in.y0 + i * 12, in.x1 - 4, sec.lines[man_scroll + i].c_str(), F6x12, BTN_TXT, "manual text");
+  for (int i = 0; i < MAN_LINES && man_scroll + i < (int)sec.lines.size(); i++) {
+    const std::string& ml = sec.lines[man_scroll + i];
+    if (ml.size() >= 3 && ml[0] == 1) {     // a game symbol, then its text three columns in
+      char g[2] = {ml[1], 0};
+      s.fill(in.x0 + 6, in.y0 + i * 12 - 1, in.x0 + 18, in.y0 + i * 12 + 13, rgb(0, 0, 0));
+      draw_text(s, in.x0 + 8, in.y0 + i * 12 - 1, g, F8x14, READ_FG[(ml[2] - 0x30) & 15]);
+      fit_text(s, in.x0 + 8 + 18, in.y0 + i * 12, in.x1 - 4, ml.c_str() + 3, F6x12, BTN_TXT, "manual text");
+    } else fit_text(s, in.x0 + 8, in.y0 + i * 12, in.x1 - 4, ml.c_str(), F6x12, BTN_TXT, "manual text");
+  }
   // scroll bar
   if (maxs > 0) {
     int track = in.y1 - in.y0, th = track * MAN_LINES / (int)sec.lines.size();
