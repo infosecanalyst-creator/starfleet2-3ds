@@ -1,0 +1,3 @@
+kind: map
+hint: Tap a star or ship to aim, tap it again to select
+buttons: [SPACE FORCES] [LEGIONS] [LOSSES] [STARS] [SYSTEM] [WAR] [COMBAT] [FLEET] [ORDERS] [LOG]

@@ -1,0 +1,3 @@
+kind: plain
+hint: X/Y fire, Circle Pad steers, B backs out
+buttons: [PG UP] [] [PG DN] [] [SPACE] [] [] [ENTER] [BACK] [KEYBOARD] [STARS] [SYSTEM] [WAR] [COMBAT] [FLEET] [ORDERS] [LOG]

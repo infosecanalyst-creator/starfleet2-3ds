@@ -1,0 +1,3 @@
+kind: plain
+hint: Tap YES or NO
+buttons: [PG UP] [] [PG DN] [] [SPACE] [] [] [YES] [NO] [STARS] [SYSTEM] [WAR] [COMBAT] [FLEET] [ORDERS] [LOG]

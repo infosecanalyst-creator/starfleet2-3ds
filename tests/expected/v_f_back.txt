@@ -1,0 +1,3 @@
+kind: bridge
+hint: Tap display: steer ³ X/Y: fire
+buttons: [PHASERS] [TORPS] [SHLD+] [SHLD-] [SPD+] [SPD-] [AUTO] [FREEZE] [SYSTEM MAP] [NAV MAP] [WAR MAP] [HELM] [STARS] [SYSTEM] [WAR] [COMBAT] [FLEET] [ORDERS] [LOG]

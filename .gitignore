@@ -25,3 +25,5 @@ __pycache__/
 dosbox/ctr/gfx/*.o
 *.bgr.o
 symbols/
+tests/screentest
+tests/out/

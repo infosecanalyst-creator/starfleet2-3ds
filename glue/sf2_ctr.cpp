@@ -298,6 +298,33 @@ unsigned int sf2_emu_ticks = 0;                 // emulated milliseconds (GFX_Ev
 extern unsigned int sf2_mixer_underruns;        // counted in mixer.cpp
 
 // Called from GFX_Events() in place of DOSBox-3DS's own input handling.
+// debug.txt only: every new text screen is saved to sdmc:/3ds/starfleet2/dumps/NNN.txt in the
+// format of tests/screens (characters, colours, cursor), so hardware runs grow the screen
+// regression test (plan item 1). A screen counts as new when its text changes apart from digits
+// (clocks and counters); at most one dump per 3 s and 300 per launch, written in the background.
+static void dump_screen(const sf2ui::TextScreen& ts, u64 now) {
+  static uint32_t last_sig = 0; static u64 last_t = 0; static int n = 0;
+  if (!sf2ctr_debug() || !ts.text_mode || n >= 300 || now - last_t < 3000) return;
+  uint32_t h = 2166136261u;
+  for (int r = 0; r < 25; r++) for (int c = 0; c < 80; c++) {
+    uint8_t ch = ts.ch[r][c]; if (ch >= '0' && ch <= '9') ch = '0';
+    h ^= ch; h *= 16777619u;
+  }
+  if (h == last_sig) return;
+  last_sig = h; last_t = now;
+  if (n == 0) mkdir("sdmc:/3ds/starfleet2/dumps", 0777);
+  std::string out = "#vgamode=9 crtc_start_bytes=0\n";
+  char buf[8];
+  for (int r = 0; r < 25; r++) { for (int c = 0; c < 80; c++) { uint8_t ch = ts.ch[r][c]; out += (ch >= 32 && ch < 127) ? (char)ch : (ch ? '.' : ' '); } out += '\n'; }
+  out += "#attrs\n";
+  for (int r = 0; r < 25; r++) { for (int c = 0; c < 80; c++) { snprintf(buf, sizeof buf, "%02X", ts.at[r][c]); out += buf; } out += '\n'; }
+  out += "#raw\n";
+  for (int r = 0; r < 25; r++) { for (int c = 0; c < 80; c++) { snprintf(buf, sizeof buf, "%02X", ts.ch[r][c]); out += buf; } out += '\n'; }
+  char cur[40]; snprintf(cur, sizeof cur, "#cursor=%d,%d\n", ts.cursor_x, ts.cursor_y); out += cur;
+  char path[64]; snprintf(path, sizeof path, "sdmc:/3ds/starfleet2/dumps/%03d.txt", ++n);
+  sf2w_queue(path, (const uint8_t*)out.data(), out.size());
+}
+
 void sf2ctr_events() {
   if (!inited) { init(); sf2ctr_note("Star Fleet II 3DS started%s", sf2ctr_debug() ? " (debug log on: debug.txt)" : ""); }
   sf2_emu_ticks++;
@@ -439,6 +466,7 @@ void sf2ctr_events() {
       sf2ui::notify(msg);
     }
   }
+  dump_screen(ts, now);
   sf2ui::Redraw rd = sf2ui::frame(ts, top_img, bot_img);
   { bool eff = swapped && can_swap;
     if (eff != swap_eff || swap_force) {            // layout changed: show both screens afresh
