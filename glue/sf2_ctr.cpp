@@ -144,8 +144,9 @@ static void key_logged(sf2ui::Key k, bool down) {
 static void save_bg(const char* path, const char* data, unsigned n) { sf2w_queue(path, (const uint8_t*)data, n); }
 static bool quit_req = false;                  // START menu > EXIT GAME
 static void quit_app() { sf2ctr_log("exit chosen in the START menu"); quit_req = true; }
+static void ui_log(const char* line) { sf2ctr_log("%s", line); }
 static sf2ui::Host host = {key_logged, click, ms, "sdmc:/3ds/starfleet2/manual.txt", "sdmc:/3ds/starfleet2/officer.txt", save_bg, quit_app, "sdmc:/3ds/starfleet2/lefty.txt",
-                             "sdmc:/3ds/starfleet2/settings.txt"};
+                             "sdmc:/3ds/starfleet2/settings.txt", ui_log};
 
 static void init() {
   gfxSet3D(false);

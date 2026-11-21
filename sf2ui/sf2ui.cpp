@@ -1662,6 +1662,76 @@ static void typed_enter() {
 }
 
 static bool save_kb = false;   // the keyboard was opened for SAVE MISSION's file name
+// SAVE MISSION, step by step, watching the screen (hardware, Nov 20: Alt+V alone showed nothing while
+// the game's PRESS KEY prompt was up). A press-any-key prompt gets SPACE first; then the game's menu
+// path [C] [S] [S] (0.5 s apart); if C changes nothing on screen, Alt+V instead. The keyboard opens
+// only once a file-name prompt shows (the cursor's row, newly drawn, mentions file / name / save);
+// otherwise, after 3 s, a toast says it did not open. Each step's changed rows go to the debug log.
+enum SmPhase { SM_OFF, SM_PRE, SM_C, SM_S1, SM_WAIT };
+static SmPhase sm_phase = SM_OFF;
+static uint32_t sm_t = 0, sm_sig = 0;
+static TextScreen sm_ts0, sm_logged;
+static void sm_log(const char* fmt, const std::string& a = "") {
+  if (!H || !H->log) return;
+  char line[300]; snprintf(line, sizeof line, fmt, a.c_str()); H->log(line);
+}
+static void sm_log_changes(const char* after) {
+  std::string out; int n = 0;
+  for (int r = 0; r < 25; r++) {
+    if (!memcmp(last.ch[r], sm_logged.ch[r], 80)) continue;
+    std::string row = trim(row_str(last, r, 0, 80));
+    for (auto& c : row) if ((uint8_t)c < 32 || (uint8_t)c > 126) c = '.';
+    if (n++ < 6) { char h[8]; snprintf(h, sizeof h, "r%d: ", r); out += (out.empty() ? "" : " | ") + std::string(h) + row; }
+  }
+  sm_logged = last;
+  char tag[64]; snprintf(tag, sizeof tag, "save mission, after %s: %%s", after);
+  sm_log(tag, out.empty() ? std::string("(screen unchanged)") : out);
+}
+static bool sm_anykey(const TextScreen& ts) {
+  return ts.text_mode && (screen_has(ts, "PRESS ANY KEY", 0, 24) || screen_has(ts, "PRESS KEY", 0, 24) || row_mode == R_ANYKEY);
+}
+static void sm_start() {
+  sm_ts0 = sm_logged = last; sm_t = now();
+  if (sm_anykey(last)) { press(K_SPACE); sm_phase = SM_PRE; sm_log("save mission: SPACE first (press-key prompt up)%s"); }
+  else { press(K_C); sm_sig = screen_sig(last); sm_phase = SM_C; sm_log("save mission: C%s"); }
+  busy_since = now();
+}
+static void sm_step(const TextScreen& ts) {
+  if (sm_phase == SM_OFF || !queue.empty()) return;
+  uint32_t t = now(), el = t - sm_t;
+  if (sm_phase == SM_PRE && el > 700) {
+    sm_log_changes("SPACE");
+    sm_ts0 = ts; press(K_C); sm_sig = screen_sig(ts); sm_phase = SM_C; sm_t = t; sm_log("save mission: C%s");
+  } else if (sm_phase == SM_C && el > 500) {
+    sm_log_changes("C");
+    if (screen_sig(ts) != sm_sig) { press(K_S); sm_phase = SM_S1; sm_log("save mission: S%s"); }
+    else { press(K_V, M_ALT); sm_phase = SM_WAIT; sm_log("save mission: C changed nothing, Alt+V%s"); }
+    sm_t = t;
+  } else if (sm_phase == SM_S1 && el > 500) {
+    sm_log_changes("S");
+    press(K_S); sm_phase = SM_WAIT; sm_t = t; sm_log("save mission: S%s");
+  } else if (sm_phase == SM_WAIT) {
+    int cy = ts.cursor_y;
+    bool prompt = false;
+    if (ts.text_mode && cy >= 0 && cy < 25 && memcmp(ts.ch[cy], sm_ts0.ch[cy], 80)) {
+      std::string cr = row_str(ts, cy, 0, 80);
+      for (auto& c : cr) c = (char)tolower((unsigned char)c);
+      prompt = cr.find("file") != std::string::npos || cr.find("name") != std::string::npos || cr.find("save") != std::string::npos;
+    }
+    if (prompt) {
+      sm_log_changes("the last key");
+      sm_log("save mission: name prompt \"%s\", keyboard opened", trim(row_str(ts, cy, 0, 80)));
+      kb_open = true; kb_forced = true; kb_user_hidden = false; save_kb = true;
+      say("Type a name for the save, then ENTER", 4000);
+      sm_phase = SM_OFF; dirty();
+    } else if (el > 3000) {
+      sm_log_changes("the last key (3 s)");
+      sm_log("save mission: no name prompt seen%s");
+      say("Save Mission didn't open - try again", 4000);
+      sm_phase = SM_OFF; dirty();
+    }
+  }
+}
 static void fire(const Act& a) {
   switch (a.kind) {
     case A_KEY:
@@ -1702,9 +1772,8 @@ static void fire(const Act& a) {
       // The game's own Save Mission command (Alt+V; also [C] [S] [S] from its menus): it asks for a
       // file name, so the keyboard opens and the player types it once. After that SELECT (Ctrl+Q)
       // saves again under that name.
-      press(K_V, M_ALT); pause_open = false;
-      kb_open = true; kb_forced = true; kb_user_hidden = false; save_kb = true;
-      say("Type a name for the save, then ENTER", 4000);
+      pause_open = false;
+      sm_start();
       break;
     case A_PAUSE: pause_open = false; quit_confirm = false; break;
     case A_QUIT: quit_confirm = true; pause_focus = 1; break;
@@ -1762,6 +1831,7 @@ static void fire(const Act& a) {
 
 Redraw frame(const TextScreen& ts, uint16_t* top, uint16_t* bottom) {
   pump_keys();
+  sm_step(last);     // SAVE MISSION in progress (reads the screen as last drawn)
   uint32_t t = now();
   Redraw rd = {false, false, 0, BOT_H};
 
