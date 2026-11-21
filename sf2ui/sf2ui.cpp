@@ -552,6 +552,39 @@ static void parse_hints(std::string row, std::vector<MenuItem>& items, std::stri
     p = q + 1;
   }
 }
+// Key hints listed one per row in a column ("[Enter]  Select mission for practice" / "[Esc]  Return
+// to..." / "[V]  View orders..."): the keys the game waits for on that page. Needs an Enter or Esc
+// among them and no modifier keys, so a page that only describes keys is left alone.
+static std::vector<MenuItem> column_hints(const TextScreen& ts) {
+  std::vector<MenuItem> best, cur; int col = -1;
+  auto close = [&]() {
+    bool anchor = false;
+    for (auto& m : cur) if (m.key == 13 || m.key == 27) anchor = true;
+    if (cur.size() >= 2 && cur.size() <= 6 && anchor && cur.size() > best.size()) best = cur;
+    cur.clear(); col = -1;
+  };
+  for (int r = 1; r <= 23; r++) {
+    std::string row = row_str(ts, r, 0, 80);
+    size_t b = row.find('['), e = row.rfind(']');
+    // a hint row: "[key] words", the words starting right after the last bracket
+    size_t w = e == std::string::npos ? e : row.find_first_not_of(' ', e + 1);
+    bool hint = b != std::string::npos && e != std::string::npos && e > b && w != std::string::npos && w - e <= 12 && isalnum((unsigned char)row[w]);
+    if (!hint || (col >= 0 && (int)b != col)) close();
+    if (!hint) continue;
+    // (labels may be several spaces away: "[Enter]     Select mission")
+    std::string packed = row.substr(0, e + 1) + " " + trim(row.substr(e + 1));
+    std::vector<MenuItem> h; parse_hints(packed, h, 0);
+    col = (int)b;
+    for (auto& m : h) {
+      if (m.mods) { cur.clear(); col = -2; break; }      // a list that describes key chords, not a prompt
+      if (!(m.key == 13 || m.key == 27 || isalnum((unsigned char)m.key)) || !has_letter(m.label)) continue;
+      if (m.key == 27) m.label = "BACK";
+      cur.push_back(m);
+    }
+  }
+  close();
+  return best;
+}
 static std::vector<MenuItem> parse_menu(const TextScreen& ts, std::string& prompt) {
   std::vector<MenuItem> items;
   int c = 0;
@@ -596,12 +629,19 @@ static std::vector<MenuItem> parse_menu(const TextScreen& ts, std::string& promp
   for (int r = 23; r >= 1; r--) {
     std::vector<MenuItem> h;
     parse_hints(row_str(ts, r, 0, 80), h, 0);
-    if (h.size() >= 2) { items = h; break; }
+    bool words = true; for (auto& m : h) if (!has_letter(m.label)) words = false;   // ("[\x18]/[\x19]" is not a set of buttons)
+    if (h.size() >= 2 && words) { items = h; break; }
   }
+  { std::vector<MenuItem> v = column_hints(ts); if (!v.empty()) items = v; }
   return items;
 }
 static bool window_hints(const TextScreen& ts) {     // a window with its own keys is open
-  for (int r = 23; r >= 1; r--) { std::vector<MenuItem> h; parse_hints(row_str(ts, r, 0, 80), h, 0); if (h.size() >= 2) return true; }
+  if (!column_hints(ts).empty()) return true;
+  for (int r = 23; r >= 1; r--) {
+    std::vector<MenuItem> h; parse_hints(row_str(ts, r, 0, 80), h, 0);
+    bool words = true; for (auto& m : h) if (!has_letter(m.label)) words = false;
+    if (h.size() >= 2 && words) return true;
+  }
   return false;
 }
 

@@ -1,6 +1,6 @@
 kind: plain
-hint: Sticks scroll the page ³ A: Enter ³ B: back
-buttons: [PG UP] [] [PG DN] [] [SPACE] [] [] [ENTER] [BACK] [KEYBOARD] [STARS (grey)] [SYSTEM (grey)] [WAR (grey)] [COMBAT (grey)] [FLEET (grey)] [ORDERS (grey)] [LOG (grey)]
+hint: Tap one of the keys below
+buttons: [PG UP] [] [PG DN] [] [SPACE] [] [] [SELECT] [BACK] [VIEW] [STARS (grey)] [SYSTEM (grey)] [WAR (grey)] [COMBAT (grey)] [FLEET (grey)] [ORDERS (grey)] [LOG (grey)]
 explain cards: 17/17
 quick reference: QUICK REFERENCE
 start menu: [RESUME] [MISSION] [MANUAL] [COACH: ON] [GAME SETTINGS (grey)] [EXIT GAME (grey)]
