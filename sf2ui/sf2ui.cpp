@@ -715,6 +715,7 @@ static const char* context_hint(const TextScreen& ts) {
   if (glay_kind() == 1) return menu_scrolls ? "Tap an item; drag or tap the arrows for more" : "Tap an item to choose it";
   if (glay_kind() == 2) return "Tap a star or ship to aim, tap it again to select";
   if (row_mode == R_ANYKEY) return lefty_on ? "Read the screen, then tap CONTINUE (or D-Rt)" : "Read the screen, then tap CONTINUE (or A)";
+  if (screen_has(ts, "COMMANDER'S LOG", 1, 1)) return lefty_on ? "Your ship's diary: read it, then EXIT (or D-Dn)" : "Your ship's diary: read it, then EXIT (or B)";
   if (in_flight(ts)) return lefty_on ? "D-Lt/Up fire, Circle Pad steers, D-Dn backs out" : "X/Y fire, Circle Pad steers, B backs out";
   if (reader_on) return lefty_on ? "Drag or sticks to scroll \xb3 D-Rt: Enter \xb3 D-Dn: back" : "Drag or sticks to scroll \xb3 A: Enter \xb3 B: back";
   return lefty_on ? "Sticks scroll the page \xb3 D-Rt: Enter \xb3 D-Dn: back" : "Sticks scroll the page \xb3 A: Enter \xb3 B: back";
@@ -2429,18 +2430,22 @@ Redraw frame(const TextScreen& ts, uint16_t* top, uint16_t* bottom) {
         for (int i = 0; i < 8; i++) { light_at[i] = ts.at[0][starts[i] + 1]; light_last[i] = 0; }
       }
       bool settled = t - flight_since > 1500;   // nothing is announced as the screen first appears
+      // A light counts once it has stayed lit for 1.2 s: the game's lamp test sweeps one lit lamp
+      // across the row (about 6 a second; seen Nov 21 as a false "ALERT: LOW SUP" at 100% supplies).
+      static uint32_t light_on_since[8];
       for (int i = 0; i < 8; i++) {
         uint8_t at = ts.at[0][starts[i] + 1];
-        if (at == light_at[i]) continue;
-        bool was_off = light_at[i] == 0x08 || light_at[i] == 0x00;
-        light_at[i] = at;
         bool on = at != 0x08 && at != 0x00;
-        if (on && was_off && settled && (!light_last[i] || t - light_last[i] > 10000)) {
-          light_last[i] = t;
-          std::string lab = trim(row_str(ts, 0, starts[i], starts[i] + 7));
-          int fg = at & 15, bgc = (at >> 4) & 7;
-          alert_red = fg == 4 || fg == 12 || bgc == 4;
-          alert_text = "ALERT: " + lab; alert_until = t + 3000; dirty();
+        if (at != light_at[i]) { light_at[i] = at; light_on_since[i] = on ? t : 0; continue; }
+        if (on && light_on_since[i] && t - light_on_since[i] >= 1200) {
+          light_on_since[i] = 0;                 // (once per time it comes on)
+          if (settled && (!light_last[i] || t - light_last[i] > 10000)) {
+            light_last[i] = t;
+            std::string lab = trim(row_str(ts, 0, starts[i], starts[i] + 7));
+            int fg = at & 15, bgc = (at >> 4) & 7;
+            alert_red = fg == 4 || fg == 12 || bgc == 4;
+            alert_text = "ALERT: " + lab; alert_until = t + 3000; dirty();
+          }
         }
       }
       if (is_bridge(ts)) {                      // newest COMMS line, once the game has finished printing it
