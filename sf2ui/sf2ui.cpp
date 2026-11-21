@@ -820,8 +820,11 @@ static void bottom_rows(Surf& s, const TextScreen& ts) {
         if (ts.ch[r][c] == '?' && ((ts.at[r][c] >> 4) & 15) == 7 && row.find("Do you") != std::string::npos) yesno = true;
       if (row.size() > 2 && row[row.size() - 1] == '?' && ((ts.at[r][40] >> 4) & 15) == 7) yesno = true;
     }
+  // a message box that says PRESS KEY wins over the menu row drawn behind it
+  if (!yesno && pop_r0 >= 0 && pop_text.find("PRESS KEY") != std::string::npos) items.clear();
   bool anykey = items.empty() && !yesno &&
-                (prompt.find("PRESS") != std::string::npos || screen_has(ts, "PRESS ANY KEY", 18, 24) || screen_has(ts, "PRESS KEY", 18, 24));
+                (prompt.find("PRESS") != std::string::npos || screen_has(ts, "PRESS ANY KEY", 18, 24) || screen_has(ts, "PRESS KEY", 18, 24) ||
+                 (pop_r0 >= 0 && pop_text.find("PRESS KEY") != std::string::npos));
   row_mode = !items.empty() ? (window_hints(ts) ? R_WINDOW : R_MENU) : yesno ? R_YESNO : anykey ? R_ANYKEY : R_DEFAULT;
   if (screen_has(ts, "SIGN-ON OPTIONS") && prompt.find("www.") != std::string::npos) prompt = "Tap an option";   // (the game's advert line does not fit and is no prompt)
   prompt_strip(s, ts, prompt);
