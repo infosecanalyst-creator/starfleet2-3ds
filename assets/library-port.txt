@@ -250,8 +250,8 @@ STEP - | Tap the planet to put the target box on it | Planet
 STEP - | Tap Targeter in the menu row | Target #
 STEP SPD+ | Set a sublight speed, 0.5 to 0.9 | -
 STEP A | Press A to enter the target | ENTERED
+STEP B | Go back to the bridge | -
 STEP ENGINES | Start the engines; the ship turns and goes | Engines engaged
-STEP B | Go back to the bridge and watch the trip | -
 STEP - | The engines stop by themselves on arrival | Target reached
 
 WHY: The Targeter is the autopilot: it works out the course, flies there and stops next to the target. Steering by hand is for chasing ships and close work.
@@ -268,6 +268,7 @@ STEP - | Tap Targeter; hyperspace speed 8.0 is offered | Max. Vel
 STEP A | Press A to accept the speed | Select target
 STEP - | Its system map opens: tap a spot near the edge | -
 STEP A | Press A to enter that second target | -
+STEP B | Go back to the bridge | -
 STEP ENGINES | Start engines: the ship runs to the system edge | Engines engaged
 STEP - | At the edge it jumps into hyperspace by itself | HYPRSPCE
 STEP - | It drops out on arrival and flies to target 2 | Target bearing
