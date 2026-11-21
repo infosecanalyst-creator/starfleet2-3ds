@@ -1028,18 +1028,63 @@ static const Gloss GLOSSARY[] = {
   {"YES", "YES", "Answers the game's question with yes."},
   {"NO", "NO", "Answers the game's question with no."},
 };
+// Library links (learning design step 1): where in the game's own manuals a card's subject is
+// explained. With the card up, R + tap the same thing again opens the manual there.
+struct LibLink { const char* key; const char* section; const char* anchor; };
+static const LibLink LIBLINKS[] = {
+  {"PHASERS", "Ops 1.3", "Phaser Control"}, {"TORPS", "Ops 1.3", "Torpedo Control"},
+  {"SHLD+", "Training 2.4", "shield"}, {"SHLD-", "Training 2.4", "shield"},
+  {"SPD+", "Training 2.4", "TABLE II"}, {"SPD-", "Training 2.4", "TABLE II"},
+  {"LAUNCH", "Tutorial 1", "undock"}, {"ENGINES", "Tutorial 1", "engines"}, {"STOP", "Training 2.4", "Emergency"},
+  {"STARFORT", "Ops 1.1", "tarfort"}, {"ECM ON", "Ops 1.9", "ECM"}, {"ECM OFF", "Ops 1.9", "ECM"},
+  {"TELEPORT", "Tutorial 2", ""}, {"STARS", "Ops 1.1", "Nav Map"}, {"SYSTEM", "Ops 1.1", "System Map"},
+  {"WAR", "Ops 1.1", "War Map"}, {"COMBAT", "Ops 1.3", ""}, {"FLEET", "Ops 3.2", ""},
+  {"NAV", "Ops 1.1", ""}, {"ENG", "Ops 1.2", ""}, {"CMB", "Ops 1.3", ""}, {"CMP", "Ops 1.4", ""},
+  {"SEC", "Ops 1.5", ""}, {"COM", "Ops 1.6", ""}, {"STG", "Ops 1.7", ""}, {"SCI", "Ops 1.8", ""}, {"CTL", "Ops 1.9", ""},
+  {"TACTICAL DISPLAY", "Training 2.2", "Tactical Display -"}, {"NAVIGATION", "Training 2.2", "Navigation Data"},
+  {"FREEZE", "Training 2.4", "Freeze"},
+};
+static std::string explain_key;          // what the card on screen is about (for the Library link)
+static void manual_wrap(struct Section& sec, int w);
+static int lib_find(const char* key) {   // the manual section a card links to, or -1
+  for (auto& l : LIBLINKS) if (!strcmp(l.key, key))
+    for (int i = 0; i < (int)manual.size(); i++) if (manual[i].title.compare(0, strlen(l.section), l.section) == 0) return i;
+  return -1;
+}
+static bool lib_open(const char* key) {
+  int i = lib_find(key); if (i < 0) return false;
+  const char* anchor = "";
+  for (auto& l : LIBLINKS) if (!strcmp(l.key, key)) anchor = l.anchor;
+  manual_open = true; pause_open = false; man_sel = i; man_scroll = 0; man_focus = 0;
+  manual_wrap(manual[i], top_w);
+  if (*anchor) for (int k = 0; k < (int)manual[i].lines.size(); k++)
+    if (manual[i].lines[k].find(anchor) != std::string::npos) { man_scroll = k > 1 ? k - 1 : 0; break; }
+  explain_until = 0; dirty();
+  return true;
+}
 static void explain(const char* title, const char* text) {
-  explain_title = title; explain_text = text; explain_until = now() + 7000; dirty();
+  explain_title = title; explain_text = text; explain_until = now() + 7000; explain_key.clear(); dirty();
+}
+static void explain_link(const char* key) {   // the card says how to read more when the manual covers it
+  explain_key = key;
+  if (lib_find(key) >= 0) { explain_text += " (R + tap it again: the manual on this.)"; explain_until = now() + 9000; }
 }
 static bool explain_button(const std::string& label) {
-  for (auto& g : GLOSSARY) if (label == g.key) { explain(g.title, g.text); return true; }
+  for (auto& g : GLOSSARY) if (label == g.key) {
+    if (explain_until && explain_key == g.key && lib_open(g.key)) return true;   // second tap: the Library
+    explain(g.title, g.text); explain_link(g.key); return true;
+  }
   return false;
 }
 // What the tapped spot on the bridge's touch screen is (outside the buttons).
 static void explain_spot(const TextScreen& ts, int x, int y) {
   if (is_bridge(ts) && y < UP_H) {
+    const char* key = x < 180 ? "TACTICAL DISPLAY" : x < 236 ? "NAVIGATION" : 0;
+    if (!key) return;
+    if (explain_until && explain_key == key && lib_open(key)) return;
     if (x < 180) explain("TACTICAL DISPLAY", "A close-up around your ship (in the centre, heading up). Tap to steer there. Red dots are torpedoes or mines.");
-    else if (x < 236) explain("NAVIGATION", "Where you are (region and position), the course set, your first target and its distance, and the mode: DOCKED, NORM SPC, HYPRSPCE, EMG STOP...");
+    else explain("NAVIGATION", "Where you are (region and position), the course set, your first target and its distance, and the mode: DOCKED, NORM SPC, HYPRSPCE, EMG STOP...");
+    explain_link(key);
     return;
   }
   if (y >= UP_H && y < ROW1_Y0) { explain("PROMPT LINE", "The game's instructions and questions, or what to do next. Alerts show here in red or gold."); return; }
@@ -1692,7 +1737,7 @@ static void load_manual() {
 static const int MAN_LINES = 16;   // text lines on the top screen (between the header bar and the hint strip)
 // Word-wrap a section for a screen this many pixels wide (63 columns at 400, 50 at 320 when
 // swapped: same 6x12 text, never squeezed). The wrap is cached per width (swap readability rule 4).
-static void manual_wrap(Section& sec, int w) {
+static void manual_wrap(struct Section& sec, int w) {
   int cols = (w - 22) / 6;
   if (sec.wrap == cols) return;
   sec.wrap = cols; sec.lines.clear();
@@ -1732,8 +1777,8 @@ static void manual_top(Surf& s) {
   if (show_num) draw_text(s, top_w - 8 - nw, 5, num, F6x12, rgb(150, 150, 165));
   Box in = {0, 28, top_w - 2, 28 + MAN_LINES * 12};
   if (!lefty_loaded) lefty_load();
-  const char* hint = lefty_on ? "Sticks scroll  ABXY sections  L/R pages  D-Dn close"
-                              : "Sticks scroll  D-Pad sections  L/R pages  B close";
+  const char* hint = lefty_on ? "Sticks scroll  ABXY sections  L/R next  D-Dn close"
+                              : "Sticks scroll  D-Pad sections  L/R next  B close";
   s.fill(0, 224, top_w, TOP_H, BTN);
   s.hline(0, top_w, 224, BTN_EDGE);
   fit_text(s, (top_w - text_width(hint, F6x12)) / 2, 226, top_w - 2, hint, F6x12, TITLE, "manual top hint");
@@ -1773,7 +1818,24 @@ uint32_t lefty_remap(uint32_t m) {
 static void manual_bottom(Surf& s) {
   s.fill(0, 0, BOT_W, BOT_H, BG);
   // UI rule 11: buttons 24 px tall, 8 px apart, 6 px from the edges
-  const int rows = 5;  // section buttons visible; the list follows the highlight, and the arrows page it
+  // Shelf tabs (learning design step 1): jump to the port's guide, the key list, the Operations
+  // Manual, the Training Manual or the tutorials; the tab of the section being read is lit.
+  static const char* SHELF[5] = {"GUIDE", "KEYS", "OPS", "TRAIN", "TUTOR"};
+  static const char* SHELF_PRE[5] = {"", "Keyboard Quick Reference", "Ops ", "Training ", "Tutorial "};
+  int shelf_first[5] = {0, -1, -1, -1, -1}, cur_shelf = 0;
+  for (int i = 0; i < (int)manual.size(); i++)
+    for (int k = 1; k < 5; k++)
+      if (manual[i].title.compare(0, strlen(SHELF_PRE[k]), SHELF_PRE[k]) == 0) {
+        if (shelf_first[k] < 0) shelf_first[k] = i;
+        if (i <= man_sel) cur_shelf = k;
+      }
+  if (shelf_first[1] >= 0 && man_sel < shelf_first[1]) cur_shelf = 0;
+  for (int k = 0; k < 5; k++) {
+    int a, b; split_gap(6, BOT_W - 6, 5, k, a, b, 4);
+    add_btn(a, 6, b, 30, SHELF[k], &F8x16, kind_act(A_SECTION, shelf_first[k] < 0 ? 0 : shelf_first[k]), -1, k == cur_shelf);
+    if (shelf_first[k] < 0) btns.back().off = true;
+  }
+  const int rows = 4;  // section buttons visible; the list follows the highlight, and the arrows page it
   int n = (int)manual.size();
   static int seen_sel = -1;
   if (man_sel != seen_sel) {      // a new section was chosen: bring it into view (the arrows may scroll away)
@@ -1787,16 +1849,16 @@ static void manual_bottom(Surf& s) {
   int lx1 = paged ? 270 : BOT_W - 6;   // section buttons; with more sections than rows: a scroll bar and arrows
   for (int i = 0; i < rows && man_list_top + i < n; i++) {
     int k = man_list_top + i;
-    add_btn(6, 6 + i * 32, lx1, 30 + i * 32, manual[k].title, &F8x16, kind_act(A_SECTION, k), -1, k == man_sel);
+    add_btn(6, 38 + i * 32, lx1, 62 + i * 32, manual[k].title, &F8x16, kind_act(A_SECTION, k), -1, k == man_sel);
   }
   if (paged) {                    // rule 13: show there is more, and let the stylus page the list
-    int ty0 = 6, ty1 = 158, th = (ty1 - ty0) * rows / n; if (th < 10) th = 10;
+    int ty0 = 38, ty1 = 158, th = (ty1 - ty0) * rows / n; if (th < 10) th = 10;
     int ty = ty0 + (ty1 - ty0 - th) * man_list_top / (n - rows);
     s.fill(272, ty0, 275, ty1, rgb(40, 44, 60));
     s.fill(272, ty, 275, ty + th, BTN_EDGE);
-    add_btn(279, 6, BOT_W - 6, 78, "\x1e", &F8x16, kind_act(A_SECLIST, -rows));
+    add_btn(279, 38, BOT_W - 6, 94, "\x1e", &F8x16, kind_act(A_SECLIST, -rows));
     if (man_list_top == 0) btns.back().off = true;
-    add_btn(279, 86, BOT_W - 6, 158, "\x1f", &F8x16, kind_act(A_SECLIST, rows));
+    add_btn(279, 102, BOT_W - 6, 158, "\x1f", &F8x16, kind_act(A_SECLIST, rows));
     if (man_list_top >= n - rows) btns.back().off = true;
   }
   if (!lefty_loaded) lefty_load();
