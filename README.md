@@ -36,15 +36,18 @@ The PC game is keyboard-only. On the 3DS:
 | X / Y | Fire phasers / torpedoes |
 | L | Freeze / resume the simulation |
 | R | Tap mode: auto (default), steer, target |
-| D-Pad | Arrow keys |
-| Circle Pad | Course -1 / +1 degree (left/right), sublight speed (up/down) |
-| ZL | Swap the screens (dashboard on the touch screen, game controls on top) |
+| D-Pad | Arrow keys (menus, target box) |
+| Circle Pad | Left / right: course -1 / +1 degree (hold to keep turning). Up / down: sublight speed +0.1 / -0.1 |
+| ZL | Swap the screens on the bridge and in the manual (other screens stay unswapped so they stay readable). Swapped, the touch screen is a touchpad: slide moves the pointer, a quick still tap presses |
+| ZR | Button ring: the D-Pad moves a gold ring over the touch buttons, A presses the ringed one, B or ZR goes back |
 | C-Stick up / down | Hyperspace speed +1 / -1 |
-| C-Stick | Review earlier messages (bridge) |
-| START | Manual |
-| SELECT | Quick save on the bridge; keyboard elsewhere |
+| C-Stick left / right | Bridge: review earlier messages |
+| Sticks (off the bridge) | Scroll orders, reports and other long pages: up / down a line, left / right a page |
+| START | Menu: RESUME, MANUAL, GAME SETTINGS, EXIT GAME (asks first); the menu header shows the build version |
+| SELECT | Bridge: quick save under the name of your last save (the game's Ctrl+Q). Elsewhere: show or hide the keyboard |
+| LEFT HAND (manual) | Swaps the D-Pad with Y / A / B / X (remembered in `/3ds/starfleet2/lefty.txt`) |
 
-The built-in manual (START) holds the port guide plus the game's Quick Reference, Operations
+The built-in manual (START, then MANUAL) holds the port guide plus the game's Quick Reference, Operations
 Manual and Training Manual, built from **your** GOG PDFs by `tools/mkmanual.py`. Manual controls:
 sticks scroll, D-Pad moves between sections, L/R previous/next, tap a section, B or START closes.
 
@@ -68,6 +71,9 @@ lives directly in `/3ds`, as `sdmc:/3ds/starfleet2.3dsx`); `sd/3ds/starfleet2/` 
 `starfleet2.conf`, and the installer adds `manual.txt` and `game/` there (the contents of the GOG
 install's `base` folder; the game itself is not part of this repository). It uploads both over
 Wi-Fi to ftpd (port 5000), checking every file's size on the 3DS.
+
+CI builds every push to `main` and puts `starfleet2.3dsx` (with the build log and
+`starfleet2.elf.gz` / `starfleet2.sym.gz` symbols for crash addresses) on the `builds` branch.
 
 Logs on the 3DS: `/3ds/starfleet2/debug.log` (start, exit, write failures, text-fit problems) and
 `/3ds/starfleet2/error.log` (fatal errors). An empty `/3ds/starfleet2/debug.txt` turns on the full
