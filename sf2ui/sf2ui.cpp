@@ -1877,6 +1877,7 @@ static void generic_bottom(Surf& s, const TextScreen& ts) {
       std::string lab = l.label;
       if (hot < 0) { lab = std::string(1, l.key) + " " + l.label; hot = 0; }
       add_btn(x0, y0, x1, y1, lab, small && !scroll ? &F6x12 : &F8x16, key_act(key_for_char(l.key)), hot, l.sel);
+      if (l.label == "DOS shell") btns.back().off = true;   // nothing to do at a DOS prompt on a handheld, and no easy way back
     }
   } else if (glay.kind == G_MAP) {
     cells(s, ts, glay.c0, glay.r0, glay.c1, glay.r1, *glay.f, glay.ox, glay.oy, glay.cw, glay.lh);
@@ -2349,6 +2350,11 @@ Redraw frame(const TextScreen& ts, uint16_t* top, uint16_t* bottom) {
     bool want = wants_text(ts);
     if (want && !kb_open && !kb_user_hidden) { kb_open = true; dirty(); }
     if (!want) { kb_user_hidden = false; if (kb_open && !kb_forced) { kb_open = false; dirty(); } }
+    // a keyboard the player opened goes away when the game moves between the bridge and its other
+    // pages (seen Nov 21: opened on the sign-on menu, it was still covering the bridge in the mission)
+    static int kb_bridge = -1; int br = is_bridge(ts) ? 1 : 0;
+    if (kb_open && kb_forced && !want && kb_bridge >= 0 && br != kb_bridge) { kb_open = kb_forced = false; dirty(); }
+    kb_bridge = br;
   }
 
   // auto sign-on: send the password when its prompt appears
