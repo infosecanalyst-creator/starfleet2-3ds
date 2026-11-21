@@ -100,10 +100,11 @@ static std::string report(const std::string& name, const TextScreen& ts, const s
     o << "start menu:";
     for (auto& b : btns) o << " [" << b.label << (b.off ? " (grey)" : "") << "]";
     o << "\n";
-    for (auto& b : btns) if (b.label == "MISSION" && !b.off) {
+    for (auto& b : btns) if (b.label == "WHAT NOW?" && !b.off) {     // the advisor's card must fit too
       touch((b.x0 + b.x1) / 2, (b.y0 + b.y1) / 2, true); clock_ms += 40; frame(ts, top, bot);
       touch((b.x0 + b.x1) / 2, (b.y0 + b.y1) / 2, false); clock_ms += 40; frame(ts, top, bot);
-      o << "mission card: " << explain_title << " | " << explain_text << "\n";
+      o << "what now: " << explain_text << (advise_button ? std::string(" [ring ") + advise_button + "]" : std::string()) << "\n";
+      advise_button = 0;
       break;
     }
     pause_open = false; explain_until = 0; force_redraw(); clock_ms += 40; frame(ts, top, bot);

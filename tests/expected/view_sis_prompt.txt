@@ -3,5 +3,5 @@ hint: X/Y fire, Circle Pad steers, B backs out
 buttons: [PG UP] [] [PG DN] [] [SPACE] [] [] [NAV] [ENG] [CMB] [CMP] [SEC] [COM] [STG] [SCI] [CTL] [STARS] [SYSTEM] [WAR] [COMBAT] [FLEET] [ORDERS] [LOG]
 explain cards: 23/23
 quick reference: QUICK REFERENCE: THIS VIEW
-start menu: [RESUME] [MISSION] [MANUAL] [COACH: ON] [GAME SETTINGS (grey)] [EXIT GAME (grey)]
-mission card: Reconnaissance Mission into Region #1-A | Discover at least one mineral-rich planet in UGA or neutral space. INCOMPLETE- no suitable planets discovered. You have 10 days (Time left on the top screen). Orders again: ORDERS on the bridge, or START > MISSION.
+start menu: [RESUME] [WHAT NOW?] [MANUAL] [COACH: ON] [SAVE (grey)] [GAME SETTINGS (grey)] [EXIT GAME (grey)]
+what now: Goal: Discover at least one mineral-rich planet in UGA or neutral space (not done yet). This is one of the ship's pages. The buttons below are its keys; B goes back to the bridge.

@@ -3,5 +3,5 @@ hint: Docked: LAUNCH leaves the starfort
 buttons: [PHASERS] [TORPS] [SHLD+] [SHLD-] [SPD+] [SPD-] [LAUNCH] [ORDERS] [EVASIVE] [ORBIT] [DOCK] [MORE] [STARS] [SYSTEM] [WAR] [COMBAT] [FLEET] [ORDERS] [LOG]
 explain cards: 19/19
 quick reference: QUICK REFERENCE: BRIDGE
-start menu: [RESUME] [MISSION] [MANUAL] [COACH: ON] [GAME SETTINGS (grey)] [EXIT GAME (grey)]
-mission card: Reconnaissance Mission into Region #1-A | Discover at least one mineral-rich planet in UGA or neutral space. You have 10 days (Time left on the top screen). Orders again: ORDERS on the bridge, or START > MISSION.
+start menu: [RESUME] [WHAT NOW?] [MANUAL] [COACH: ON] [SAVE] [GAME SETTINGS (grey)] [EXIT GAME (grey)]
+what now: Goal: Discover at least one mineral-rich planet in UGA or neutral space. 1) Tap LAUNCH to leave the starfort. 2) Then SYSTEM shows the planets here; STARS shows other star systems. [ring LAUNCH]

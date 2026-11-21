@@ -1113,7 +1113,7 @@ static void read_orders(const TextScreen& ts) {
 static std::string mission_text() {
   std::string t = mis_goal + ".";
   if (mis_days > 0) t += " You have " + std::to_string(mis_days) + " days (Time left on the top screen).";
-  t += " Orders again: ORDERS on the bridge, or START > MISSION.";
+  t += " Orders again: ORDERS on the bridge. Stuck? Press SELECT.";
   return t;
 }
 
@@ -1329,6 +1329,91 @@ static void check_refusals(const TextScreen& ts, uint32_t t) {
       }
 }
 
+// ------------------------------------------------------------------ advisor: "What now?"
+// SELECT on a flight screen, or START > WHAT NOW?: the mission goal and the next one to three
+// things to do, read from the situation on screen, with the first button to press ringed.
+static float bridge_speed(const TextScreen& ts, int row);
+static const char* advise_button = 0; static uint32_t advise_until = 0;
+static int pct_at(const TextScreen& ts, int row, int c0, int c1) {     // "  76%" -> 76, none -> -1
+  std::string v = row_str(ts, row, c0, c1); size_t p = v.find('%');
+  if (p == std::string::npos) return -1;
+  size_t a = p; while (a > 0 && isdigit((unsigned char)v[a - 1])) a--;
+  return a == p ? -1 : atoi(v.c_str() + a);
+}
+static std::string advise(const TextScreen& ts, const char** button) {
+  *button = 0;
+  std::vector<std::string> say_list;
+  auto add = [&](const std::string& t, const char* b) { if (say_list.empty() && b) *button = b; say_list.push_back(t); };
+  if (!ts.text_mode) return "Wait for the picture to finish, or press A.";
+  if (is_bridge(ts)) {
+    Situation st = bridge_situation(ts);
+    std::string prompt = trim(row_str(ts, 24, 0, 24));
+    std::string mode = trim(row_str(ts, 13, 18, 26)), target = trim(row_str(ts, 9, 20, 26));
+    float set = bridge_speed(ts, 15), cur = bridge_speed(ts, 16);
+    int sup = pct_at(ts, 13, 60, 78), energy = pct_at(ts, 19, 44, 58), shields = pct_at(ts, 22, 44, 58);
+    float left = (float)atof(row_str(ts, 12, 11, 17).c_str());
+    bool has_left = row_str(ts, 12, 1, 11).find("Time left") != std::string::npos;
+    bool asked = prompt.find('?') != std::string::npos;
+    if (asked) {
+      const char* why = prompt.find("orbit") != std::string::npos ? "YES circles the planet (needed to scan it or send landing parties); NO stays beside it." :
+                        prompt.find("dock") != std::string::npos ? "YES docks: the starfort repairs and resupplies the ship." :
+                        prompt.find("Comply") != std::string::npos ? "A routine request from the starfort: YES is the usual answer." :
+                        prompt.find("Answer") != std::string::npos ? "The question is in COMMS on the top screen." : "Answer YES or NO below.";
+      bool safe = prompt.find("orbit") != std::string::npos || prompt.find("dock") != std::string::npos || prompt.find("Comply") != std::string::npos;
+      add("The game asks: " + prompt + " " + why, safe ? "YES" : 0);      // (YES is only ringed where it is harmless)
+    } else if (prompt.find("PRESS") != std::string::npos) add("Read the message in COMMS, then tap CONTINUE.", "CONTINUE");
+    if (asked) {
+    } else if (st == SIT_ALERT) {
+      if (shields == 0) add("Enemy near and shields are down: tap SHLD+.", "SHLD+");
+      add("Fire when the P and T lights are green: X phasers, Y torpedoes. FREEZE stops time while you think.", "PHASERS");
+    }
+    if (asked) {
+    } else {
+    if (sup >= 0 && sup < 25) add("Supplies are low: STARFORT flies you home to resupply.", st == SIT_DOCKED ? 0 : "STARFORT");
+    if (energy >= 0 && energy < 25) add("Energy is low: slow down (SPD-) or go back to a starfort.", "SPD-");
+    if (has_left && left > 0 && left < 1.5f && st != SIT_DOCKED) add("Under 1.5 days left: STARFORT takes you home before time runs out.", "STARFORT");
+    if (st == SIT_DOCKED) {
+      if (mis_goal.empty()) add("Read your orders first: tap ORDERS.", "ORDERS");
+      add("Tap LAUNCH to leave the starfort.", "LAUNCH");
+      add("Then SYSTEM shows the planets here; STARS shows other star systems.", 0);
+    } else if (st == SIT_ORBIT || mode.find("ORBIT") != std::string::npos) {
+      add("You are in orbit. TELEPORT sends a landing party down to explore.", "TELEPORT");
+      add("ENGINES leaves orbit.", "ENGINES");
+    } else if (mode.find("HYPR") != std::string::npos) {
+      add("In hyperspace: nothing to do until the ship arrives.", 0);
+    } else if (st == SIT_CRUISE) {
+      if (cur <= 0.0f && target.empty()) add("Choose where to go: SYSTEM for a planet here, STARS for another star system.", "SYSTEM");
+      else if (cur <= 0.0f) add(set > 0.0f ? "A target is set: tap ENGINES to go." : "A target is set: SPD+ for a speed, then ENGINES.", set > 0.0f ? "ENGINES" : "SPD+");
+      else if (!target.empty()) add("Under way to " + target + ". The ship stops there by itself; the helm then asks to orbit or dock.", 0);
+      else add("Flying by hand. SYSTEM lets you pick a destination and the ship flies itself.", "SYSTEM");
+    }
+    }
+    if (say_list.empty()) add("Follow the prompt line above the buttons. NAV, ENG, CMB... open the ship's menus; B backs out of them.", 0);
+  } else if (screen_has(ts, "SIGN-ON OPTIONS")) {
+    add("New here? Tap Practice (demo) mission, answer YES, pick a mission, then Start a new mission.", "Practice (demo) mission");
+    add("Tutorials (lower in the list) teach flying step by step.", 0);
+  } else if (screen_has(ts, "MAP OF STAR SYSTEM")) {
+    add("Tap a planet (a letter) or a starfort to put the target box on it.", 0);
+    add("Then TARGETER, choose a speed, ENTER. Back on the bridge (B), tap ENGINES.", "TARGETER");
+  } else if (in_flight(ts) && glay_kind() == 2) {
+    add("Tap a star to put the target box on it, then TARGETER and ENTER.", "TARGETER");
+    add("B goes back to the bridge.", 0);
+  } else if (in_flight(ts)) {
+    add("This is one of the ship's pages. The buttons below are its keys; B goes back to the bridge.", 0);
+  } else {
+    add("Read the page, then tap CONTINUE (or A). B goes back.", 0);
+  }
+  std::string out;
+  if (!mis_goal.empty() && in_flight(ts)) {
+    std::string g = mis_goal; size_t inc = g.find("INCOMPLETE");      // (the orders page adds its own status line)
+    if (inc != std::string::npos) g = trim(g.substr(0, inc));
+    while (!g.empty() && (g.back() == '.' || g.back() == ' ')) g.pop_back();
+    out = "Goal: " + g + (inc != std::string::npos ? " (not done yet). " : ". ");
+  }
+  for (size_t i = 0; i < say_list.size() && i < 3; i++) out += (say_list.size() > 1 ? std::to_string(i + 1) + ") " : "") + say_list[i] + " ";
+  return trim(out);
+}
+
 // ------------------------------------------------------------------ coach (plan item 8)
 // One card per situation, the first time it comes up, with the next button ringed in blinking
 // cyan while the coach is on. The ring stays (the card goes after 9 s) until the situation changes.
@@ -1337,7 +1422,7 @@ static const char* COACH_TITLE[CS_COUNT] = {"COACH: START HERE", "COACH: YOUR OR
                                            "COACH: FLYING", "COACH: ENEMY!", "COACH: SYSTEM MAP"};
 static const char* COACH_TEXT[CS_COUNT] = {
   "New to Star Fleet II? Choose Practice (demo) mission: nothing counts against your career. Hold R and tap anything to learn what it does; hold R alone for the buttons. START > COACH switches me off.",
-  "These are your orders: read them, then tap CONTINUE. START > MISSION shows them again later.",
+  "These are your orders: read them, then tap CONTINUE. Stuck later? Press SELECT for what to do next.",
   "You are docked at a starfort. Tap LAUNCH: it sets a speed and starts the engines.",
   "You are under way. Tap the tactical display to steer, SPD+/SPD- for speed. Tap SYSTEM to see the planets nearby; STARFORT flies you home.",
   "Red alert! SHLD+ raises the shields, X fires phasers, Y torpedoes, ECM jams their aim. FREEZE pauses while you think.",
@@ -2187,14 +2272,16 @@ static void pause_bottom(Surf& s, const TextScreen& ts) {
   bool menu = ts.text_mode && screen_has(ts, "Change default settings", 0, 24);
   // (Saving is the game's own: its command menu on the touch screen; the port does not drive it.
   // Hardware, Nov 20: at mission start every injected key only advanced the XO's COMMS messages.)
-  const char* lab[6] = {"RESUME", "MISSION", "MANUAL", coach_on ? "COACH: ON" : "COACH: OFF", "GAME SETTINGS", "EXIT GAME"};
-  Act act[6] = {kind_act(A_PAUSE), kind_act(A_MISSION), kind_act(A_MANUAL), kind_act(A_COACH), kind_act(A_SETTINGS), kind_act(A_QUIT)};
-  for (int i = 0; i < 6; i++) {
-    add_btn(50, 28 + i * 28, 270, 52 + i * 28, lab[i], &F8x16, act[i]);   // 24 px tall, 4 px apart
-    if ((i == 1 && mis_goal.empty()) || (i == 4 && !menu) || (i == 5 && !(H && H->quit))) btns.back().off = true;
+  // seven items on six rows (24 px tall, 4 px apart): COACH and SAVE share the fourth row
+  const char* lab[7] = {"RESUME", "WHAT NOW?", "MANUAL", coach_on ? "COACH: ON" : "COACH: OFF", "SAVE", "GAME SETTINGS", "EXIT GAME"};
+  Act act[7] = {kind_act(A_PAUSE), kind_act(A_MISSION), kind_act(A_MANUAL), kind_act(A_COACH), kind_act(A_SAVE), kind_act(A_SETTINGS), kind_act(A_QUIT)};
+  for (int i = 0; i < 7; i++) {
+    int row = i < 4 ? i : i - 1, x0 = i == 4 ? 164 : 50, x1 = i == 3 ? 156 : 270;
+    add_btn(x0, 28 + row * 28, x1, 52 + row * 28, lab[i], &F8x16, act[i]);
+    if ((i == 4 && !bridge) || (i == 5 && !menu) || (i == 6 && !(H && H->quit))) btns.back().off = true;
     btns.back().focus = i == pause_focus;
   }
-  const char* note = bridge ? "Save: the game's command menu; SELECT re-saves." :
+  const char* note = bridge ? "SAVE re-saves a mission you saved by name." :
                      menu ? "Saving works on the bridge." : "Saving: on the bridge. Settings: main menu.";
   fit_text(s, (BOT_W - text_width(note, F6x12)) / 2, 200, BOT_W, note, F6x12, HINT, "pause");
   hint_strip(s, lefty_on ? "D-Right Select  D-Down Back  ZL Swap" : "A Select  B Back  ZL Swap");
@@ -2283,7 +2370,9 @@ static void fire(const Act& a) {
     case A_COACH: coach_on = !coach_on; if (coach_on) coach_seen = 0; save_settings(); break;
     case A_MISSION:
       pause_open = false;
-      if (!mis_goal.empty()) { explain(mis_title.empty() ? "MISSION" : mis_title.c_str(), mission_text().c_str()); explain_until = now() + 12000; }
+      { const char* b = 0; std::string a = advise(last, &b);
+        explain("WHAT NOW?", a.c_str()); explain_until = now() + 15000;
+        advise_button = b; advise_until = now() + 15000; }
       break;
     case A_LAUNCH: case A_ENGINES: {
       // the helm refuses to start the engines with no speed set ("Velocity must be set"):
@@ -2573,6 +2662,8 @@ Redraw frame(const TextScreen& ts, uint16_t* top, uint16_t* bottom) {
   if (refusal_button && (int32_t)(t - refusal_until) >= 0) { refusal_button = 0; dirty(); }
   ring_active = false;
   if (refusal_button) for (auto& b : btns) if (b.label == refusal_button) { b.coach = true; ring_active = true; }
+  if (advise_button && (int32_t)(t - advise_until) >= 0) { advise_button = 0; dirty(); }
+  if (advise_button && !pause_open && !manual_open) for (auto& b : btns) if (b.label == advise_button) { b.coach = true; ring_active = true; }
   if (coach_on && !manual_open && !pause_open && !kb_open) {
     int cs = coach_step(ts);
     if (cs >= 0) {
@@ -2829,25 +2920,26 @@ void buttons(uint32_t held, uint32_t pr, uint32_t rel) {
   if (pause_open) {
     if (pr & (B_B | B_START)) {
       H->click();
-      if (quit_confirm) { quit_confirm = false; pause_focus = 5; } else pause_open = false;
+      if (quit_confirm) { quit_confirm = false; pause_focus = 6; } else pause_open = false;
       dirty(); return;
     }
     if (quit_confirm) {
       if (pr & (B_DLEFT | B_DRIGHT)) { pause_focus = !pause_focus; dirty(); }
-      if (pr & B_A) { H->click(); if (pause_focus == 0) fire(kind_act(A_QUIT_YES)); quit_confirm = false; pause_focus = 5; dirty(); }
+      if (pr & B_A) { H->click(); if (pause_focus == 0) fire(kind_act(A_QUIT_YES)); quit_confirm = false; pause_focus = 6; dirty(); }
       return;
     }
     bool bridge = is_bridge(last);
     bool menu = last.text_mode && screen_has(last, "Change default settings", 0, 24);
     (void)bridge;
-    bool usable[6] = {true, !mis_goal.empty(), true, true, menu, H && H->quit};
-    int step = repeat_due(B_DDOWN, held, pr) ? 1 : repeat_due(B_DUP, held, pr) ? 5 : 0;
+    bool usable[7] = {true, true, true, true, bridge, menu, H && H->quit};
+    int step = repeat_due(B_DDOWN, held, pr) ? 1 : repeat_due(B_DUP, held, pr) ? 6 : 0;
+    if (!step && (pr & (B_DLEFT | B_DRIGHT)) && (pause_focus == 3 || pause_focus == 4) && usable[7 - pause_focus]) { pause_focus = 7 - pause_focus; dirty(); }
     if (step) {
-      do pause_focus = (pause_focus + step) % 6; while (!usable[pause_focus]);
+      do pause_focus = (pause_focus + step) % 7; while (!usable[pause_focus]);
       dirty();
     }
     if ((pr & B_A) && usable[pause_focus]) {
-      static const ActKind k[6] = {A_PAUSE, A_MISSION, A_MANUAL, A_COACH, A_SETTINGS, A_QUIT};
+      static const ActKind k[7] = {A_PAUSE, A_MISSION, A_MANUAL, A_COACH, A_SAVE, A_SETTINGS, A_QUIT};
       H->click(); fire(kind_act(k[pause_focus])); dirty();
     }
     return;
@@ -2892,7 +2984,7 @@ void buttons(uint32_t held, uint32_t pr, uint32_t rel) {
     if (pr & B_B) { focus_mode = false; dirty(); }
     held &= ~PAD; pr &= ~PAD;
   }
-  if (pr & B_SELECT) fire(kind_act(is_bridge(last) ? A_SAVE : A_KB));   // quick save on the bridge
+  if (pr & B_SELECT) fire(kind_act(in_flight(last) ? A_MISSION : A_KB));   // "What now?" in flight (re-save is in the START menu)
   if (pr & B_A) { press(K_ENTER); typed_enter(); chk_pressed = "A"; }
   if (pr & B_B) chk_pressed = "B";
   if (pr & B_B) press(K_ESC);
