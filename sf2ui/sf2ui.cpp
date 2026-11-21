@@ -72,6 +72,7 @@ static int pause_focus = 0;            // D-Pad focus in the START menu (confirm
 // Explain mode (plan item 6): hold R and tap anything on the touch screen; a card on the top screen
 // says in plain words what it is. R pressed and released with no tap still changes the tap mode.
 static bool r_held = false, r_used = false;
+static uint32_t r_since = 0; static bool quickref_up = false;   // R held 0.6 s with no tap: quick reference
 static std::string explain_title, explain_text; static uint32_t explain_until = 0;
 // Busy feedback: a button was pressed and the game hasn't answered yet (see frame()).
 static uint32_t busy_since = 0; static bool busy_now = false;
@@ -1203,7 +1204,7 @@ enum CoachStep { CS_MENU, CS_ORDERS, CS_DOCKED, CS_CRUISE, CS_ALERT, CS_SYSMAP, 
 static const char* COACH_TITLE[CS_COUNT] = {"COACH: START HERE", "COACH: YOUR ORDERS", "COACH: LEAVE THE STARFORT",
                                            "COACH: FLYING", "COACH: ENEMY!", "COACH: SYSTEM MAP"};
 static const char* COACH_TEXT[CS_COUNT] = {
-  "New to Star Fleet II? Choose Practice (demo) mission: nothing counts against your career. Hold R and tap anything to learn what it does. START > COACH switches me off.",
+  "New to Star Fleet II? Choose Practice (demo) mission: nothing counts against your career. Hold R and tap anything to learn what it does; hold R alone for the buttons. START > COACH switches me off.",
   "These are your orders: read them, then tap CONTINUE. START > MISSION shows them again later.",
   "You are docked at a starfort. Tap LAUNCH: it sets a speed and starts the engines.",
   "You are under way. Tap the tactical display to steer, SPD+/SPD- for speed. Tap SYSTEM to see the planets nearby; STARFORT flies you home.",
@@ -2695,8 +2696,24 @@ void buttons(uint32_t held, uint32_t pr, uint32_t rel) {
   if (pr & B_Y) press(K_DELETE);           // fire torpedoes
   if (pr & B_L) press(K_F, M_CTRL);        // freeze / unfreeze
   // R: held + tap = explain (plan item 6); pressed and released with no tap = tap mode
-  if (pr & B_R) { r_held = true; r_used = false; }
-  if (rel & B_R) { if (r_held && !r_used) fire(kind_act(A_MODE)); r_held = false; }
+  if (pr & B_R) { r_held = true; r_used = false; r_since = now(); }
+  if (r_held && !r_used && !quickref_up && (int32_t)(now() - r_since) >= 600 && last.text_mode) {
+    // quick reference for this screen (learning design): what every button does here
+    quickref_up = true; r_used = true;
+    bool br = is_bridge(last), fl = in_flight(last);
+    const char* body = br ?
+      (lefty_on ? "D-Left phasers, D-Up torpedoes. L freeze. ZR/ZL hyperspace speed up/down. Circle Pad: left/right heading, up/down sublight speed. Tap the display to steer. D-Right Enter, D-Down back. SELECT re-save. START menu. R + tap: explain."
+                : "X phasers, Y torpedoes. L freeze. ZR/ZL hyperspace speed up/down. Circle Pad: left/right heading, up/down sublight speed. Tap the display to steer. A Enter, B back. SELECT re-save. START menu. R + tap: explain.")
+      : fl ? "Tap an item or a spot on the map. A Enter, B back to the bridge. X/Y still fire, Circle Pad still steers. The tabs at the bottom jump straight to another view. START menu. R + tap: explain."
+           : "Tap an item to choose it. A Enter (or CONTINUE), B back. Sticks or drag scroll long pages. ZR: move a ring over the buttons with the D-Pad. SELECT keyboard. START menu. R + tap: explain.";
+    explain(br ? "QUICK REFERENCE: BRIDGE" : fl ? "QUICK REFERENCE: THIS VIEW" : "QUICK REFERENCE", body);
+    explain_until = now() + 600000;      // stays while R is held
+  }
+  if (rel & B_R) {
+    if (r_held && !r_used) fire(kind_act(A_MODE));
+    if (quickref_up) { quickref_up = false; explain_until = 0; dirty(); }
+    r_held = false;
+  }
   if (repeat_due(B_DUP, held, pr)) press(K_UP);
   if (repeat_due(B_DDOWN, held, pr)) press(K_DOWN);
   if (repeat_due(B_DLEFT, held, pr)) press(K_LEFT);

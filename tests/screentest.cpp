@@ -91,6 +91,10 @@ static std::string report(const std::string& name, const TextScreen& ts, const s
     }
     buttons(0, 0, B_R); explain_until = 0; clock_ms += 40; frame(ts, top, bot);
     o << "explain cards: " << cards << "/" << bs.size() << "\n";
+    // quick reference (R held 0.6 s, no tap): the card must fit
+    buttons(B_R, B_R, 0); clock_ms += 700; buttons(B_R, 0, 0); frame(ts, top, bot);
+    o << "quick reference: " << (quickref_up ? explain_title : std::string("none")) << "\n";
+    buttons(0, 0, B_R); clock_ms += 40; frame(ts, top, bot);
     // START menu on this screen: its items (greyed or not); MISSION shows the mission card
     buttons(B_START, B_START, 0); clock_ms += 40; frame(ts, top, bot); buttons(0, 0, B_START);
     o << "start menu:";
