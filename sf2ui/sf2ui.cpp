@@ -34,7 +34,7 @@ static std::vector<Ev> queue;          // pending key events
 static uint32_t next_key_ms = 0;
 static const uint32_t KEY_GAP_MS = 35; // spacing between injected key events
 
-enum ActKind { A_NONE, A_KEY, A_MODE, A_MANUAL, A_KB, A_SECTION, A_CLOSE, A_TYPE, A_SIGNON, A_SAVE, A_VIEW, A_PAUSE, A_QUIT, A_QUIT_YES, A_SETTINGS, A_LEFTY, A_SECLIST, A_ROWPAGE, A_RDLINE, A_MENUSCROLL, A_LAUNCH, A_ENGINES, A_MISSION, A_COACH };
+enum ActKind { A_NONE, A_KEY, A_MODE, A_MANUAL, A_KB, A_SECTION, A_CLOSE, A_TYPE, A_SIGNON, A_SAVE, A_VIEW, A_PAUSE, A_QUIT, A_QUIT_YES, A_SETTINGS, A_LEFTY, A_SECLIST, A_ROWPAGE, A_RDLINE, A_MENUSCROLL, A_LAUNCH, A_ENGINES, A_MISSION, A_COACH, A_FOLLOW };
 struct Act { ActKind kind; Key key; uint8_t mods; int arg; };
 enum { M_SHIFT = 1, M_CTRL = 2, M_ALT = 4 };
 
@@ -101,7 +101,12 @@ static bool last_text_mode = false;
 // shelf: 0 START, 1 BRIDGE, 2 PROCEDURES, 3 PROBLEMS, 4 REFERENCE (the port's own Library cards,
 // built into the app from assets/library-port.txt), 5 BOOKS (manual.txt: the port's guide and the
 // game's manuals from the player's own GOG files).
-struct Section { std::string title; std::vector<std::string> paras, lines; int wrap = 0; int shelf = 5; };
+struct Step { std::string btn, what, done; };   // a checklist step (PROCEDURES cards)
+struct Section { std::string title; std::vector<std::string> paras, lines; int wrap = 0; int shelf = 5; std::vector<Step> steps; };
+// The checklist being followed (learning design step 3): shown on the top screen while playing;
+// steps tick themselves from what the game shows or which button was pressed.
+static int chk_sec = -1, chk_step = 0; static bool chk_had = false; static uint32_t chk_since = 0;
+static std::string chk_pressed;         // label of the last touch button / hardware button pressed
 static std::vector<Section> manual;
 static int man_sel = 0, man_scroll = 0, man_list_top = 0;
 static int man_focus = 0;   // D-Pad focus in the manual: 0 the section list, -1 LEFT HAND, -2 CLOSE MANUAL (rule 6)
@@ -1094,6 +1099,52 @@ static void explain_spot(const TextScreen& ts, int x, int y) {
   if (y >= UP_H && y < ROW1_Y0) { explain("PROMPT LINE", "The game's instructions and questions, or what to do next. Alerts show here in red or gold."); return; }
   explain("EXPLAIN", "Hold R and tap a button or a part of the touch screen to see what it does.");
 }
+// ------------------------------------------------------------------ checklists (learning design step 3)
+static bool screen_has_ci(const TextScreen& ts, const std::string& needle) {
+  if (needle.empty()) return false;
+  std::string n = needle; for (auto& c : n) c = (char)tolower((unsigned char)c);
+  for (int r = 0; r < 25; r++) {
+    std::string row = row_str(ts, r, 0, 80); for (auto& c : row) c = (char)tolower((unsigned char)c);
+    if (row.find(n) != std::string::npos) return true;
+  }
+  return false;
+}
+static void chk_begin_step(const TextScreen& ts) {
+  chk_since = now(); chk_pressed.clear();
+  chk_had = chk_sec >= 0 && chk_step < (int)manual[chk_sec].steps.size() && screen_has_ci(ts, manual[chk_sec].steps[chk_step].done);
+}
+// A step is done when its "done" text newly appears on the game screen, or (no such text, or it
+// was already there) when its button is pressed. A step with neither is done when the next one is.
+static bool chk_step_done(const TextScreen& ts, const Step& st, bool current) {
+  if (!st.done.empty() && !(current && chk_had) && screen_has_ci(ts, st.done)) return true;
+  if (!st.btn.empty() && chk_pressed == st.btn) return true;
+  return false;
+}
+static void chk_update(const TextScreen& ts) {
+  if (chk_sec < 0 || !ts.text_mode) return;
+  std::vector<Step>& st = manual[chk_sec].steps;
+  for (int look = 0; look < 3 && chk_step + look < (int)st.size(); look++) {
+    const Step& x = st[chk_step + look];
+    if (chk_step_done(ts, x, look == 0)) { chk_step += look + 1; chk_begin_step(ts); dirty(); break; }
+  }
+  chk_pressed.clear();
+  if (chk_step >= (int)st.size()) { say("Checklist done", 3000); chk_sec = -1; dirty(); }
+}
+static void chk_card(Surf& s) {
+  const std::vector<Step>& st = manual[chk_sec].steps;
+  const int x0 = 4, x1 = TOP_W - 4, y1 = TOP_H - 18, y0 = y1 - 56;
+  s.fill(x0, y0, x1, y1, PROMPT_BG); s.rect(x0, y0, x1, y1, rgb(80, 230, 255));
+  char head[96]; snprintf(head, sizeof head, "%s  %d/%d", manual[chk_sec].title.c_str(), chk_step + 1, (int)st.size());
+  fit_text(s, x0 + 6, y0 + 3, x1 - 6, head, F6x12, rgb(80, 230, 255), "checklist card");
+  for (int k = -1; k <= 1; k++) {
+    int i = chk_step + k; if (i < 0 || i >= (int)st.size()) continue;
+    std::string l = std::string(k < 0 ? "\xfb " : k == 0 ? "\x10 " : "  ") + st[i].what;
+    if (k == 0 && !st[i].btn.empty()) l += "  [" + st[i].btn + "]";
+    const Font* f = text_width(l.c_str(), F6x12) <= x1 - x0 - 12 ? &F6x12 : &F5x9;
+    fit_text(s, x0 + 6, y0 + 17 + (k + 1) * 12, x1 - 6, l.c_str(), *f, k == 0 ? BTN_TXT : k < 0 ? rgb(110, 200, 120) : HINT, "checklist card");
+  }
+}
+
 static void explain_card(Surf& s) {
   const int x0 = 4, x1 = TOP_W - 4, y1 = TOP_H - 4;
   // wrap the text to the card width in the 6x12 font
@@ -1724,6 +1775,9 @@ static void load_library_cards() {
         std::string rest = line.substr(5), btn, what;
         size_t a = rest.find('|'), b = a == std::string::npos ? a : rest.find('|', a + 1);
         btn = trim(rest.substr(0, a)); what = a == std::string::npos ? "" : trim(rest.substr(a + 1, b == std::string::npos ? b : b - a - 1));
+        Step st; st.btn = btn == "-" ? "" : btn; st.what = what; st.done = b == std::string::npos ? "" : trim(rest.substr(b + 1));
+        if (st.done == "-") st.done.clear();
+        sec.steps.push_back(st);
         line = "[ ] " + what + (btn.empty() || btn == "-" ? "" : "  (" + btn + ")");
       }
       // "{HH:C} text": the game's own symbol (CP437 code HH, VGA colour C) drawn before the text
@@ -1911,6 +1965,9 @@ static void manual_bottom(Surf& s) {
     if (man_list_top >= n - rows) btns.back().off = true;
   }
   if (!lefty_loaded) lefty_load();
+  if (!manual[man_sel].steps.empty())      // a checklist card: follow it while playing (or stop)
+    add_btn(6, 166, BOT_W - 6, 190, chk_sec == man_sel ? "STOP THIS CHECKLIST" : "FOLLOW THIS CHECKLIST", &F8x16, kind_act(A_FOLLOW), -1, chk_sec == man_sel);
+  else
   add_btn(6, 166, BOT_W - 6, 190, lefty_on ? "LEFT HAND: ON" : "LEFT HAND: OFF", &F8x16, kind_act(A_LEFTY), -1, lefty_on);
   btns.back().focus = man_focus == -1;
   s.fill(0, 193, BOT_W, 207, PROMPT_BG);
@@ -2052,6 +2109,12 @@ static void fire(const Act& a) {
       // (seen Nov 18 2026: the "p" of a password chose Practice). Only sign on once, at the prompt.
       if (autologin != 0 || !at_name_prompt(last)) break;
       typed.clear(); type_text(off_name); press(K_ENTER); autologin = 1; pass_tries = 0; pend_name = off_name; say("Signing on...", 1500);
+      break;
+    case A_FOLLOW:
+      if (chk_sec == man_sel) { chk_sec = -1; break; }
+      chk_sec = man_sel; chk_step = 0; chk_begin_step(last);
+      manual_open = false; man_focus = 0; manual_closed(); save_settings();
+      say("Checklist on the top screen", 2500);
       break;
     case A_COACH: coach_on = !coach_on; if (coach_on) coach_seen = 0; save_settings(); break;
     case A_MISSION:
@@ -2309,6 +2372,7 @@ Redraw frame(const TextScreen& ts, uint16_t* top, uint16_t* bottom) {
     rd.top = draw_top; rd.bottom = true;
   }
   if (ts.text_mode && !manual_open && !pause_open) check_refusals(ts, t);
+  if (!manual_open && !pause_open) { int was = chk_step, ws = chk_sec; chk_update(ts); if (was != chk_step || ws != chk_sec) dirty(); }
   if (refusal_button && (int32_t)(t - refusal_until) >= 0) { refusal_button = 0; dirty(); }
   ring_active = false;
   if (refusal_button) for (auto& b : btns) if (b.label == refusal_button) { b.coach = true; ring_active = true; }
@@ -2322,6 +2386,12 @@ Redraw frame(const TextScreen& ts, uint16_t* top, uint16_t* bottom) {
       }
       if (COACH_BUTTON[cs]) for (auto& b : btns) if (b.label == COACH_BUTTON[cs]) { b.coach = true; ring_active = true; }
     }
+  }
+  if (chk_sec >= 0 && !manual_open && !pause_open) {
+    const std::vector<Step>& cst = manual[chk_sec].steps;
+    if (chk_step < (int)cst.size() && !cst[chk_step].btn.empty())
+      for (auto& b : btns) if (b.label == cst[chk_step].btn) { b.coach = true; ring_active = true; }
+    if (draw_top && ts.text_mode && !explain_until) { chk_card(ts_top); rd.top = true; }
   }
   if (draw_top && explain_until && ts.text_mode && !manual_open && !pause_open) { explain_card(ts_top); rd.top = true; }
   if (focus_mode && !manual_open && !pause_open) {     // ring the button nearest the last focus point
@@ -2481,6 +2551,7 @@ void touch(int x, int y, bool down) {
       for (int k = 0; k < (int)btns.size(); k++) if (same(p, btns[k])) i = k;
       if (i >= 0 && x >= p.x0 - 8 && x < p.x1 + 8 && y >= p.y0 - 8 && y < p.y1 + 8) {
         flash_id = p; flash_until = now() + 110; flash_on = true;
+        chk_pressed = btns[i].label;
         fire(btns[i].act);
       }
       dirty();
@@ -2540,7 +2611,7 @@ void buttons(uint32_t held, uint32_t pr, uint32_t rel) {
       if (H && H->click) H->click();
       flash_until = now() + 110; flash_on = true;
       for (auto& b : btns) if (b.focus) flash_id = id_of(b);
-      fire(kind_act(man_focus == -1 ? A_LEFTY : A_CLOSE));
+      fire(kind_act(man_focus == -1 ? (manual[man_sel].steps.empty() ? A_LEFTY : A_FOLLOW) : A_CLOSE));
     }
     if (pr & (B_B | B_START)) { manual_open = false; man_focus = 0; manual_closed(); save_settings(); dirty(); }
     if (!dragging && (man_mom > 0.5f || man_mom < -0.5f)) {   // coast a little after a drag
@@ -2609,6 +2680,7 @@ void buttons(uint32_t held, uint32_t pr, uint32_t rel) {
       if (pr & B_A) {
         if (H && H->click) H->click();
         flash_id = id_of(btns[cur]); flash_until = now() + 110; flash_on = true;
+        chk_pressed = btns[cur].label;
         fire(btns[cur].act);
       }
     }
@@ -2616,7 +2688,8 @@ void buttons(uint32_t held, uint32_t pr, uint32_t rel) {
     held &= ~PAD; pr &= ~PAD;
   }
   if (pr & B_SELECT) fire(kind_act(is_bridge(last) ? A_SAVE : A_KB));   // quick save on the bridge
-  if (pr & B_A) { press(K_ENTER); typed_enter(); }
+  if (pr & B_A) { press(K_ENTER); typed_enter(); chk_pressed = "A"; }
+  if (pr & B_B) chk_pressed = "B";
   if (pr & B_B) press(K_ESC);
   if (pr & B_X) press(K_INSERT);           // fire phasers
   if (pr & B_Y) press(K_DELETE);           // fire torpedoes
