@@ -108,7 +108,7 @@ static const Refusal REFUSALS[] = {
   {"Planetary bombardment not set", "WHY WON'T WE BOMBARD?", "HOW: tap STG, choose the planet menu and Bombardment, and pick the weapons and targets there first. You must be in orbit. WHY: the bombard order was given before a bombardment was set up.", "STG"},  // [T]
   {"Insufficient energy available", "WHY IS THERE NOT ENOUGH POWER?", "HOW: tap SHLD- to free power and slow down, or tap STARFORT and dock to refill. WHY: the ship's power reserves are too low for what you ordered.", "SHLD-"},  // [T][B][O4][O5]
   {"Shield control out", "WHY WON'T THE SHIELDS GO UP?", "HOW: tap ENG, open Damage Control and put repair teams on shield control, or tap STARFORT and dock. WHY: the shield system has been knocked out by damage.", "ENG"},  // [T]
-  {"Scanners inoperative due to ECM", "WHY WON'T THE SCANNERS WORK?", "HOW: switch your ECM (jammer) off with the ECM button, scan, then switch it back on if you still need it. WHY: your own jamming blinds your scanners too.", 0},  // [T]
+  {"Scanners inoperative due to ECM", "WHY WON'T THE SCANNERS WORK?", "HOW: switch your ECM (jammer) off with the ECM button, scan, then switch it back on if you still need it. WHY: your own jamming blinds your scanners too.", "ECM OFF"},  // [T]
 
   // ---------------------------------------------------------------- tractor beam
   {"Enemy ship not disabled", "WHY WON'T THE TRACTOR BEAM HOLD?", "HOW: cripple the ship first: tap CMB, Weapons and set them to Disable, then shoot until its engines are out. Or capture it. WHY: the beam cannot hold an enemy ship that still works.", "CMB"},  // [T]

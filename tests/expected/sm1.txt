@@ -1,2 +1,2 @@
 kind: graphics
-buttons: [GUIDE] [KEYS (grey)] [OPS (grey)] [TRAIN (grey)] [TUTOR (grey)] [Getting started] [Playing on the 3DS] [Touch screen] [Buttons] [ (grey)] [] [LEFT HAND: OFF] [CLOSE MANUAL]
+buttons: [START] [BRIDGE] [HOW TO] [FIX IT] [REF] [BOOKS] [Abbreviations A to Z] [Speed, distance and time units] [Ranks and what each one commands] [Getting started] [] [] [LEFT HAND: OFF] [CLOSE MANUAL]

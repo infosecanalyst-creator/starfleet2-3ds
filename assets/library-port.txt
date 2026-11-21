@@ -1,0 +1,795 @@
+# What this game is
+@shelf START
+@see Training 2.0 Your Missions
+HOW: 1) You command one Krellan battlecruiser. 2) Each mission gives you written orders for one region of space: tap ORDERS to read them again at any time. 3) You fly out from a starfort, explore planets, raid or fight the Alliance (UGA), and come back to a starfort.
+
+WHY: This is a simulation, not an arcade game. The ship does what you order, in real time, and your officers report back in words. There are 35 missions in seven levels, from Altern up to Admiral.
+
+# Your first 10 minutes
+@shelf START
+@see Training 3.5 Test Flights
+@see Tutorial 1: Basic Navigation
+HOW: 1) At sign-on choose Practice. 2) Read the orders and tap CONTINUE. 3) On the bridge tap LAUNCH. 4) Tap SYSTEM for the map of this star system. 5) Tap a planet, tap Targeter in the menu row, set a speed with SPD+, press A. 6) Tap ENGINES and watch the ship go. 7) Press L to freeze whenever you want to think.
+
+WHY: A Practice mission does not count on your service record, so nothing you break matters. Flying to one planet teaches the three things every mission needs: the map, the Targeter and the engines.
+
+IF IT DOESN'T WORK: If the ship stays where it is, read the card "Ship won't move". If you are lost in menus, press B until you are back on the bridge.
+
+# How a mission flows
+@shelf START
+@see Ops 4.1 Conquering a Region
+@see Tutorial 1: Basic Navigation
+HOW: 1) Read ORDERS. 2) LAUNCH from the starfort. 3) Tap STARS, pick a star system and travel there in hyperspace. 4) In each system visit the planets: orbit, scan, send landing parties; at higher ranks fight ships and invade. 5) Tap ORDERS to see which objectives say COMPLETED. 6) Tap STARFORT and dock.
+
+WHY: Objectives are met out in the region, but repairs, supplies and fresh crew come from starforts. The Training Manual says you are required to return to a starfort at the end of each mission.
+
+# Ranks and your career
+@shelf START
+@see Training 2.0 Your Missions
+HOW: 1) You start as Altern (level 1): one ship, exploring and landing parties, no enemy warships. 2) Complete the five missions of a level (A to E) to be promoted. 3) Centurion (level 2) adds four destroyer escorts. 4) Later ranks add harder space combat, planetary invasions and, from Sub-Admiral, command of the whole fleet.
+
+WHY: Your rank decides which commands work. If a menu item answers that it is not available at your rank, that is normal: it unlocks later. Practice missions never change your career.
+
+# Saving your game
+@shelf START
+@see Ops 1.4 Computer Control
+HOW: 1) The game autosaves by itself during a mission. 2) For a save with a name: tap CMP, then Special services, then Save, and type a name of up to 8 characters. 3) The port's quick save then saves again under that name. 4) To stop playing: CMP, Special services, Quit, and answer NO when asked to delete the mission files.
+
+WHY: Resume at sign-on continues from your last named save or autosave. Quit offers to delete the mission's files; if you say yes, the mission is gone.
+
+IF IT DOESN'T WORK: Save while the bridge is quiet. If messages are still arriving, wait for them to finish and try again.
+
+# Time: days left and why to hurry
+@shelf START
+@see Training 2.2 Bridge Display
+@see Ops 1.1 Navigation Control
+HOW: 1) On the top screen find MsnElpTme (days used) and Time left (days remaining). 2) Before a trip, the Targeter box shows Time (days the trip takes) beside Time left: compare them. 3) Cross between stars at hyperspace speed 8. 4) When the LOW TME light turns red, less than 10% of your time remains: finish up and head for a starfort.
+
+WHY: Your orders must be completed in the time allotted. The clock runs while the ship moves, orbits, resupplies in dock or rests; it stands still while you sit stopped in space or freeze the game.
+
+# Reading the top screen
+@shelf START
+@see Training 2.2 Bridge Display
+HOW: 1) Top row: eight alert lights; one that stays red is a problem. 2) LRS: the wide radar around your ship. 3) COMMS: what your officers just told you. 4) DAMAGE, DATA and ENERGY: the ship's health, stores and power. 5) STATUS: GREEN, ORANGE, RED or DOCKED. 6) The BRIDGE shelf of this Library explains each panel.
+
+WHY: You watch the top screen and act on the touch screen. When an order seems to do nothing, the reason is almost always a red light or the newest COMMS line.
+
+# Freeze: stop the clock while you think
+@shelf START
+@see Training 2.4 Ship and Simulation Controls
+HOW: 1) Press L or tap FREEZE. 2) The mission time flashes white: the game is frozen. 3) Look at any display, read your orders, change settings. 4) Press L again to carry on.
+
+WHY: Everything happens in real time, and the manual itself calls Freeze the most powerful command you have. Enemies cannot move or shoot while you read.
+
+IF IT DOESN'T WORK: While frozen you cannot give orders that take time. A few, such as activating the teleporters, start the clock again by themselves.
+
+# Alert lights (top row)
+@shelf BRIDGE
+@see Training 2.2 Bridge Display
+HOW: 1) A light that stays red is a live problem. 2) LOW PWR: under 25% energy. LOW SUP: under 25% supplies. LOW TME: under 10% of mission time. MEDICAL: crew exhausted, sick or low in morale. SEC ALT: security alert inside your ship. MINES: enemy mines nearby. DISTRSS: other Krellan forces call for help. HULL PN: over half the hull is destroyed.
+
+WHY: The computer checks the eight lights in turn, so each flickers briefly as it is tested. Only a light that stays lit matters. An officer also reports the problem in COMMS and an alarm sounds.
+
+IF IT DOESN'T WORK: LOW PWR, LOW SUP and HULL PN are all cured by docking: tap STARFORT. For MEDICAL see the card "Crew tired or morale low".
+
+# Star system number (SS-##)
+@shelf BRIDGE
+@see Training 2.2 Bridge Display
+HOW: 1) Look for SS- and a number at the top left, next to EDC. 2) That is the star system you are in; a region has 50, numbered 0 to 49. 3) SS-XX means you are in hyperspace, between systems. 4) Planets are named after it: SS-3A is planet A of system 3.
+
+WHY: Orders, probe reports and messages all name places by this number, so it is the quickest answer to "where am I?".
+
+# Long Range Scan (LRS)
+@shelf BRIDGE
+@see Training 2.2 Bridge Display
+HOW: 1) Your ship is the centre; the top of the grid is where your nose points. 2) It shows 20 points in every direction. 3) Green dot: Krellan ship. Red dot: Alliance ship. Cyan block: planet. Green block: starfort. Red block: starbase. Yellow block: the star. 4) To close in on something, turn until it sits on the line straight above the centre.
+
+WHY: The tactical display only sees 5 points around you. The LRS shows what is coming before it gets there, without symbols, only coloured dots.
+
+IF IT DOESN'T WORK: A black and white pattern instead of dots means the long range sensors are not working (LRS in the DAMAGE panel).
+
+# Tactical display
+@shelf BRIDGE
+@see Training 2.2 Bridge Display
+@see Training 2.3 Display Symbols
+HOW: 1) Your ship is always in the centre, nose up. 2) Tap anywhere on it to steer toward that point. 3) The red numbers on the edges count distance in points, 5 each way. 4) Small red dots are torpedoes or mines: keep clear of them. 5) Hold R and tap a symbol to have it explained.
+
+WHY: This is the close-up view where fighting, docking and towing happen. Phasers only reach targets you can see here.
+
+IF IT DOESN'T WORK: Coloured streaks instead of a grid mean you are in hyperspace. A planet in the middle with rings of dots means you are in orbit: see "Orbital display".
+
+# Orbital display
+@shelf BRIDGE
+@see Training 2.2 Bridge Display
+@see Ops 1.1 Navigation Control
+HOW: 1) The planet is in the centre; three rings of dots are the high, medium and low orbits. 2) Your ship and anything else in orbit ride on the rings. 3) Corner letters describe the planet: see the card "Orbital display legend". 4) The planet's name is green if Krellan, red if Alliance, blue if neutral, and UNKNOWN in white until surveyed.
+
+WHY: It replaces the tactical display while you orbit. The lower your orbit, the faster you circle the planet, which is how you catch up with another ship in orbit.
+
+# Heading angles
+@shelf BRIDGE
+@see Training 2.2 Bridge Display
+HOW: 1) Four numbers sit around the tactical display. 2) The top one is your heading: the way the nose points. 3) Right is starboard, bottom is aft, left is port, always 90 degrees apart. 4) Angles run clockwise: 0 is up the map, 90 right, 180 down, 270 left. 5) Circle Pad left or right turns the ship one degree at a time.
+
+WHY: Bearings to targets are given in the same angles. If a ship bears 90, it is on the right-hand side of the system map, whichever way you are facing.
+
+# Navigation data (NAV)
+@shelf BRIDGE
+@see Training 2.2 Bridge Display
+HOW: 1) Reg. Loc: where you are in the region (light years). 2) Position: where you are in this system (points), or your orbit and place in it. 3) Course: the direction you have set. 4) Target and Dist Trg: where the navigation computer is taking you and how far it is. 5) Mode: what the ship is doing now.
+
+WHY: Course is what you asked for; the heading number above the tactical display is where the nose points now. The ship swings round until the two match.
+
+IF IT DOESN'T WORK: Modes: DOCKED, NORM SPC (normal space), HYPRSPCE (hyperspace), EMG STOP (stopping), PURSUIT (chasing a ship), IN TOW (being towed), SYS SRCH (searching the system), PATROL (circling a point).
+
+# Velocity (VEL)
+@shelf BRIDGE
+@see Training 2.2 Bridge Display
+HOW: 1) Two bars: H is hyperspace speed, 0 to 10; S is sublight speed, 0.0 to 1.0. 2) The small arrows mark the speed you have set. 3) Below, s: is the speed set and c: is the speed now. 4) SPD+ and SPD- or Circle Pad up and down change sublight; ZR and ZL change hyperspace speed.
+
+WHY: Setting a speed does not start the ship. The bars only climb after the engines are started: s: 0.9 with c: 0.0 means "ready, but engines off".
+
+IF IT DOESN'T WORK: You cannot change speed while flying in hyperspace, only stop. Top sublight speed is 0.9; safe hyperspace speed is 8.
+
+# Messages (COMMS) and the instruction line
+@shelf BRIDGE
+@see Training 2.2 Bridge Display
+@see Ops 1.6 Communications Control
+HOW: 1) New reports appear at the bottom of COMMS and push older lines up. 2) The line under it shows what the game wants now, such as "Select option" or a yes/no question. 3) To reread old lines tap LOG, or COM in the menu row for the logs.
+
+WHY: Your officers answer every order in words. "Engines engaged" means it worked; anything else tells you what is missing. Reading the last line fixes most problems.
+
+# EDC: enemy distress call
+@shelf BRIDGE
+@see Training 2.2 Bridge Display
+HOW: 1) EDC sits at the top left, beside the star system number. 2) Lit red, your communications section has picked up one or more enemy distress calls. 3) For details tap COM, then Status.
+
+WHY: An enemy calling for help is an enemy in trouble somewhere, and it may be bringing other enemy ships to that spot.
+
+# Hull damage bar
+@shelf BRIDGE
+@see Training 2.2 Bridge Display
+HOW: 1) Find the upright bar labelled Hull in the DAMAGE panel. 2) Green is sound hull, yellow is damage, in steps of 20%. 3) The word Hull is cyan with no damage and orange with any. 4) Over 50% damage lights HULL PN: tap STARFORT and dock.
+
+WHY: Past half damage, every further hit breaks ship systems more easily. The manual's advice at that point: get to the nearest starfort immediately.
+
+# Systems status (DAMAGE)
+@shelf BRIDGE
+@see Training 2.2 Bridge Display
+@see Ops 1.2 Engineering Control
+HOW: 1) Each name is a ship system; its background colour is its health. 2) Green: working. Yellow: damaged, partly working. Red: not working. Black: destroyed. 3) To speed up repairs tap ENG, then Damage control, give repair teams to a system with + and -, and press A.
+
+WHY: Damaged systems repair themselves slowly, faster with teams assigned. A destroyed (black) system cannot be fixed in space: only a starfort can replace it.
+
+# Systems status: the twelve names
+@shelf BRIDGE
+@see Training 2.2 Bridge Display
+HOW: COMPUTR main computer. S/L ENG sublight engines. HYP ENG hyperdrive engines. SRS short range sensors. LRS long range sensors. SHD CTL shield control. TRP CTL torpedo control. PHS CTL phaser control. TELEPRT teleporters. COM CTL communications. TRAC BM tractor beam. PLS primary life support.
+
+WHY: When an order fails, look here for the matching system. No sublight engines means no moving, no HYP ENG means no trips between stars, no TELEPRT means no landing parties.
+
+# Weapons status (P T T)
+@shelf BRIDGE
+@see Training 2.2 Bridge Display
+@see Tutorial 4: Weapons
+HOW: 1) P is the phaser bank; the two T are the torpedo tubes. 2) Green: ready to fire. Red: reloading, recharging or on standby. Black: out of action. 3) The small letter is a for automatic aiming or m for manual. 4) A blinking "cont" means continuous fire is on.
+
+WHY: X and Y only do something when the matching light is green. After each shot the light goes red for a short time while the weapon gets ready again.
+
+# DATA: ship's stores
+@shelf BRIDGE
+@see Training 2.2 Bridge Display
+HOW: 1) Torps: torpedoes left. Crew and Shk Troops: people aboard. Supplies: percent left. Oblitr Pods: planet-killer bombs. Escorts: destroyers assigned to you. 2) Snsr Probes shows L: probes loaded in the launchers and S: probes in storage. 3) In dock, a number in brackets after Escorts counts escorts docked with you; green with an up arrow means they are ready.
+
+WHY: These are the things you run out of. Supplies and energy fall all the time; torpedoes, probes and crew fall when you use or lose them. A starfort refills them all.
+
+# TARGET DATA
+@shelf BRIDGE
+@see Training 2.2 Bridge Display
+@see Tutorial 4: Weapons
+HOW: 1) At red alert this replaces DATA; the number in its title is torpedoes left. 2) Each line is one enemy: R.Pos (position from you, in points), Brng (bearing), Vel (speed) and its symbol. 3) Wpn shows which weapon is locked on it: P or T, red for destroy, yellow for disable, blue for standby; a white background means manual aim.
+
+WHY: It tells you whether a target is in reach (phasers 5 points, torpedoes 10) and which weapon will hit what before you press X or Y.
+
+IF IT DOESN'T WORK: To see your stores during a fight, tap CTL, then Hot keys, and switch the Data/Target display.
+
+# ENERGY
+@shelf BRIDGE
+@see Training 2.2 Bridge Display
+@see Ops 1.2 Engineering Control
+HOW: 1) Usage: how fast you are spending power now. 2) Quantity: energy left; under 25% lights LOW PWR. 3) Backup: the small emergency reserve. 4) Shields: shield strength; SHLD+ and SHLD- change it by 5%. 5) For exact numbers tap ENG, then Power, then Status.
+
+WHY: Engines, shields, the tractor beam and teleporters all drink energy, and every hit your shields stop is paid for in energy too. Shields below 100% let part of a hit through to the hull.
+
+IF IT DOESN'T WORK: If Quantity is empty and only Backup is left: lower shields, stop, and get energy teleported from another Krellan ship, or ask for a tow.
+
+# Switch lights: ECM, SPD, RST, CMF, AAS
+@shelf BRIDGE
+@see Training 2.2 Bridge Display
+@see Training 2.4 Ship and Simulation Controls
+HOW: 1) ECM, magenta: jamming on; enemy weapons cannot lock on you, and yours cannot lock on them. 2) SPD, blue: flight recorder on. 3) RST, white: crew resting. 4) CMF, orange: only essential messages shown. 5) AAS, green: shields and red alert are automatic; magenta "man" means manual. 6) Tap ECM, or CTL then Hot keys, to change a switch.
+
+WHY: These five switches change how the ship behaves without any menu showing it, so check them when the ship acts oddly, for example shields that will not go up by themselves.
+
+# Supply ship, sideslip and tractor lights
+@shelf BRIDGE
+@see Training 2.2 Bridge Display
+HOW: 1) Supply ship symbol above ECM: grey means none is coming; green with a number means one is on its way, that many light years off. 2) ss with a green arrow: the ship is sideslipping, flying 45 degrees off its heading; two arrows mean evasive maneuvers. 3) TB lit magenta: your tractor beam is on.
+
+WHY: A supply ship can refill you without a trip to a starfort. Sideslip and evasive maneuvers make you harder to hit. The tractor beam uses energy and needs your shields down.
+
+# STATUS: your alert condition
+@shelf BRIDGE
+@see Training 2.2 Bridge Display
+HOW: 1) DOCKED: at a starfort or captured starbase. 2) GREEN: no enemy about; the crew rests. 3) ORANGE: in Alliance space, nothing in range; shields and weapons powered down, crew on edge. 4) RED: enemy ship or starbase detected, or orbiting an Alliance planet; shields up, weapons ready, energy use high.
+
+WHY: The condition decides what works. Phasers only fire in condition RED, and the crew only recovers its rest in GREEN or DOCKED. With AAS on, the ship changes condition by itself.
+
+IF IT DOESN'T WORK: The Ops Manual also mentions a condition YELLOW once without explaining it. Treat it like ORANGE: not yet ready to fire.
+
+# Launch from a starfort
+@shelf PROCEDURES
+@see Tutorial 1: Basic Navigation
+@see Ops 1.1 Navigation Control
+STEP ORDERS | Read your mission orders first | -
+STEP - | With escorts: STG, Escorts, Formation, pick one | -
+STEP LAUNCH | Tap LAUNCH: the engines start and you undock | We have undocked
+STEP SPD+ | Raise sublight speed if the ship only crawls | -
+STEP SYSTEM | Open the system map to choose where to go | -
+
+WHY: You leave a starfort simply by starting the sublight engines. Escorts with no formation stay behind in dock, so give them one first (rank Centurion and above).
+
+IF IT DOESN'T WORK: Check that the game is not frozen (press L), that a sublight speed is set (SPD+), and that S/L ENG in the DAMAGE panel is not red or black. Then tap ENGINES.
+
+# Travel to a planet in this system
+@shelf PROCEDURES
+@see Tutorial 1: Basic Navigation
+@see Ops 1.1 Navigation Control
+STEP SYSTEM | Open the system map | -
+STEP - | Tap the planet to put the target box on it | Planet
+STEP - | Tap Targeter in the menu row | -
+STEP SPD+ | Set a sublight speed, 0.5 to 0.9 | -
+STEP A | Press A to enter the target | ENTERED
+STEP ENGINES | Start the engines; the ship turns and goes | Engines engaged
+STEP B | Go back to the bridge and watch the trip | -
+STEP - | The engines stop by themselves on arrival | Establish Orbit?
+
+WHY: The Targeter is the autopilot: it works out the course, flies there and stops next to the target. Steering by hand is for chasing ships and close work.
+
+IF IT DOESN'T WORK: If the target is far away and you are near the system edge, a short hyperspace hop is quicker: on the STARS map target the system you are already in, then the planet.
+
+# Jump to another star system
+@shelf PROCEDURES
+@see Tutorial 1: Basic Navigation
+@see Ops 1.1 Navigation Control
+STEP STARS | Open the navigation map of the region | -
+STEP - | Tap the star system you want to reach | -
+STEP - | Tap Targeter; hyperspace speed 8.0 is offered | -
+STEP A | Press A to accept the speed | -
+STEP - | Its system map opens: tap a spot near the edge | -
+STEP A | Press A to enter that second target | -
+STEP ENGINES | Start engines: the ship runs to the system edge | Engines engaged
+STEP - | At the edge it jumps into hyperspace by itself | HYPRSPCE
+STEP - | It drops out on arrival and flies to target 2 | NORM SPC
+
+WHY: Hyperdrive is the only way between star systems, and it only works through the Targeter. The ship must reach the edge of the system at 0.6 or faster before it can jump.
+
+IF IT DOESN'T WORK: If the ship sits at the system edge and will not jump, the targets are muddled. On the map tap Targets, delete or reset both, press A (not B), and set them again with the star system first.
+
+# Orbit a planet
+@shelf PROCEDURES
+@see Tutorial 1: Basic Navigation
+@see Ops 1.1 Navigation Control
+STEP - | Fly to the planet with the Targeter | Establish Orbit?
+STEP YES | Answer YES: you enter a high orbit | -
+STEP - | First visit: the planet is scanned for you | -
+STEP NO | Planetary map? NO is fine while learning | -
+STEP - | PG UP and PG DN raise and lower your orbit | -
+STEP ENGINES | To leave orbit, start the engines | -
+
+WHY: Almost everything you do to a planet needs an orbit first: scanning, landing parties, taking on supplies, bombardment and invasion.
+
+IF IT DOESN'T WORK: If you flew there by hand, stop within one point of the planet, then tap NAV, Helm, Orbit. Stars are never offered automatically: orbiting one slowly burns your hull.
+
+# Send a landing party and bring it back
+@shelf PROCEDURES
+@see Tutorial 2: Teleporters & Landing Parties
+@see Ops 1.2 Engineering Control
+STEP - | Orbit the planet (any class except G) | -
+STEP TELEPORT | Tap TELEPORT, then Landing parties | -
+STEP - | D-Pad up or down: highlight a mission | -
+STEP - | Tap + to add a team of ten, - to remove one | -
+STEP - | Planet shows Sp:N? Add Supply on the last row | -
+STEP A | Press A to activate the teleporters | -
+STEP - | Keep orbiting and read their reports in COMMS | -
+STEP TELEPORT | To recall: Landing parties again, answer YES | Beam landing party up?
+STEP - | Lower the teams to the number staying, press A | -
+
+WHY: Landing parties do the real work of early missions. The six jobs are Explore/Survey, Establish Base, Hold/Reinforce, Obtain Supplies, Combat and Negotiate. A finished base keeps reporting to you from anywhere in the region.
+
+IF IT DOESN'T WORK: You cannot teleport through raised shields at the far end, with TELEPRT broken, or to a gas giant. Teams with no supplies on a barren planet need the Supply row.
+
+# Red alert: fight a ship
+@shelf PROCEDURES
+@see Tutorial 4: Weapons
+@see Ops 1.3 Combat Control
+@see Ops 4.2 Space Combat Tactics
+STEP - | Enemy detected: the ship goes to RED by itself | RED
+STEP SHLD+ | If AAS is on manual, raise the shields yourself | -
+STEP FREEZE | Freeze and read the TARGET DATA lines | -
+STEP - | Close in: torpedoes reach 10 points, phasers 5 | -
+STEP Y | Fire torpedoes when a T light is green | -
+STEP X | Fire phasers when the P light is green | -
+STEP ECM | Under heavy fire switch ECM on for a while | -
+STEP - | Enemy gone: the alert ends, shields come down | -
+
+WHY: Shields stop hits but each hit drains energy. Phasers hurt more the closer you are; torpedoes hit equally hard at any range and home on a moving target.
+
+IF IT DOESN'T WORK: With ECM on, your own weapons cannot lock either: switch it off to shoot. For other causes read the card "Can't fire".
+
+# Capture an enemy ship
+@shelf PROCEDURES
+@see Tutorial 6: Boarding Parties Capturing Ships
+@see Ops 1.2 Engineering Control
+STEP FREEZE | Freeze so the ship cannot run away | -
+STEP - | COM, Send, Enemy: tap the ship, Demand Surrender | -
+STEP - | Refused? Set weapons to Disable and shoot | -
+STEP YES | Shields down: say YES to a boarding party | -
+STEP - | Choose Capture; place teams on the ship plan | -
+STEP A | Activate the teleporters | -
+STEP - | The whole ship turns green: it is yours | -
+STEP TELEPORT | Prize crew: send 10 shock troops and 20 crew | -
+STEP - | Or tow it: ENG, Tractor beam, tap the ship, A | -
+STEP STARFORT | Go to a starfort and dock | -
+
+WHY: A captured ship earns far more than a wreck. Asking for surrender first costs nothing; shooting may destroy the prize, and boarding a ship that has not surrendered costs shock troops.
+
+IF IT DOESN'T WORK: You can never board while its shields are up. The tractor beam needs your own shields down and the ship next to you: switch AAS to manual, or raised shields will cut the beam.
+
+# Dock, resupply and repair at a starfort
+@shelf PROCEDURES
+@see Tutorial 1: Basic Navigation
+@see Ops 1.1 Navigation Control
+STEP STARFORT | Tap STARFORT and answer YES | -
+STEP - | The ship flies itself to the nearest starfort | -
+STEP YES | On arrival answer YES to dock | Shall we dock?
+STEP - | Wait while the starfort works on your ship | DOCKED
+STEP - | Escorts ready: bracket number green, up arrow | -
+STEP LAUNCH | Leave when you are ready | We have undocked
+
+WHY: Docking resupplies the ship, repairs every damaged system, refills energy, torpedoes and probes, replaces lost crew, rests the crew and cures disease. Supplies are not used up while docked.
+
+IF IT DOESN'T WORK: To dock by hand, stop within one point of the starfort and tap NAV, Helm, Dock. Starforts show on the WAR map, not on the STARS map.
+
+# Use sensor probes
+@shelf PROCEDURES
+@see Tutorial 1: Basic Navigation
+@see Ops 1.1 Navigation Control
+STEP STARS | Open the navigation map | -
+STEP - | Tap a star within 5 light years of you | -
+STEP - | Tap Probes, then Launch | -
+STEP A | Press A to launch the probe shown | -
+STEP - | Or Probes, Auto_tg: probes the 5 nearest stars | -
+STEP - | Fly on; the probe reports when it arrives | -
+
+WHY: A probe maps a star system for you without the trip, and its DETECT column says Enemy if the Alliance is there. You start with five in the launchers and five in storage.
+
+IF IT DOESN'T WORK: A probe cannot be sent to the system you are in or further than 5.0 light years. Probes can only be launched from the star maps, not from ENG, Probes.
+
+# Command your escorts
+@shelf PROCEDURES
+@see Tutorial 5: Escorts
+@see Ops 1.7 Strategic Command
+STEP - | In dock: STG, Escorts, Formation | -
+STEP - | + and - browse the 20 formations; A assigns | -
+STEP LAUNCH | Launch: the escorts follow and take station | -
+STEP - | Formation 20 sends them to search the system | -
+STEP - | Targeting: pick escorts with +, an option, A | -
+STEP - | Commands, Rendezvous brings them to your side | -
+STEP - | Commands, Go to Station fixes a stray escort | -
+STEP YES | Take them along when you orbit or dock | Escorts to orbit?
+
+WHY: From Centurion you lead four destroyers. Their targeting options are Disable, Slave to Us (shoot what you shoot), Exclusive Fire (shoot what you do not), Hold Fire and Bombardment.
+
+IF IT DOESN'T WORK: Escorts left in dock catch up once you give them a formation. As an Altern you have no escorts and these commands answer that they do not work at your rank.
+
+# Bombard a planet
+@shelf PROCEDURES
+@see Ops 1.7 Strategic Command
+@see Tutorial 4: Weapons
+STEP - | Orbit the planet | -
+STEP - | STG, Planet, Bombard: read shields and defenses | -
+STEP - | Mode: Salvo (one round) or Continuous | -
+STEP - | Weapons: phasers, torpedoes or both | -
+STEP B | Go back to the bridge | -
+STEP X | Salvo: fire with X and Y | -
+STEP - | Continuous: CTL, Hot keys, Bombardment switch | cont
+STEP - | To stop: Mode, Halt | -
+STEP TELEPORT | Planet gives up? Send a Negotiate team | -
+
+WHY: Bombardment knocks down a planet's shields before an invasion, or frightens the natives into surrender and a treaty. A planet bombed to destruction becomes a barren class B world, worth far less to the Empire.
+
+IF IT DOESN'T WORK: In Continuous mode a planet with defenses keeps shooting back the whole time, and can destroy your ship quickly. Watch ENERGY and your torpedo count.
+
+# Invade a planet
+@shelf PROCEDURES
+@see Tutorial 7: Planetary Invasions
+@see Ops 2.5 Planetary Invasion
+@see Ops 4.3 Planetary Invasion Strategy
+STEP - | Orbit it; COM, Send, Fleet HQ, Request Invasion | -
+STEP - | Wait for the troop ships to arrive in orbit | -
+STEP - | Bombard until the planet's shields are down | -
+STEP - | STG, Planet, Orbit control: the planet map | -
+STEP - | Select the cities to attack, then Invade | -
+STEP - | Assault each zone with shock troops | -
+STEP - | Order one unit: Construct a landing pad | -
+STEP - | Pad ready: load warriors on a Drop ship, Launch | -
+STEP - | Zones surrender: Command, Withdraw your troops | -
+STEP - | Drop off some legions to hold the planet | -
+
+WHY: Invasion takes a planet whole, with its people and industry. Only shock troops can teleport down; the stronger warrior units need a landing pad and drop ships.
+
+IF IT DOESN'T WORK: You need the rank for it, the planet's shields knocked out, troop ships with legions in orbit and no enemy ships in orbit. Landing pads can only be built on plains.
+
+# Transfer supplies, energy or people
+@shelf PROCEDURES
+@see Tutorial 3: Teleporters 2: Material & Personnel
+@see Ops 1.2 Engineering Control
+STEP - | Be next to the other ship, or share its orbit | -
+STEP TELEPORT | Tap TELEPORT (or ENG, Teleporters) | -
+STEP - | Personnel transfer: people. Material: goods | -
+STEP - | Tap the other ship, then press A | -
+STEP - | Highlight a row; + and - set the amount | -
+STEP A | Press A to activate the teleporters | -
+STEP - | Check that the DATA numbers have changed | -
+
+WHY: This is how you refill from a supply ship or planet base, hand energy to a captured ship, pass stores to escorts and put a prize crew aboard. Material covers energy, torpedoes, supplies, probes and obliterator pods.
+
+IF IT DOESN'T WORK: Teleporters cannot reach a ship with its shields up, and each person moved costs one unit of energy. With only a supply ship beside you, you can also ask it by message: COM, Send, Krellan ship.
+
+# Ship won't move
+@shelf PROBLEMS
+@see Ops 1.1 Navigation Control
+@see Training 2.4 Ship and Simulation Controls
+HOW: Check in this order. 1) Is the mission time flashing? The game is frozen: press L. 2) Is s: in VEL zero? Tap SPD+. 3) Tap ENGINES (or LAUNCH in dock). 4) Is S/L ENG red or black in DAMAGE? Tap ENG, Damage control. 5) Does NAV Mode say IN TOW or EMG STOP? Wait until it clears.
+
+WHY: The ship needs three things to move: a speed set, engines started and working sublight engines. Setting a course or a target alone never starts it.
+
+IF IT DOESN'T WORK: With fewer than 20 crew left, engines and weapons cannot be run at all. With no energy left the ship is dead in space: tap COM, Send and ask for a tow or a supply ship.
+
+# Can't fire
+@shelf PROBLEMS
+@see Ops 1.3 Combat Control
+@see Tutorial 4: Weapons
+HOW: Check in this order. 1) STATUS must be RED for phasers. 2) The P or T light must be green; red means wait. 3) Is the target close enough? Phasers 5 points, torpedoes 10. 4) Is ECM lit? Switch it off. 5) Tap CMB, Weapons: a weapon on Standby never fires.
+
+WHY: Weapons need power (red alert), a lock on a target in range, and time to reload. A black light means the weapon is damaged, or you are out of torpedoes or phaser energy.
+
+IF IT DOESN'T WORK: From open space you cannot hit a ship that is in orbit: go into orbit too. In orbit, phasers cannot shoot through the planet (the P blinks): use torpedoes or change your orbit.
+
+# Can't enter hyperspace
+@shelf PROBLEMS
+@see Ops 1.1 Navigation Control
+@see Tutorial 1: Basic Navigation
+HOW: 1) Hyperspace trips must be set with the Targeter on the STARS or WAR map: you cannot steer into one. 2) The first target must be another star system. 3) The speed set must be 1.0 or more. 4) Tap ENGINES and let the ship reach the system edge at 0.6 or faster. 5) Check HYP ENG in DAMAGE.
+
+WHY: Near a star the hyperdrive only engages at the edge of the system. The navigation computer flies you there first, which can take a while from deep inside a system.
+
+IF IT DOESN'T WORK: If the ship waits at the edge, reset the targets and set them again. If the helm warns of a black hole on your path, choose another route: passing a black hole throws you off course and damages the ship.
+
+# Can't dock
+@shelf PROBLEMS
+@see Ops 1.1 Navigation Control
+HOW: 1) Easiest: tap STARFORT, answer YES, and answer YES again to "Shall we dock?" on arrival. 2) By hand: stop within one point of the starfort, then tap NAV, Helm, Dock. 3) To find a starfort use the WAR map; the STARS map does not show them.
+
+WHY: The docking question is only asked when the starfort was your navigation target. If you steered there yourself, you must give the Dock order from the Helm menu.
+
+IF IT DOESN'T WORK: On the tactical display the starfort must be right beside your ship, not just visible. You can also dock at a captured Alliance starbase, never at one still held by the enemy.
+
+# Landing party in trouble
+@shelf PROBLEMS
+@see Ops 1.2 Engineering Control
+@see Tutorial 2: Teleporters & Landing Parties
+HOW: 1) Go back and orbit the planet. 2) Tap TELEPORT, Landing parties. 3) Either send help: Combat or Hold/Reinforce teams, and Supply if they are short. 4) Or pull them out: answer YES to "Beam landing party up?" and lower the teams to zero. 5) For their state anywhere: CMP, Information, Landing party.
+
+WHY: A party reports when attacked and calls for help when over half are dead. A finished base protects them: natives below technology level 5 cannot break into it and give up.
+
+IF IT DOESN'T WORK: No word from them? You only hear a party if you are in the same star system, they have built a base, or another Krellan ship or base there relays the message.
+
+# Running out of supplies or energy
+@shelf PROBLEMS
+@see Ops 1.2 Engineering Control
+@see Ops 1.6 Communications Control
+HOW: 1) Save energy now: SHLD- to lower shields, lower speed, tractor beam off. 2) Tap STARFORT if one is in reach: docking refills everything. 3) Supplies from a planet: orbit it and send an Obtain Supplies team, or COM, Send, Planet, Request Supplies. 4) Far from help: COM, Send, Fleet HQ, Request Supply Fleet.
+
+WHY: LOW PWR and LOW SUP light at 25%. Out of supplies, morale collapses and the crew may mutiny. Out of energy, only a 100-unit backup remains and it does not last.
+
+IF IT DOESN'T WORK: On backup power: stop, shields down, and have a Krellan ship come alongside to teleport energy over, or send Request Tow. Before a long trip, check the Targeter's Energy figure against what you have left.
+
+# Crew tired or morale low
+@shelf PROBLEMS
+@see Ops 1.8 Science Control
+@see Training 2.4 Ship and Simulation Controls
+HOW: 1) Tap SCI, then Medical, to read rest, morale, casualties and disease. 2) Leave enemy space: rest comes back by itself in condition GREEN or DOCKED. 3) Or stop the ship and switch on Rest mode: CTL, Hot keys, Rest (the RST light turns white). 4) Best of all, dock at a starfort.
+
+WHY: Rest falls slowly in ORANGE and fast in RED; under 25% the MEDICAL light comes on. Morale drops with no supplies, extra passengers, heavy losses or disease, and at zero the crew mutinies.
+
+IF IT DOESN'T WORK: Rest mode needs the ship standing still and ends when you start the engines. Mission time keeps running while you rest. A disease brought up by a landing party is cured by docking.
+
+# Lost: which system am I in?
+@shelf PROBLEMS
+@see Training 2.1 The Galactic Region
+@see Training 2.2 Bridge Display
+HOW: 1) Read SS-## on the top screen: that is your star system (SS-XX means hyperspace). 2) NAV shows Reg. Loc (your square in the region) and Position (your point in the system). 3) Tap STARS to see the region, WAR to see starforts. 4) To find a system by number: CTL, Hot keys, Locate star system.
+
+WHY: There are two maps. The region is 35 by 15 light years and holds the stars; each system is 80 by 80 points and holds the star, planets and ships. Think of them as country and city.
+
+IF IT DOESN'T WORK: When truly lost, tap STARFORT: the ship finds the nearest starfort and flies there by itself.
+
+# Captured ship didn't reach the starfort
+@shelf PROBLEMS
+@see Tutorial 6: Boarding Parties Capturing Ships
+@see Ops 1.2 Engineering Control
+HOW: 1) Fly back to the captured ship. 2) TELEPORT, Personnel transfer: it needs a prize crew of at least 10 shock troops and 20 crew. 3) TELEPORT, Material transfer: give it energy, at least 250 units for the trip. 4) Or tow it home yourself with the tractor beam.
+
+WHY: A prize with no crew stays where it is and the Alliance may retake it. A prize with a crew but too little energy never arrives. A good one repairs itself, flies home, and its arrival is reported to you.
+
+IF IT DOESN'T WORK: The trip takes time, so wait before worrying. Captured freighters usually have enough energy; other ship types often need a top-up before they set off.
+
+# Mission time ran out
+@shelf PROBLEMS
+@see Training 2.0 Your Missions
+@see Training 2.2 Bridge Display
+HOW: 1) Tap ORDERS to see which objectives are marked COMPLETED. 2) Watch Time left and the LOW TME light, which warns at 10%. 3) Do the objectives nearest to a starfort first. 4) Leave enough days to fly back and dock: the Targeter shows how long any trip takes.
+
+WHY: Orders must be completed in the time allotted, and you are expected back at a starfort at the end. A mission has to be completed successfully to count toward promotion.
+
+IF IT DOESN'T WORK: If time is nearly gone and objectives are open, load your last save from before the delay and plan a shorter route. A Practice mission is a free place to rehearse.
+
+# Symbols: Krellan ships (green)
+@shelf REFERENCE
+@see Training 2.3 Display Symbols
+HOW: Everything Krellan is green. Your escorts are a brighter green than other destroyers.
+
+Battlecruiser (your ship): a club, like the card suit.
+
+Destroyer or escort: a horseshoe (omega).
+
+Troop transport: a circle with a bar across it (theta).
+
+Supply ship: a circle with a small cross below it.
+
+Starfort: joined letters "ae".
+
+Probe: a small two-headed arrow.
+
+Torpedo: a green dot.
+
+Shields up: the symbol sits on a brown background (only when the Krellan shields indicator switch is on).
+
+WHY: Green is safe to approach, dock with or transfer to. The symbols are the same on the tactical display, the orbital display and combat control.
+
+# Symbols: Alliance ships (red)
+@shelf REFERENCE
+@see Training 2.3 Display Symbols
+HOW: Everything Alliance (UGA) is red.
+
+Heavy cruiser: a Y with two bars across its stem (yen sign).
+
+Light cruiser: a capital Y.
+
+Destroyer: a small w.
+
+Frigate: a small v.
+
+Scout: a solid triangle pointing down.
+
+Freighter: a U with two dots above it.
+
+Starliner: a heart.
+
+Starbase: a # sign.
+
+5th Fleet HQ: a double S (section sign).
+
+Orbital fort: a small sun, a circle with rays.
+
+Other UGA ship: an upside-down exclamation mark.
+
+Torpedo or mine: a small red dot.
+
+WHY: The shape tells you what you face before you are in range. Freighters and starliners are unarmed prizes; cruisers outgun you; a starbase should never be attacked carelessly.
+
+# Symbols: targets, shields and hazards
+@shelf REFERENCE
+@see Training 2.3 Display Symbols
+@see Tutorial 4: Weapons
+HOW: Colours on an enemy symbol tell you its state.
+
+Red background behind the symbol: its shields are up.
+
+Bright red symbol: you have it targeted to destroy.
+
+Yellow symbol: you have it targeted to disable.
+
+Symbol shown in reverse colours: your current phaser target.
+
+Bright red @ sign: a black hole.
+
+Yellow shaded block: an ion storm.
+
+WHY: You can board, tow or teleport to a ship only when its shields are down, so the red background is the thing to watch. Passing a black hole in hyperspace throws you off course with damage, and stopping at one destroys the ship. Ion storms blind your sensors.
+
+# Symbols: star maps and the LRS
+@shelf REFERENCE
+@see Training 2.3 Display Symbols
+@see Training 2.2 Bridge Display
+HOW: On the STARS map each star system is one character.
+
+A star *: not yet explored.
+
+A plain o: explored, no planets.
+
+An o with one mark above: one planet. Two dots above: two planets. A small roof above: three or more.
+
+WAR map: grey o unknown, green o Krellan, red o Alliance, blue o neutral.
+
+LRS dots: green Krellan ship, red Alliance ship, cyan planet, green block starfort, red block starbase, yellow block star.
+
+WHY: The marks above the o tell you at a glance which systems are worth a visit. A probe turns a * into an o without the trip.
+
+# Planet classes and technology levels
+@shelf REFERENCE
+@see Training 2.3 Display Symbols
+@see Ops 4.1 Conquering a Region
+HOW: The class letter says what kind of world it is.
+
+A: aquatic (blue). B: barren, with atmosphere (dark grey). D: desert (brown). G: gas giant (red). I: ice, frozen (white). K: Krella-like, the best to live on (green). P: poisonous atmosphere (magenta).
+
+Technology level of the natives: 0 no intelligent life, 1 primitive nomads, 2 primitive society, 3 medieval, 4 early industrial, 5 early nuclear, 6 advanced interplanetary, 7 advanced, at Krellan level or beyond.
+
+WHY: Landing parties can go to every class except G. Class K, A and D worlds are the ones the Empire wants. Natives below level 5 cannot break into a finished base.
+
+# Orbital display legend
+@shelf REFERENCE
+@see Training 2.2 Bridge Display
+HOW: The letters in the corners of the orbital display describe the planet.
+
+Shld: planet shields. Up arrow: up. Down arrow: down. Dash: none.
+
+PD: planetary defense. Y active, N inactive or none.
+
+LP: your landing party. Y present, N none, B in battle.
+
+Bs: Krellan base. Y present, N none, blinking N being built.
+
+T: treaty. Y or N.
+
+Sp: supplies on the planet. Y or N.
+
+Cls: planet class letter.
+
+TchL: technology level of the natives, 0 to 7.
+
+WHY: One look tells you whether it is safe to teleport down (Shld down, PD N), whether teams need supplies sent with them (Sp:N) and who you will meet (TchL).
+
+# Alert conditions
+@shelf REFERENCE
+@see Training 2.2 Bridge Display
+@see Training 2.4 Ship and Simulation Controls
+HOW: STATUS shows one of these.
+
+DOCKED: at a starfort or captured starbase. Energy use is lowest and supplies are not used.
+
+GREEN: no enemy present, or in hyperspace. The crew rests.
+
+ORANGE: in Alliance space with nothing in range. Shields and weapons are down; the crew slowly tires.
+
+RED: enemy ship, starbase or mines detected, or orbiting an Alliance planet. Shields up, weapons live, high energy use; the crew tires fast.
+
+WHY: With the AAS switch on, the ship moves between conditions and raises or lowers shields by itself. Staying in RED longer than needed wastes energy and wears out the crew.
+
+# Abbreviations A to Z
+@shelf REFERENCE
+@see Training 2.2 Bridge Display
+@see Training 2.4 Ship and Simulation Controls
+HOW: Short names used on the screens and in the manuals.
+
+AAS: Auto Alert Switch. Raises shields and goes to red alert by itself.
+
+CCC: Combat Control Center, the full-screen battle display (COMBAT tab).
+
+CID: Combat Information Display, the map inside the CCC.
+
+CMF: Combat Message Filter. Shows only essential messages.
+
+C&W: Caution and Warning panel, the eight alert lights.
+
+ECM: Electronic Counter Measures. Jams weapon locks, theirs and yours.
+
+EDC: Enemy Distress Call light.
+
+EHM: Emergency Hyperspace Maneuver, a risky random jump inside the system.
+
+FHQ: Fleet Headquarters.
+
+KS: Krellan ship, as in KS-9.
+
+LOS: line of sight. Phasers need it in orbit.
+
+LP: landing party.
+
+LRS: Long Range Scan, or the long range sensors.
+
+MET: Mission Elapsed Time, in days.
+
+PD: planetary defense.
+
+PLS: Primary Life Support.
+
+RST: Rest mode light.
+
+SF: starfort, as in SF-1.
+
+SIS: Ship Information System, the game's own built-in encyclopedia.
+
+SPD: Ship Performance Data, the flight recorder.
+
+SRS: Short Range Sensors.
+
+SS: star system, as in SS-12. Small "ss" on the bridge is the sideslip light.
+
+TAC: the tactical display.
+
+TB: tractor beam light.
+
+TDB: Target Designator Box, the box you move over things on a map.
+
+UGA: United Galactic Alliance, the enemy.
+
+XO: your Executive Officer, who asks most of the yes/no questions.
+
+WHY: The game was written for an 80-column text screen, so nearly every label is squeezed to a few letters. Hold R and tap a label on the touch screen to have it explained in place.
+
+# Speed, distance and time units
+@shelf REFERENCE
+@see Training 2.1 The Galactic Region
+@see Ops 1.1 Navigation Control
+HOW: What the numbers mean.
+
+Light years: distance on the STARS and WAR maps. A region is 35 wide and 15 deep.
+
+Points: distance inside a star system, which is 80 by 80. The tactical display shows 11 by 11, the LRS 40 by 40.
+
+c-factor: speed, where 1.0 is the speed of light. Sublight runs 0.1 to 0.9. Hyperspace runs 1 to 10; 8 is the safe maximum.
+
+Days: all mission time. A trip's length is shown in the Targeter before you commit.
+
+Degrees: 0 is up the map, 90 right, 180 down, 270 left.
+
+Energy units: a standard battlecruiser holds 4000.
+
+WHY: Weapon ranges are in points (phasers 5, torpedoes 10), probe range is in light years (5), and docking or orbiting needs you within 1 point.
+
+# Ranks and what each one commands
+@shelf REFERENCE
+@see Training 2.0 Your Missions
+HOW: Seven ranks, five missions (A to E) each.
+
+1 Altern: your ship only. Exploration and landing parties.
+
+2 Centurion: ship and four escorts. Ship-to-ship combat.
+
+3 Sub-Commander: ship, escorts, invasion. Advanced space combat.
+
+4 Commander: ship, escorts, invasion. Planetary invasions.
+
+5 Prefect: ship, escorts, invasions. Advanced planetary invasions.
+
+6 Sub-Admiral: unrestricted command. Strategic command.
+
+7 Admiral: unrestricted command. Advanced strategic command.
+
+After mission 7-E: Imperial Tribune, free to replay any mission as practice.
+
+WHY: Each level teaches one skill before the next is added, and the number of Alliance starbases in a region grows from one at level 1 to five at level 7.
