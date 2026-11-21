@@ -2,8 +2,8 @@ checklist: Travel to a planet in this system
 tut1_03_bridge_docked_main_menu: step 1/8 Open the system map
 tut1_04_sysmap_start: step 2/8 Tap the planet to put the target box on it
 tut1_05_sysmap_tdb_on_planet: step 2/8 Tap the planet to put the target box on it
-tut1_06_targeter: step 4/8 Set a sublight speed, 0.5 to 0.9
-tut1_07_targeter_speed05: step 4/8 Set a sublight speed, 0.5 to 0.9
+tut1_06_targeter: step 4/8 Speed 0.9 is offered; Circle Pad up or down changes it
+tut1_07_targeter_speed05: step 4/8 Speed 0.9 is offered; Circle Pad up or down changes it
 tut1_08_target_entered: step 6/8 Go back to the bridge
 tut1_10_f9_engines_start: step 8/8 The engines stop by themselves on arrival
 tut1_13_sysmap_undocked: step 8/8 The engines stop by themselves on arrival

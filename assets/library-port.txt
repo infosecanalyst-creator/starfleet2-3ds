@@ -9,7 +9,7 @@ WHY: This is a simulation, not an arcade game. The ship does what you order, in 
 @shelf START
 @see Training 3.5 Test Flights
 @see Tutorial 1: Basic Navigation
-HOW: 1) At sign-on choose Practice. 2) Read the orders and tap CONTINUE. 3) On the bridge tap LAUNCH. 4) Tap SYSTEM for the map of this star system. 5) Tap a planet, tap Targeter in the menu row, set a speed with SPD+, press A. 6) Tap ENGINES and watch the ship go. 7) Press L to freeze whenever you want to think.
+HOW: 1) At sign-on tap Practice (demo) mission, answer YES, tap SELECT on the mission chart, then tap Start a new mission. 2) Tap CONTINUE through the orders and the first messages; answer YES to the starfort's test message; tap EXIT to close the Commander's Log. 3) On the bridge tap LAUNCH. 4) Tap SYSTEM for the map of this star system. 5) Tap a planet, tap TARGETER and press A to accept the speed it offers. 6) Press B for the bridge, then tap ENGINES and watch the ship go. 7) Press L to freeze whenever you want to think. Stuck at any point? Press SELECT: it says what to do next.
 
 WHY: A Practice mission does not count on your service record, so nothing you break matters. Flying to one planet teaches the three things every mission needs: the map, the Targeter and the engines.
 
@@ -248,7 +248,7 @@ IF IT DOESN'T WORK: Check that the game is not frozen (press L), that a sublight
 STEP SYSTEM | Open the system map | MAP OF STAR SYSTEM
 STEP - | Tap the planet to put the target box on it | Planet
 STEP - | Tap Targeter in the menu row | Target #
-STEP SPD+ | Set a sublight speed, 0.5 to 0.9 | -
+STEP - | Speed 0.9 is offered; Circle Pad up or down changes it | -
 STEP A | Press A to enter the target | ENTERED
 STEP B | Go back to the bridge | -
 STEP ENGINES | Start the engines; the ship turns and goes | Engines engaged

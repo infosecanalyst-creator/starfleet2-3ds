@@ -994,8 +994,8 @@ static void bridge_top(Surf& s, const TextScreen& ts) {
     cells_in(s, ts, 53, 15, 58, 16, F6x12, in.x0 + 114, top + 5 * lh, in.x1, top + 7 * lh, lh);
   }
   if (!lefty_loaded) lefty_load();
-  const char* hint = lefty_on ? "D-Lt/Up fire  L freeze  R mode  R+tap: explain  START menu"
-                              : "X/Y fire  L freeze  R mode  R+tap: explain  START menu";
+  const char* hint = lefty_on ? "D-Lt/Up fire  L freeze  R+tap: explain  SELECT: what now?"
+                              : "X/Y fire  L freeze  R+tap: explain  SELECT: what now?";
   // every other 8 s the strip shows the mission goal instead (plan item 4), when it fits
   std::string goal_line = mis_goal.empty() ? "" : "Goal: " + mis_goal;
   const Font* hf = &F6x12;
