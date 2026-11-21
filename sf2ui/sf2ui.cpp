@@ -1584,12 +1584,14 @@ static bool find_menu(const TextScreen& ts, GLayout& g) {
       uint8_t k = ts.ch[r][c];
       if (!is_key_char(k)) continue;
       if (c > 0 && ts.ch[r][c - 1] != ' ' && !is_box(ts.ch[r][c - 1])) continue;
-      if (ts.ch[r][c + 1] != ' ' || ts.ch[r][c + 2] != ' ' || !is_alpha(ts.ch[r][c + 3])) continue;
+      // ("1* Basic navigation": the tutorials menu stars the ones already run)
+      if ((ts.ch[r][c + 1] != ' ' && ts.ch[r][c + 1] != '*') || ts.ch[r][c + 2] != ' ' || !is_alpha(ts.ch[r][c + 3])) continue;
       int e = c + 3;
       while (e + 1 < 80 && !is_box(ts.ch[r][e + 1]) && !(ts.ch[r][e + 1] == ' ' && (e + 2 >= 80 || ts.ch[r][e + 2] == ' '))) e++;
       std::string lab = trim(row_str(ts, r, c + 3, e + 1));
       if (lab.size() < 3) continue;
       GLine l; l.row = r; l.col = c; l.end = e; l.key = (char)k; l.label = lab;
+      if (ts.ch[r][c + 1] == '*') l.label += " (done)";
       l.sel = ((ts.at[r][c + 3] >> 4) & 7) == 7;
       all.push_back(l);
       c = e;
