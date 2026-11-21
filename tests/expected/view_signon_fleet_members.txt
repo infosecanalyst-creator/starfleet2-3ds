@@ -1,0 +1,7 @@
+kind: plain
+hint: Tap one of the keys below
+buttons: [PG UP] [] [PG DN] [] [SPACE] [] [] [,] [] [STARS (grey)] [SYSTEM (grey)] [WAR (grey)] [COMBAT (grey)] [FLEET (grey)] [ORDERS (grey)] [LOG (grey)]
+explain cards: 16/16
+quick reference: QUICK REFERENCE
+start menu: [RESUME] [MISSION] [MANUAL] [COACH: ON] [GAME SETTINGS (grey)] [EXIT GAME (grey)]
+mission card: Reconnaissance Mission into Region #1-A | Discover at least one mineral-rich planet in UGA or neutral space. INCOMPLETE- no suitable planets discovered. You have 10 days (Time left on the top screen). Orders again: ORDERS on the bridge, or START > MISSION.

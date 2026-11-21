@@ -331,6 +331,37 @@ static bool pass_waiting(const TextScreen& ts) {
 }
 
 // ------------------------------------------------------------------ widgets
+// A message box the game draws over the screen (double-line frame, plain top and bottom edges).
+// Found on every frame; its cells are left blank in the panels (they would show slices of it)
+// and the message goes on a card on the top screen instead.
+static int pop_r0 = -1, pop_c0, pop_r1, pop_c1;
+static std::string pop_text;
+static void find_popup(const TextScreen& ts) {
+  pop_r0 = -1; pop_text.clear();
+  if (!ts.text_mode) return;
+  for (int r = 1; r <= 21; r++)
+    for (int c = 0; c < 66; c++) {
+      if (ts.ch[r][c] != 0xC9) continue;
+      int c2 = c + 1; while (c2 < 80 && ts.ch[r][c2] == 0xCD) c2++;
+      if (c2 >= 80 || ts.ch[r][c2] != 0xBB || c2 - c < 12) continue;
+      for (int r2 = r + 2; r2 <= r + 8 && r2 <= 23; r2++) {
+        if (ts.ch[r2][c] != 0xC8 || ts.ch[r2][c2] != 0xBC) continue;
+        bool ok = true;
+        for (int k = c + 1; k < c2; k++) if (ts.ch[r2][k] != 0xCD) ok = false;
+        for (int k = r + 1; k < r2; k++) if (ts.ch[k][c] != 0xBA || ts.ch[k][c2] != 0xBA) ok = false;
+        if (!ok) break;
+        pop_r0 = r; pop_c0 = c; pop_r1 = r2; pop_c1 = c2;
+        for (int k = r + 1; k < r2; k++) {
+          std::string l;
+          for (int x = c + 1; x < c2; x++) l += (ts.ch[k][x] >= 32 && ts.ch[k][x] < 127) ? (char)ts.ch[k][x] : ' ';
+          size_t a = l.find_first_not_of(' '), b = l.find_last_not_of(' ');
+          if (a != std::string::npos) { if (!pop_text.empty()) pop_text += ' '; pop_text += l.substr(a, b - a + 1); }
+        }
+        return;
+      }
+    }
+}
+static bool in_popup(int r, int c) { return pop_r0 >= 0 && r >= pop_r0 && r <= pop_r1 && c >= pop_c0 && c <= pop_c1; }
 static void cells(Surf& s, const TextScreen& ts, int c0, int r0, int c1, int r1, const Font& f,
                   int x, int y, int cw, int lh) {
   for (int r = r0; r <= r1; r++)
@@ -338,7 +369,9 @@ static void cells(Surf& s, const TextScreen& ts, int c0, int r0, int c1, int r1,
       uint8_t a = ts.at[r][c];
       uint16_t bg = VGA[(a >> 4) & 15];
       uint16_t fg = ((a >> 4) & 15) == (a & 15) ? VGA[a & 15] : READ_FG[a & 15];
-      draw_cell(s, x + (c - c0) * cw, y + (r - r0) * lh, cw, lh, ts.ch[r][c], fg, bg, f);
+      // a row the game's message box lies over is left blank in this panel (the card has the message)
+      bool hid = pop_r0 >= 0 && r >= pop_r0 && r <= pop_r1 && c1 >= pop_c0 && c0 <= pop_c1 && is_bridge(ts);
+      draw_cell(s, x + (c - c0) * cw, y + (r - r0) * lh, cw, lh, hid ? ' ' : ts.ch[r][c], fg, hid ? VGA[0] : bg, f);
     }
 }
 // Cells centred in an inner box with the most line spacing that fits (font height .. +3).
@@ -352,6 +385,7 @@ static void cells_in(Surf& s, const TextScreen& ts, int c0, int r0, int c1, int 
   snprintf(where, sizeof where, "panel cols %d-%d rows %d-%d", c0, c1, r0, r1);
   if (w > ix1 - ix0 || hgt > iy1 - iy0) fit_problem(std::string(where) + " is bigger than its tile");
   for (int r = r0; r <= r1; r++) {      // a letter/digit on both sides of an edge = a sliced word
+    if (in_popup(r, c0) || in_popup(r, c1)) continue;   // a message box lies over this edge
     if (c0 > 0 && isalnum(ts.ch[r][c0]) && isalnum(ts.ch[r][c0 - 1])) fit_problem(std::string(where) + " cuts a word at its left edge");
     if (c1 < 79 && isalnum(ts.ch[r][c1]) && isalnum(ts.ch[r][c1 + 1])) fit_problem(std::string(where) + " cuts a word at its right edge");
   }
@@ -861,7 +895,7 @@ static void bridge_top(Surf& s, const TextScreen& ts) {
     else cells_in(s, ts, 42, 14, 50, 16, F5x9, in.x0, in.y0 + 4, in.x1, in.y0 + 4 + 36, 12);
     s.hline(in.x0, in.x1, in.y0 + 46, FRAME);
     cells_in(s, ts, 1, 1, 3, 1, F6x12, in.x0, in.y0 + 52, in.x1, in.y0 + 64, 12);
-    cells_in(s, ts, 7, 1, 10, 1, F6x12, in.x0, in.y0 + 70, in.x1, in.y0 + 82, 12);
+    cells_in(s, ts, 7, 1, 12, 1, F6x12, in.x0, in.y0 + 70, in.x1, in.y0 + 82, 12);
   }
   in = tile(s, 238, 108, 400, 224, "DATA");
   {
@@ -937,7 +971,7 @@ static void bridge_top_narrow(Surf& s, const TextScreen& ts) {
   in = tile(s, 132, 184, 212, TOP_H, 0);
   cells_in(s, ts, 42, 14, 50, 16, F5x9, in.x0, in.y0, in.x1, in.y1 - 12, 10);
   cells_in(s, ts, 1, 1, 3, 1, F5x9, in.x0, in.y1 - 11, in.x0 + 30, in.y1);
-  cells_in(s, ts, 7, 1, 10, 1, F5x9, in.x0 + 34, in.y1 - 11, in.x1, in.y1);
+  cells_in(s, ts, 7, 1, 12, 1, F5x9, in.x0 + 34, in.y1 - 11, in.x1, in.y1);
 
   in = tile(s, 212, 98, BOT_W, TOP_H, "DATA");
   int dsep = in.y1 - 23;
@@ -2186,6 +2220,7 @@ static void fire(const Act& a) {
 }
 
 Redraw frame(const TextScreen& ts, uint16_t* top, uint16_t* bottom) {
+  find_popup(ts);
   pump_keys();
   uint32_t t = now();
   Redraw rd = {false, false, 0, BOT_H};
@@ -2373,6 +2408,18 @@ Redraw frame(const TextScreen& ts, uint16_t* top, uint16_t* bottom) {
     rd.top = draw_top; rd.bottom = true;
   }
   if (ts.text_mode && !manual_open && !pause_open) check_refusals(ts, t);
+  {   // the game's message box, in full, on the top screen (the bridge panels can only show slices)
+    static std::string shown;
+    if (pop_text != shown && !manual_open && !pause_open) {
+      shown = pop_text;
+      if (!pop_text.empty() && is_bridge(ts)) {
+        std::string m = pop_text;
+        if (m.find("NOT AVAILABLE IN TUTORIALS") != std::string::npos) m += ". Tutorials switch this off; it works in a mission or in Practice.";
+        else if (m.find("NO INFORMATION ON RECORD") != std::string::npos) m += ". The ship's information system has no entry for that word; pick a topic from its index.";
+        explain("THE GAME SAYS", m.c_str()); explain_until = t + 8000;
+      }
+    }
+  }
   if (!manual_open && !pause_open) { int was = chk_step, ws = chk_sec; chk_update(ts); if (was != chk_step || ws != chk_sec) dirty(); }
   if (refusal_button && (int32_t)(t - refusal_until) >= 0) { refusal_button = 0; dirty(); }
   ring_active = false;

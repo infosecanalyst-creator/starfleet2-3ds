@@ -69,6 +69,15 @@
 
 static const Refusal REFUSALS[] = {
   // ---------------------------------------------------------------- moving the ship
+  // seen in the real game (harness, Nov 21 2026): tests/screens/refuse_*
+  {"Engines already on", "THE ENGINES ARE ALREADY RUNNING", "HOW: nothing to do; change speed with SPD+ and SPD-, or tap STOP. WHY: the ship is already under way.", "SPD+"},
+  {"Unable to establish orbit", "WHY CAN'T WE ORBIT?", "HOW: tap SYSTEM, pick the planet as your target and fly there; the helm offers to orbit when you arrive. WHY: the ship must be right next to the planet.", "SYSTEM"},
+  {"Unable to use while docked", "WHY CAN'T I USE THIS NOW?", "HOW: tap LAUNCH to leave the starfort, then give the order again. WHY: this order does not work while the ship is docked.", "LAUNCH"},
+  {"Torpedoes not targeted", "WHY WON'T THE TORPEDOES FIRE?", "HOW: move until the enemy is on the tactical display, or tap CMB, Weapons and pick a target by hand. WHY: the torpedoes have no target.", "CMB"},
+  {"No valid target within range", "NOTHING TO BOARD", "HOW: fly right next to a crippled enemy ship, then repeat the order. WHY: a boarding party needs a target ship within teleporter range.", "SYSTEM"},
+  {"our ship, Excellency", "YOU SCANNED YOUR OWN SHIP", "HOW: move the target box onto another ship or planet, then scan again. WHY: the target box was on your own ship.", 0},
+  {"captives on board", "NO ONE TO INTERROGATE", "HOW: capture prisoners first (boarding parties and landing parties bring them back). WHY: there are no captives on the ship.", 0},
+  {"not in a rest state", "REST STATE", "HOW: answer YES to put the crew at rest, NO to leave things as they are. WHY: the crew is on normal duty; rest speeds recovery but slows reactions.", 0},
   {"Velocity must be set", "WHY WON'T THE SHIP MOVE?", "HOW: tap SPD+ a few times (or LAUNCH / ENGINES, which set a speed for you), then start the engines. WHY: the helm will not start the engines while the set speed is 0.", "SPD+"},  // [T]
   {"Sublight speed needs to be set", "WHY WON'T THE SHIP MOVE?", "HOW: tap SPD+ to set a sublight speed (0.6 or more if you want to jump to another star), then try again. WHY: this order needs a normal-space speed and the set speed is 0.", "SPD+"},  // [D2]
   {"Engines must be on", "WHY IS THAT ORDER REFUSED?", "HOW: tap ENGINES (set a speed with SPD+ first if asked), then give the order again. WHY: this order only works while the engines are running.", "ENGINES"},  // [T]

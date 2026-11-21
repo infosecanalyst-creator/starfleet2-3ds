@@ -1,0 +1,7 @@
+kind: plain
+hint: X/Y fire, Circle Pad steers, B backs out
+buttons: [PG UP] [] [PG DN] [] [SPACE] [] [] [TARGETER] [TARGETS] [DATABASE] [LRS BOX] [STRG CMD] [STARS] [SYSTEM] [WAR] [COMBAT] [FLEET] [ORDERS] [LOG]
+explain cards: 19/19
+quick reference: QUICK REFERENCE: THIS VIEW
+start menu: [RESUME] [MISSION] [MANUAL] [COACH: ON] [GAME SETTINGS (grey)] [EXIT GAME (grey)]
+mission card: Reconnaissance Mission into Region #1-A | Discover at least one mineral-rich planet in UGA or neutral space. You have 10 days (Time left on the top screen). Orders again: ORDERS on the bridge, or START > MISSION.

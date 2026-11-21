@@ -1,0 +1,7 @@
+kind: map
+hint: Tap a star or ship to aim, tap it again to select
+buttons: [SYSTEM MAP] [NAV MAP] [WAR MAP] [HELM] [STARS] [SYSTEM] [WAR] [COMBAT] [FLEET] [ORDERS] [LOG]
+explain cards: 11/11
+quick reference: QUICK REFERENCE: THIS VIEW
+start menu: [RESUME] [MISSION] [MANUAL] [COACH: ON] [GAME SETTINGS (grey)] [EXIT GAME (grey)]
+mission card: Reconnaissance Mission into Region #1-A | Discover at least one mineral-rich planet in UGA or neutral space. You have 10 days (Time left on the top screen). Orders again: ORDERS on the bridge, or START > MISSION.

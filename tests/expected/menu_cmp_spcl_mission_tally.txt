@@ -1,0 +1,7 @@
+kind: reader
+hint: Drag or sticks to scroll ³ A: Enter ³ B: back
+buttons: [PG UP] [] [] [] [] [PG DN] [SPACE] [PERSONAL] [KRELLAN] [VALUES] [ORDERS] [STARS (grey)] [SYSTEM (grey)] [WAR (grey)] [COMBAT (grey)] [FLEET (grey)] [ORDERS (grey)] [LOG (grey)]
+explain cards: 18/18
+quick reference: QUICK REFERENCE
+start menu: [RESUME] [MISSION] [MANUAL] [COACH: ON] [GAME SETTINGS (grey)] [EXIT GAME (grey)]
+mission card: Reconnaissance Mission into Region #1-A | Discover at least one mineral-rich planet in UGA or neutral space. You have 10 days (Time left on the top screen). Orders again: ORDERS on the bridge, or START > MISSION.
