@@ -1,0 +1,40 @@
+checklist: Tutorial 1, step by step
+tut1_03_bridge_docked_main_menu: step 1/32 Open the system map
+tut1_04_sysmap_start: step 2/32 Tap planet A, right of the yellow star
+tut1_05_sysmap_tdb_on_planet: step 2/32 Tap planet A, right of the yellow star
+tut1_06_targeter: step 4/32 Tap SPD- until Velocity reads 0.5
+tut1_07_targeter_speed05: step 5/32 Tap ENTER to load the target
+tut1_08_target_entered: step 6/32 Press B for the bridge
+tut1_10_f9_engines_start: step 6/32 Press B for the bridge
+tut1_13_sysmap_undocked: step 8/32 Wait until the helm reports Target reached
+tut1_15_bridge_underway: step 8/32 Wait until the helm reports Target reached
+tut1_16_target_reached: step 9/32 Establish orbit? Answer NO this time
+tut1_17_establish_orbit_prompt: step 9/32 Establish orbit? Answer NO this time
+tut1_20_manual_f9: step 12/32 Tap the tactical display to turn the ship
+tut1_21_sysmap_manual_wrong_way: step 12/32 Tap the tactical display to turn the ship
+tut1_22_sysmap_manual_steered: step 12/32 Tap the tactical display to turn the ship
+tut1_23_bridge_manual_course: step 12/32 Tap the tactical display to turn the ship
+tut1_24_f10_emergency_stop: step 14/32 SYSTEM, tap planet A, TARGETER, ENTER
+tut1_25_orbit_entered: step 17/32 The planet offers supplies: YES or NO
+tut1_26_orbit_resupply_prompt: step 17/32 The planet offers supplies: YES or NO
+tut1_28_bridge_in_orbit: step 18/32 Open the star map
+tut1_29_navmap: step 19/32 Tap the star above yours, PROBES, then LAUNCH
+tut1_31_probe_display: step 20/32 Press A to launch the probe
+tut1_33_probe_report_popup: step 20/32 Press A to launch the probe
+tut1_34_navmap_tdb_ss33: step 20/32 Press A to launch the probe
+tut1_35_hyper_targeter: step 22/32 Press A to accept hyperspace speed 8
+tut1_37_target_system_map: step 23/32 Its map opens: tap near an edge, press A
+tut1_41_navmap_helm_jump_report: step 25/32 The ship runs to the edge, jumps and arrives
+tut1_42_bridge_to_system_edge: step 25/32 The ship runs to the edge, jumps and arrives
+tut1_43_bridge_hyperspace: step 25/32 The ship runs to the edge, jumps and arrives
+tut1_44_emerged_target2_loaded: step 26/32 SYSTEM, tap the planet, TARGETER, ENTER
+tut1_46_sysmap_ss33: step 26/32 SYSTEM, tap the planet, TARGETER, ENTER
+tut1_48_orbit_new_planet: step 27/32 Press B, ENGINES; answer YES to orbit
+tut1_49_scanning_planet: step 27/32 Press B, ENGINES; answer YES to orbit
+tut1_50_short_range_scan_blocking: step 27/32 Press B, ENGINES; answer YES to orbit
+tut1_51_landing_parties_prompt: step 27/32 Press B, ENGINES; answer YES to orbit
+tut1_53_warmap: step 27/32 Press B, ENGINES; answer YES to orbit
+tut1_56_target_sysmap_starfort: step 30/32 TARGETER, A; on its map tap the starfort, A
+tut1_58_shall_we_dock_prompt: step 32/32 Answer YES to dock. Tutorial 1 is done
+tut1_61_quit_prompt: step 32/32 Answer YES to dock. Tutorial 1 is done
+tut1_62_after_quit_yes: step 32/32 Answer YES to dock. Tutorial 1 is done

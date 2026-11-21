@@ -227,6 +227,46 @@ WHY: The condition decides what works. Phasers only fire in condition RED, and t
 
 IF IT DOESN'T WORK: The Ops Manual also mentions a condition YELLOW once without explaining it. Treat it like ORANGE: not yet ready to fire.
 
+# Tutorial 1, step by step
+@shelf PROCEDURES
+@see Tutorial 1: Basic Navigation
+STEP SYSTEM | Open the system map | MAP OF STAR SYSTEM
+STEP - | Tap planet A, right of the yellow star | Planet  
+STEP TARGETER | Tap TARGETER | Target #
+STEP SPD- | Tap SPD- until Velocity reads 0.5 | Velocity: 0.5
+STEP ENTER | Tap ENTER to load the target | ENTERED
+STEP B | Press B for the bridge | -
+STEP LAUNCH | Tap LAUNCH: the ship undocks and flies there | We have undocked
+STEP - | Wait until the helm reports Target reached | Target reached
+STEP NO | Establish orbit? Answer NO this time | -
+STEP SPD+ | Now fly by hand: tap SPD+ three times | -
+STEP ENGINES | Tap ENGINES | Ship underway
+STEP - | Tap the tactical display to turn the ship | -
+STEP STOP | Tap STOP | stop procedure
+STEP SYSTEM | SYSTEM, tap planet A, TARGETER, ENTER | ENTERED
+STEP B | Press B, then tap ENGINES | Engines engaged
+STEP YES | Establish orbit? This time answer YES | Entered orbit
+STEP YES | The planet offers supplies: YES or NO | Just send us
+STEP STARS | Open the star map | ID/class
+STEP - | Tap the star above yours, PROBES, then LAUNCH | PROBES CONTROL
+STEP A | Press A to launch the probe | -
+STEP - | Tap star SS-33 (up and left), then TARGETER | Max. Vel
+STEP A | Press A to accept hyperspace speed 8 | Select target
+STEP - | Its map opens: tap near an edge, press A | -
+STEP B | Press B, then tap ENGINES | Engines engaged
+STEP - | The ship runs to the edge, jumps and arrives | Target bearing
+STEP SYSTEM | SYSTEM, tap the planet, TARGETER, ENTER | ENTERED
+STEP B | Press B, ENGINES; answer YES to orbit | Entered orbit
+STEP A | Read the scan, press A; landing parties: NO | No landing parties
+STEP WAR | Home: tap WAR, then tap your starfort | Starfort
+STEP - | TARGETER, A; on its map tap the starfort, A | -
+STEP B | Press B, then ENGINES, and wait | Shall we dock
+STEP YES | Answer YES to dock. Tutorial 1 is done | Docking procedure complete
+
+WHY: This is the game's own first tutorial, played with this port's buttons. It teaches the three things every mission needs: the maps, the Targeter and the engines. Nothing here counts on your service record.
+
+IF IT DOESN'T WORK: Press SELECT at any time: it says what to do next. A step that does not tick by itself is ticked when you do the one after it. To start again, leave with START and pick Tutorials, 1.
+
 # Launch from a starfort
 @shelf PROCEDURES
 @see Tutorial 1: Basic Navigation

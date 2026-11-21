@@ -106,6 +106,7 @@ struct Step { std::string btn, what, done; };   // a checklist step (PROCEDURES 
 struct Section { std::string title; std::vector<std::string> paras, lines; int wrap = 0; int shelf = 5; std::vector<Step> steps; };
 // The checklist being followed (learning design step 3): shown on the top screen while playing;
 // steps tick themselves from what the game shows or which button was pressed.
+static int tut_num = 0; static bool tut_started = false;   // a tutorial chosen on the game's Tutorials menu (0 = none)
 static int chk_sec = -1, chk_step = 0; static bool chk_had = false; static uint32_t chk_since = 0;
 static std::string chk_pressed;         // label of the last touch button / hardware button pressed
 static std::vector<Section> manual;
@@ -724,6 +725,8 @@ static const char* context_hint(const TextScreen& ts) {
   if (glay_kind() == 1) return menu_scrolls ? "Tap an item; drag or tap the arrows for more" : "Tap an item to choose it";
   if (glay_kind() == 2) return "Tap a star or ship to aim, tap it again to select";
   if (row_mode == R_ANYKEY) return lefty_on ? "Read the screen, then tap CONTINUE (or D-Rt)" : "Read the screen, then tap CONTINUE (or A)";
+  { bool blank = true; for (int r = 0; r < 25 && blank; r++) for (int c = 0; c < 80; c++) if (ts.ch[r][c] > ' ' && ts.ch[r][c] != 0xFF) { blank = false; break; }
+    if (blank) return "Loading..."; }
   if (screen_has(ts, "COMMANDER'S LOG", 1, 1)) return lefty_on ? "Your ship's diary: read it, then EXIT (or D-Dn)" : "Your ship's diary: read it, then EXIT (or B)";
   if (in_flight(ts)) return lefty_on ? "D-Lt/Up fire, Circle Pad steers, D-Dn backs out" : "X/Y fire, Circle Pad steers, B backs out";
   if (reader_on) return lefty_on ? "Drag or sticks to scroll \xb3 D-Rt: Enter \xb3 D-Dn: back" : "Drag or sticks to scroll \xb3 A: Enter \xb3 B: back";
@@ -1355,6 +1358,12 @@ static std::string advise(const TextScreen& ts, const char** button) {
   std::vector<std::string> say_list;
   auto add = [&](const std::string& t, const char* b) { if (say_list.empty() && b) *button = b; say_list.push_back(t); };
   if (!ts.text_mode) return "Wait for the picture to finish, or press A.";
+  if (chk_sec >= 0 && chk_step < (int)manual[chk_sec].steps.size()) {       // a checklist is being followed: its step is the answer
+    const Step& stp = manual[chk_sec].steps[chk_step];
+    static std::string keep; keep = stp.btn;
+    if (!stp.btn.empty() && stp.btn != "A" && stp.btn != "B") *button = keep.c_str();
+    return manual[chk_sec].title + ", step " + std::to_string(chk_step + 1) + " of " + std::to_string(manual[chk_sec].steps.size()) + ": " + stp.what + ". (START > MANUAL has the whole list.)";
+  }
   if (is_bridge(ts)) {
     Situation st = bridge_situation(ts);
     std::string prompt = trim(row_str(ts, 24, 0, 24));
@@ -1383,7 +1392,7 @@ static std::string advise(const TextScreen& ts, const char** button) {
     if (energy >= 0 && energy < 25) add("Energy is low: slow down (SPD-) or go back to a starfort.", "SPD-");
     if (has_left && left > 0 && left < 1.5f && st != SIT_DOCKED) add("Under 1.5 days left: STARFORT takes you home before time runs out.", "STARFORT");
     if (st == SIT_DOCKED) {
-      if (mis_goal.empty()) add("Read your orders first: tap ORDERS.", "ORDERS");
+      if (mis_goal.empty() && tut_num == 0) add("Read your orders first: tap ORDERS.", "ORDERS");
       add("Tap LAUNCH to leave the starfort.", "LAUNCH");
       add("Then SYSTEM shows the planets here; STARS shows other star systems.", 0);
     } else if (st == SIT_ORBIT || mode.find("ORBIT") != std::string::npos) {
@@ -1437,6 +1446,7 @@ static const char* COACH_TEXT[CS_COUNT] = {
   "You are under way. Tap the tactical display to steer, SPD+/SPD- for speed. Tap SYSTEM to see the planets nearby; STARFORT flies you home.",
   "Red alert! SHLD+ raises the shields, X fires phasers, Y torpedoes, ECM jams their aim. FREEZE pauses while you think.",
   "Planets, ships and bases in this star system. Tap one to aim at it, tap it again to pick it. B goes back to the bridge."};
+static int coach_card = -1;            // the coach step whose card is up (-1: none)
 static const char* COACH_BUTTON[CS_COUNT] = {"Practice (demo) mission", "CONTINUE", "LAUNCH", "SYSTEM", "SHLD+", 0};
 static int coach_step(const TextScreen& ts) {
   if (!ts.text_mode) return -1;
@@ -2337,6 +2347,7 @@ static void typed_enter() {
 static void fire(const Act& a) {
   switch (a.kind) {
     case A_KEY:
+      if (last.text_mode && screen_has(last, "Press number of desired tutorial")) for (int i = 1; i <= 8; i++) if (a.key == key_for_char((char)('0' + i))) tut_num = i;
       if (a.key != K_NONE) press(a.key, a.mods);
       if (a.key == K_ENTER) typed_enter();
       busy_since = now();
@@ -2679,18 +2690,25 @@ Redraw frame(const TextScreen& ts, uint16_t* top, uint16_t* bottom) {
       }
     }
   }
+  if (ts.text_mode && screen_has(ts, "SIGN-ON OPTIONS")) { tut_num = 0; tut_started = false; }
+  if (tut_num == 1 && !tut_started && ts.text_mode && is_bridge(ts)) {      // Tutorial 1: its checklist follows by itself
+    tut_started = true;
+    for (size_t i = 0; i < manual.size(); i++) if (manual[i].title == "Tutorial 1, step by step" && !manual[i].steps.empty()) { chk_sec = (int)i; chk_step = 0; chk_begin_step(ts); dirty(); }
+  }
   if (!manual_open && !pause_open) { int was = chk_step, ws = chk_sec; chk_update(ts); if (was != chk_step || ws != chk_sec) dirty(); }
   if (refusal_button && (int32_t)(t - refusal_until) >= 0) { refusal_button = 0; dirty(); }
   ring_active = false;
   if (refusal_button) for (auto& b : btns) if (b.label == refusal_button) { b.coach = true; ring_active = true; }
   if (advise_button && (int32_t)(t - advise_until) >= 0) { advise_button = 0; dirty(); }
   if (advise_button && !pause_open && !manual_open) for (auto& b : btns) if (b.label == advise_button) { b.coach = true; ring_active = true; }
+  if (coach_card >= 0 && (!explain_until || explain_title != COACH_TITLE[coach_card])) coach_card = -1;
+  if (coach_card >= 0 && coach_step(ts) != coach_card) { coach_card = -1; explain_until = 0; dirty(); }   // its moment has passed
   if (coach_on && !manual_open && !pause_open && !kb_open) {
     int cs = coach_step(ts);
     if (cs >= 0) {
-      if (!(coach_seen & (1 << cs)) && !mis_show_pending) {
+      if (!(coach_seen & (1 << cs)) && !mis_show_pending && chk_sec < 0) {
         coach_seen |= 1 << cs;
-        explain(COACH_TITLE[cs], COACH_TEXT[cs]); explain_until = t + 9000;
+        explain(COACH_TITLE[cs], COACH_TEXT[cs]); explain_until = t + 9000; coach_card = cs;
         if (!draw_top) dirty();     // the next frame redraws the top with the card
       }
       // While the game waits for an answer or a key on the bridge, that is the next thing to tap
