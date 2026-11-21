@@ -1,7 +1,7 @@
 kind: bridge
-hint: Docked: LAUNCH leaves the starfort
-buttons: [PHASERS] [TORPS] [SHLD+] [SHLD-] [SPD+] [SPD-] [LAUNCH] [ORDERS] [MSN TALLY] [SAVE] [CAREER] [MORE] [STARS] [SYSTEM] [WAR] [COMBAT] [FLEET] [ORDERS] [LOG]
-explain cards: 19/19
+hint: Tap YES or NO
+buttons: [PHASERS] [TORPS] [SHLD+] [SHLD-] [SPD+] [SPD-] [LAUNCH] [ORDERS] [YES] [NO] [STARS] [SYSTEM] [WAR] [COMBAT] [FLEET] [ORDERS] [LOG]
+explain cards: 17/17
 quick reference: QUICK REFERENCE: BRIDGE
 start menu: [RESUME] [WHAT NOW?] [MANUAL] [COACH: ON] [SAVE] [GAME SETTINGS (grey)] [EXIT GAME (grey)]
 what now: Goal: Discover at least one mineral-rich planet in UGA or neutral space. The game asks: Do you want to stop? Answer YES or NO below.

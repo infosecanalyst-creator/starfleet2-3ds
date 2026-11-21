@@ -4,4 +4,4 @@ buttons: [SPACE FORCES] [LEGIONS] [LOSSES] [STARS] [SYSTEM] [WAR] [COMBAT] [FLEE
 explain cards: 10/10
 quick reference: QUICK REFERENCE: THIS VIEW
 start menu: [RESUME] [WHAT NOW?] [MANUAL] [COACH: ON] [SAVE (grey)] [GAME SETTINGS (grey)] [EXIT GAME (grey)]
-what now: Goal: Discover at least one mineral-rich planet in UGA or neutral space. 1) Tap a star to put the target box on it, then TARGETER and ENTER. 2) B goes back to the bridge. [ring TARGETER]
+what now: Goal: Discover at least one mineral-rich planet in UGA or neutral space. A window or submenu is open on this map: use the buttons below, or B to close it.

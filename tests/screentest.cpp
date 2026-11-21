@@ -77,7 +77,8 @@ static std::string report(const std::string& name, const TextScreen& ts, const s
   o << "kind: " << kind_name(ts) << "\n";
   if (ts.text_mode) o << "hint: " << context_hint(ts) << "\n";
   o << "buttons:";
-  for (auto& b : btns) o << " [" << b.label << (b.off ? " (grey)" : "") << "]";
+  std::vector<std::string> screen_btns;
+  for (auto& b : btns) { o << " [" << b.label << (b.off ? " (grey)" : "") << "]"; if (!b.off) screen_btns.push_back(b.label); }
   o << "\n";
   // Explain mode (hold R + tap): every button gets a card; each card must fit the top screen
   if (ts.text_mode) {
@@ -104,6 +105,11 @@ static std::string report(const std::string& name, const TextScreen& ts, const s
       touch((b.x0 + b.x1) / 2, (b.y0 + b.y1) / 2, true); clock_ms += 40; frame(ts, top, bot);
       touch((b.x0 + b.x1) / 2, (b.y0 + b.y1) / 2, false); clock_ms += 40; frame(ts, top, bot);
       o << "what now: " << explain_text << (advise_button ? std::string(" [ring ") + advise_button + "]" : std::string()) << "\n";
+      if (advise_button) {      // the button it points at must be on this screen
+        clock_ms += 40; frame(ts, top, bot);
+        bool there = false; for (auto& x : btns) if (!x.off && x.label == advise_button) there = true;
+        if (!there) o << "FIT: What now? rings " << advise_button << ", which is not on this screen\n";
+      }
       advise_button = 0;
       break;
     }

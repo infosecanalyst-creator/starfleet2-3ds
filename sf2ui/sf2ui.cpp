@@ -793,6 +793,10 @@ static void bottom_rows(Surf& s, const TextScreen& ts) {
   std::vector<MenuItem> items = parse_menu(ts, prompt);
 
   bool yesno = (prompt.find('?') != std::string::npos && items.empty()) || cursor_question(ts);
+  // On the bridge the helm's questions ("Establish orbit?", "Shall we dock?") come up in the prompt
+  // field while the menu row stays drawn beside them; the game then takes only Y or N.
+  // (Emulator, Nov 21: no YES/NO buttons there, so the player was stuck.)
+  if (!yesno && is_bridge(ts)) { std::string q = trim(row_str(ts, 24, 0, 24)); if (!q.empty() && q.back() == '?') { yesno = true; prompt = q; } }
   { std::string dq = dialog_question(ts); if (!dq.empty()) { yesno = true; prompt = dq; } }
   if (yesno) items.clear();
   for (int r = 1; r < 24 && !yesno; r++) {        // a dialog asking a question ("Do you still want to exit?")
@@ -1253,7 +1257,8 @@ static void chk_begin_step(const TextScreen& ts) {
 // was already there) when its button is pressed. A step with neither is done when the next one is.
 static bool chk_step_done(const TextScreen& ts, const Step& st, bool current) {
   if (!st.done.empty() && !(current && chk_had) && screen_has_ci(ts, st.done)) return true;
-  if (!st.btn.empty() && chk_pressed == st.btn) return true;
+  // (a step that names a text is ticked by the text: the game may refuse the button)
+  if (!st.btn.empty() && chk_pressed == st.btn && (st.done.empty() || (current && chk_had))) return true;
   return false;
 }
 static void chk_update(const TextScreen& ts) {
@@ -1347,6 +1352,7 @@ static void check_refusals(const TextScreen& ts, uint32_t t) {
 // things to do, read from the situation on screen, with the first button to press ringed.
 static float bridge_speed(const TextScreen& ts, int row);
 static const char* advise_button = 0; static uint32_t advise_until = 0;
+static bool want_practice_view = false;   // the sign-on menu should scroll to show Practice
 static int pct_at(const TextScreen& ts, int row, int c0, int c1) {     // "  76%" -> 76, none -> -1
   std::string v = row_str(ts, row, c0, c1); size_t p = v.find('%');
   if (p == std::string::npos) return -1;
@@ -1408,9 +1414,13 @@ static std::string advise(const TextScreen& ts, const char** button) {
     }
     }
     if (say_list.empty()) add("Follow the prompt line above the buttons. NAV, ENG, CMB... open the ship's menus; B backs out of them.", 0);
+  } else if (!dialog_question(ts).empty()) {
+    add("The game asks: " + dialog_question(ts) + " Answer YES or NO below.", 0);
   } else if (screen_has(ts, "SIGN-ON OPTIONS")) {
     add("New here? Tap Practice (demo) mission, answer YES, pick a mission, then Start a new mission.", "Practice (demo) mission");
     add("Tutorials (lower in the list) teach flying step by step.", 0);
+  } else if (in_flight(ts) && glay_kind() == 2 && row_str(ts, 24, 0, 80).find("argeter") == std::string::npos) {
+    add("A window or submenu is open on this map: use the buttons below, or B to close it.", 0);
   } else if (screen_has(ts, "MAP OF STAR SYSTEM")) {
     add("Tap a planet (a letter) or a starfort to put the target box on it.", 0);
     add("Then TARGETER, choose a speed, ENTER. Back on the bridge (B), tap ENGINES.", "TARGETER");
@@ -1971,9 +1981,10 @@ static void generic_bottom(Surf& s, const TextScreen& ts) {
       static std::string seen_first; static int seen_sel = -1;
       int sel = -1;
       for (int i = 0; i < n; i++) if (glay.items[i].sel) sel = i % rows;
-      if (glay.items[0].label != seen_first) { seen_first = glay.items[0].label; menu_top = 0; seen_sel = -1;
+      if (glay.items[0].label != seen_first || want_practice_view) { seen_first = glay.items[0].label; menu_top = 0; seen_sel = -1;
         // coach: the sign-on menu opens with Practice (and Start a new mission) in view
-        if (coach_on) for (int i = 0; i < n; i++) if (glay.items[i].label.compare(0, 8, "Practice") == 0) { menu_top = i - 2 < 0 ? 0 : i - 2; if (menu_top > n - VIS) menu_top = n - VIS; }
+        if (coach_on || want_practice_view) for (int i = 0; i < n; i++) if (glay.items[i].label.compare(0, 8, "Practice") == 0) { menu_top = i - 2 < 0 ? 0 : i - 2; if (menu_top > n - VIS) menu_top = n - VIS; }
+        want_practice_view = false;
       }
       if (sel >= 0 && sel != seen_sel) {
         seen_sel = sel;
@@ -2397,7 +2408,8 @@ static void fire(const Act& a) {
       pause_open = false;
       { const char* b = 0; std::string a = advise(last, &b);
         explain("WHAT NOW?", a.c_str()); explain_until = now() + 15000;
-        advise_button = b; advise_until = now() + 15000; }
+        advise_button = b; advise_until = now() + 15000;
+        if (b && !strcmp(b, "Practice (demo) mission")) want_practice_view = true; }
       break;
     case A_LAUNCH: case A_ENGINES: {
       // the helm refuses to start the engines with no speed set ("Velocity must be set"):
