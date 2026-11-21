@@ -222,18 +222,29 @@ void sf2w_cancel(const char* path) {
 int sf2w_rename(const char* from, const char* to) {
   if (!started) return rename(from, to);
   if (trace) sf2ctr_log("wm %s -> %s", from, to);
-  // rename and re-target under the lock, so the worker never writes the old name after the move
+  // Under the lock, and never while the worker is writing either file.
   int n = 0;
   for (;;) {
     waited(n, from);
     LightLock_Lock(&lock);
-    if (!same_path(busy_path, from)) break;
+    if (!same_path(busy_path, from) && !same_path(busy_path, to)) break;
     LightLock_Unlock(&lock);
     block_until_done();
   }
-  int r = rename(from, to);
-  if (r == 0) for (auto& j : jobs) if (same_path(j.path, from)) j.path = to;
+  // whatever was queued for the target is replaced by this rename
+  for (auto it = jobs.begin(); it != jobs.end();) { if (same_path(it->path, to)) it = jobs.erase(it); else ++it; }
+  bool queued = false, was_del = false;
+  for (auto& j : jobs) if (same_path(j.path, from)) { queued = true; was_del = j.del; if (!j.del) j.path = to; }
+  int r;
+  if (queued && was_del) { errno = ENOENT; r = -1; }          // the file was deleted
+  else if (queued) {
+    // Its contents are still on their way to the card: they will be written under the new name
+    // (no waiting for the card), and an older copy under the old name is removed.
+    Job d; d.path = from; d.own = true; d.del = true; jobs.push_back(std::move(d));
+    r = 0;
+  } else r = rename(from, to);
   LightLock_Unlock(&lock);
+  LightEvent_Signal(&wake);
   return r;
 }
 

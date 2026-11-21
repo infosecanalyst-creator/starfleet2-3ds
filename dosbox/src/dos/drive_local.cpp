@@ -559,11 +559,10 @@ bool localDrive::Rename(char * oldname,char * newname) {
 	strcat(newnew,newname);
 	CROSS_FILENAME(newnew);
 #ifdef SF2_3DS
-	// The rename is done on the card itself, so everything queued for either name must be there
-	// first: a file made in memory and not written yet, or a delete of the old target that would
-	// otherwise run after the rename and remove the renamed file (emulator, Nov 21: PLAYERS.DAT lost).
+	// sf2w_rename keeps the card's queue consistent: a delete still queued for the old target must
+	// not run after the rename (emulator, Nov 21: PLAYERS.DAT lost that way), and a file whose
+	// contents are still queued is simply written under its new name.
 	char sf2_to[CROSS_LEN]; safe_strncpy(sf2_to, dirCache.GetExpandName(newnew), CROSS_LEN);
-	sf2w_wait(newold); sf2w_wait(sf2_to);
 	int temp=sf2w_rename(newold,sf2_to);
 	if (sf2_file_trace) sf2ctr_log("fr %s -> %s: %s", oldname, newname, temp == 0 ? "ok" : "FAILED");
 	if (temp == 0) {
