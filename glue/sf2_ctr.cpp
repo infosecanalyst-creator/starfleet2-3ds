@@ -326,7 +326,8 @@ static void dump_screen(const sf2ui::TextScreen& ts, u64 now) {
 }
 
 void sf2ctr_events() {
-  if (!inited) { init(); sf2ctr_note("Star Fleet II 3DS started%s", sf2ctr_debug() ? " (debug log on: debug.txt)" : ""); }
+  if (!inited) { init(); sf2ctr_note("Star Fleet II 3DS started%s", sf2ctr_debug() ? " (debug log on: debug.txt)" : "");
+    { extern int sf2_file_trace; if (FILE* f = fopen("sdmc:/3ds/starfleet2/filetrace.txt", "r")) { int c = fgetc(f); fclose(f); sf2_file_trace = c == '2' ? 2 : 1; } } }
   sf2_emu_ticks++;
 
   // Polling HID/APT every emulated millisecond is expensive on the 3DS; 8 ms (125 Hz) is plenty.

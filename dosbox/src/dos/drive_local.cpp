@@ -72,6 +72,7 @@ unsigned int sf2_cache_hits = 0;
 // and not found. Asked about again, they are answered without a trip to the card.
 #include <set>
 static std::set<std::string> sf2_gone;
+int sf2_file_trace = 0;                    // sdmc:/3ds/starfleet2/filetrace.txt: log creates, deletes and opens (debug log)
 static void sf2_cache_drop(const char* path) {
 	if (!path) { sf2_cache.clear(); sf2_cache_bytes = 0; sf2_gone.clear(); return; }          // (a directory changed: start again)
 	std::map<std::string, Sf2Cached>::iterator it = sf2_cache.find(path);
@@ -133,6 +134,7 @@ bool localDrive::FileCreate(DOS_File * * file,char * name,Bit16u /*attributes*/)
 		localFile* lf = new localFile(name, (FILE*)0);
 		lf->flags = OPEN_READWRITE;
 		if (lf->sf2_attach_cached(sf2_host, 0, 0, ::time(0), true)) {
+			if (sf2_file_trace) sf2ctr_log("fc %s", name);
 			sf2_cache_put(sf2_host, 0, 0, ::time(0));
 			dirCache.AddEntry(newname, true);
 			*file = lf;
@@ -208,12 +210,13 @@ bool localDrive::FileOpen(DOS_File * * file,char * name,Bit32u flags) {
 	}
 
 #ifdef SF2_3DS
-	if (sf2w_pending_delete(newname)) return false;   // deleted; the card has not caught up yet
+	if (sf2w_pending_delete(newname)) { if (sf2_file_trace) sf2ctr_log("fo %s: deleted", name); return false; }   // deleted; the card has not caught up yet
 	{ std::map<std::string, Sf2Cached>::iterator it = sf2_cache.find(newname);
 	  if (it != sf2_cache.end()) {               // read before: no need to touch the card
 		localFile* lf = new localFile(name, (FILE*)0);
 		lf->flags = flags;
 		if (lf->sf2_attach_cached(newname, it->second.data.empty() ? 0 : &it->second.data[0], (Bit32u)it->second.data.size(), it->second.mtime, false)) {
+			if (sf2_file_trace > 1) sf2ctr_log("fo %s: ram %u", name, (unsigned)it->second.data.size());
 			*file = lf; sf2_cache_hits++; return true;
 		}
 		delete lf;
@@ -231,7 +234,7 @@ bool localDrive::FileOpen(DOS_File * * file,char * name,Bit32u flags) {
 			sf2w_wait(newname);                    // (no memory for a copy: let it land, then open it on the card)
 		}
 	}
-	if (sf2_gone.count(newname)) return false;   // looked for before and not there
+	if (sf2_gone.count(newname)) { if (sf2_file_trace) sf2ctr_log("fo %s: known gone", name); return false; }   // looked for before and not there
 	sf2w_wait_busy(newname);                   // opening a file while it is written stalls ~20 s on a 3DS
 #endif
 	FILE * hand = fopen_wrap(newname,type);
@@ -242,6 +245,10 @@ bool localDrive::FileOpen(DOS_File * * file,char * name,Bit32u flags) {
 	}
 #endif
 //	Bit32u err=errno;
+#ifdef SF2_3DS
+	if (sf2_file_trace) sf2ctr_log("fo %s: card %s", name, hand ? "ok" : "FAILED");
+	if (!hand && errno == ENOENT) sf2_gone.insert(newname);
+#endif
 	if (!hand) { 
 #ifdef SF2_3DS
 		{ struct stat sb; if (stat(newname, &sb) == 0) sf2ctr_log("open refused: %s (%s), errno %d", newname, type, errno); }
@@ -300,7 +307,8 @@ bool localDrive::FileUnlink(char * name) {
 		// replaces any write still queued for the file). No waiting on the card.
 		char host[CROSS_LEN]; safe_strncpy(host, fullname, CROSS_LEN);
 		struct stat sb;
-		if (sf2_stat(host, &sb) != 0) { DOS_SetError(DOSERR_FILE_NOT_FOUND); return false; }
+		if (sf2_stat(host, &sb) != 0) { if (sf2_file_trace) sf2ctr_log("fu %s (not there)", name); DOS_SetError(DOSERR_FILE_NOT_FOUND); return false; }
+		if (sf2_file_trace) sf2ctr_log("fu %s", name);
 		sf2_cache_drop(host);
 		sf2_gone.insert(host);
 		sf2w_queue_own(host, 0, 0);
@@ -557,6 +565,7 @@ bool localDrive::Rename(char * oldname,char * newname) {
 	char sf2_to[CROSS_LEN]; safe_strncpy(sf2_to, dirCache.GetExpandName(newnew), CROSS_LEN);
 	sf2w_wait(0);                              // (all of it: the directory is read again from the card afterwards)
 	int temp=sf2w_rename(newold,sf2_to);
+	if (sf2_file_trace) sf2ctr_log("fr %s -> %s: %s", oldname, newname, temp == 0 ? "ok" : "FAILED");
 	if (temp == 0) {
 		std::map<std::string, Sf2Cached>::iterator it = sf2_cache.find(newold);
 		if (it != sf2_cache.end()) { Sf2Cached c = it->second; sf2_cache_drop(newold); sf2_cache_put(sf2_to, c.data.empty() ? 0 : &c.data[0], c.data.size(), c.mtime); }
