@@ -1547,6 +1547,21 @@ static bool fit_map(GLayout& g, int r0, int c0, int r1, int c1) {
 }
 static bool find_map(const TextScreen& ts, GLayout& g) {
   int best = 0, br0 = 0, bc0 = 0, br1 = 0, bc1 = 0;
+  bool label_frame = false;      // the best frame is one with labels over its top corners
+  auto consider = [&](int r, int c, int r1, int c1) {
+    int w = c1 - c - 1, h = r1 - r - 1;
+    if (w < 24 || h < 6) return;
+    int used = 0, letters = 0, symbols = 0;
+    for (int rr = r + 1; rr < r1; rr++)
+      for (int cc = c + 1; cc < c1; cc++) {
+        uint8_t ch = ts.ch[rr][cc];
+        if (ch > ' ' && ch != 0xFF && !is_box(ch)) { used++; if (ch != 0xFA && ch != 0xF9) symbols++; }
+        if (is_alpha(ch)) letters++;
+      }
+    // a map is sparse, has something on it, and is not a page of words
+    if (symbols < 2 || used * 100 > w * h * 45 || letters * 100 > w * h * 12) return;
+    if (w * h > best) { best = w * h; br0 = r; bc0 = c; br1 = r1; bc1 = c1; label_frame = false; }
+  };
   for (int r = 0; r < 23; r++)
     for (int c = 0; c < 79; c++) {
       if (!tl_corner(ts.ch[r][c])) continue;
@@ -1557,24 +1572,28 @@ static bool find_map(const TextScreen& ts, GLayout& g) {
       int r1 = r + 1; line = 0;
       while (r1 < 24 && !bl_corner(ts.ch[r1][c])) { if (is_box(ts.ch[r1][c])) line++; r1++; }
       if (r1 >= 24 || line * 10 < (r1 - r - 1) * 6) continue;
-      int w = c1 - c - 1, h = r1 - r - 1;
-      if (w < 24 || h < 6) continue;
-      int used = 0, letters = 0, symbols = 0;
-      for (int rr = r + 1; rr < r1; rr++)
-        for (int cc = c + 1; cc < c1; cc++) {
-          uint8_t ch = ts.ch[rr][cc];
-          if (ch > ' ' && ch != 0xFF && !is_box(ch)) { used++; if (ch != 0xFA && ch != 0xF9) symbols++; }
-          if (is_alpha(ch)) letters++;
-        }
-      // a map is sparse, has something on it, and is not a page of words
-      if (symbols < 2 || used * 100 > w * h * 45 || letters * 100 > w * h * 12) continue;
-      if (w * h > best) { best = w * h; br0 = r; bc0 = c; br1 = r1; bc1 = c1; }
+      consider(r, c, r1, c1);
+    }
+  // A frame whose top corners are overwritten by axis labels (the system map: " 0====20====...80"):
+  // found from its bottom corners, going up the left edge.
+  for (int r1 = 23; r1 >= 7; r1--)
+    for (int c = 0; c < 56; c++) {
+      if (!bl_corner(ts.ch[r1][c])) continue;
+      int c1 = c + 1, line = 0;
+      while (c1 < 80 && ts.ch[r1][c1] != 0xD9 && ts.ch[r1][c1] != 0xBC && ts.ch[r1][c1] != 0xBE && ts.ch[r1][c1] != 0xBD) { if (is_box(ts.ch[r1][c1])) line++; c1++; }
+      if (c1 >= 80 || line * 10 < (c1 - c - 1) * 6) continue;
+      int r = r1 - 1;
+      while (r > 0 && is_box(ts.ch[r][c]) && !tl_corner(ts.ch[r][c])) r--;
+      if (tl_corner(ts.ch[r][c])) continue;                 // an ordinary frame: found above
+      if (!(ts.ch[r][c] >= '0' && ts.ch[r][c] <= '9') || !(ts.ch[r][c1] >= '0' && ts.ch[r][c1] <= '9')) continue;
+      { int was = best; consider(r, c, r1, c1); if (best != was) label_frame = true; }
     }
   if (best) {
     // take in the axis labels just outside the frame
     int ec0 = bc0, ec1 = bc1;
     for (int k = 0; k < 3 && ec0 > 0; k++) { bool any = false; for (int rr = br0 + 1; rr < br1; rr++) if (ts.ch[rr][ec0 - 1] > ' ') any = true; if (!any) break; ec0--; }
-    for (int k = 0; k < 3 && ec1 < 79; k++) { bool any = false; for (int rr = br0 + 1; rr < br1; rr++) if (ts.ch[rr][ec1 + 1] > ' ') any = true; if (!any) break; ec1++; }
+    // (a label-cornered frame's right neighbour is another panel, not axis labels)
+    for (int k = 0; k < 3 && ec1 < 79 && !label_frame; k++) { bool any = false; for (int rr = br0 + 1; rr < br1; rr++) if (ts.ch[rr][ec1 + 1] > ' ') any = true; if (!any) break; ec1++; }
     if (fit_map(g, br0, ec0, br1, ec1)) return true;
     if (fit_map(g, br0, bc0, br1, bc1)) return true;
     if (fit_map(g, br0 + 1, bc0 + 1, br1 - 1, bc1 - 1)) return true;      // without its frame
@@ -2432,12 +2451,18 @@ Redraw frame(const TextScreen& ts, uint16_t* top, uint16_t* bottom) {
       bool settled = t - flight_since > 1500;   // nothing is announced as the screen first appears
       // A light counts once it has stayed lit for 1.2 s: the game's lamp test sweeps one lit lamp
       // across the row (about 6 a second; seen Nov 21 as a false "ALERT: LOW SUP" at 100% supplies).
-      static uint32_t light_on_since[8];
+      // The sweep's colour (green unless the player changed it) is learned from any lamp that goes
+      // out again within 0.6 s, and lamps in that colour are never announced: the sweep can stand
+      // still on one lamp while the game waits at a prompt.
+      static uint32_t light_on_since[8]; static uint8_t sweep_at = 0x20, light_prev[8];
       for (int i = 0; i < 8; i++) {
         uint8_t at = ts.at[0][starts[i] + 1];
         bool on = at != 0x08 && at != 0x00;
-        if (at != light_at[i]) { light_at[i] = at; light_on_since[i] = on ? t : 0; continue; }
-        if (on && light_on_since[i] && t - light_on_since[i] >= 1200) {
+        if (at != light_at[i]) {
+          if (!on && light_on_since[i] && t - light_on_since[i] < 600) sweep_at = light_prev[i];
+          light_at[i] = at; light_prev[i] = at; light_on_since[i] = on ? t : 0; continue;
+        }
+        if (on && at != sweep_at && light_on_since[i] && t - light_on_since[i] >= 1200) {
           light_on_since[i] = 0;                 // (once per time it comes on)
           if (settled && (!light_last[i] || t - light_last[i] > 10000)) {
             light_last[i] = t;
