@@ -563,7 +563,7 @@ bool localDrive::Rename(char * oldname,char * newname) {
 	// first: a file made in memory and not written yet, or a delete of the old target that would
 	// otherwise run after the rename and remove the renamed file (emulator, Nov 21: PLAYERS.DAT lost).
 	char sf2_to[CROSS_LEN]; safe_strncpy(sf2_to, dirCache.GetExpandName(newnew), CROSS_LEN);
-	sf2w_wait(0);                              // (all of it: the directory is read again from the card afterwards)
+	sf2w_wait(newold); sf2w_wait(sf2_to);
 	int temp=sf2w_rename(newold,sf2_to);
 	if (sf2_file_trace) sf2ctr_log("fr %s -> %s: %s", oldname, newname, temp == 0 ? "ok" : "FAILED");
 	if (temp == 0) {
@@ -575,7 +575,13 @@ bool localDrive::Rename(char * oldname,char * newname) {
 #else
 	int temp=rename(newold,dirCache.GetExpandName(newnew));
 #endif
+#ifdef SF2_3DS
+	// (the listing is updated in place: reading the directory again from the card would miss files
+	// that are still on their way there)
+	if (temp==0) { dirCache.DeleteEntry(newold); dirCache.AddEntry(newnew, true); }
+#else
 	if (temp==0) dirCache.CacheOut(newnew);
+#endif
 	return (temp==0);
 
 }
