@@ -1196,12 +1196,19 @@ static void build_reader(const TextScreen& ts) {
 // (the STAR FLEET logo pages) keep the plain controls instead of a reader full of dots.
 static bool mostly_text(const TextScreen& ts) {
   int letters = 0, art = 0;
+  // the page's own background colour (the orders pages are grey all over): the commonest
+  // background among blank cells; only blanks in another colour count as drawn art
+  int bgc[16] = {0};
+  for (int r = 0; r < 24; r++)
+    for (int c = 0; c < 80; c++) { uint8_t x = ts.ch[r][c]; if (x == ' ' || x == 0 || x == 0xFF) bgc[ts.at[r][c] >> 4]++; }
+  int page_bg = 0;
+  for (int k = 1; k < 16; k++) if (bgc[k] > bgc[page_bg]) page_bg = k;
   for (int r = 0; r < 24; r++)
     for (int c = 0; c < 80; c++) {
       uint8_t x = ts.ch[r][c];
       if ((x >= 'A' && x <= 'Z') || (x >= 'a' && x <= 'z')) letters++;
       else if ((x >= 0xB0 && x <= 0xB2) || (x >= 0xDB && x <= 0xDF) || x == 0xFE || x == 0xF9 || x == 0xFA) art++;
-      else if ((x == ' ' || x == 0 || x == 0xFF) && (ts.at[r][c] >> 4) != 0) art++;   // coloured blank cells: grids, bars
+      else if ((x == ' ' || x == 0 || x == 0xFF) && (ts.at[r][c] >> 4) != 0 && (ts.at[r][c] >> 4) != page_bg) art++;   // coloured blank cells: grids, bars (not the page's own background)
     }
   return letters >= 60 && art * 2 < letters;
 }
