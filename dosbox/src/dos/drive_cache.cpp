@@ -302,6 +302,29 @@ void DOS_Drive_Cache::AddEntryDirOverlay(const char* path, bool checkExists) {
 }
 
 void DOS_Drive_Cache::DeleteEntry(const char* path, bool ignoreLastDir) {
+#ifdef SF2_3DS
+	// Take the one file out of the cached listing. (Stock DOSBox forgets the whole directory here
+	// and reads it again from the card on the next look: about 0.2 s for the game's 330 files, and
+	// the game deletes a work file several times a second in flight.)
+	if (!ignoreLastDir) {
+		char sf2_expand[CROSS_LEN];
+		CFileInfo* sf2_dir = FindDirInfo(path, sf2_expand);
+		const char* sf2_pos = strrchr(path, CROSS_FILESPLIT);
+		if (sf2_dir && sf2_pos && sf2_dir->fileList.size() > 1) {
+			for (size_t i = 0; i < sf2_dir->fileList.size(); i++) {
+				CFileInfo* f = sf2_dir->fileList[i];
+				if (strcasecmp(f->orgname, sf2_pos + 1) != 0 && strcasecmp(f->shortname, sf2_pos + 1) != 0) continue;
+				sf2_dir->fileList.erase(sf2_dir->fileList.begin() + i);
+				for (size_t j = 0; j < sf2_dir->longNameList.size(); j++)
+					if (sf2_dir->longNameList[j] == f) { sf2_dir->longNameList.erase(sf2_dir->longNameList.begin() + j); break; }
+				for (Bit32u k = 0; k < MAX_OPENDIRS; k++)
+					if (dirSearch[k] == sf2_dir && dirSearch[k]->nextEntry > i) dirSearch[k]->nextEntry--;
+				delete f;
+				return;
+			}
+		}
+	}
+#endif
 	CacheOut(path,ignoreLastDir);
 	if (dirSearch[srchNr] && (dirSearch[srchNr]->nextEntry>0)) dirSearch[srchNr]->nextEntry--;
 

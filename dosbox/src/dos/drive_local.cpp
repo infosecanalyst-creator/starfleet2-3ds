@@ -68,16 +68,21 @@ struct Sf2Cached { std::vector<Bit8u> data; time_t mtime; };
 static std::map<std::string, Sf2Cached> sf2_cache; static size_t sf2_cache_bytes = 0;
 static const size_t SF2_CACHE_MAX = 14u * 1024 * 1024;
 unsigned int sf2_cache_hits = 0;
+// Files known not to be there: deleted here (the card's copy goes in the background), or looked for
+// and not found. Asked about again, they are answered without a trip to the card.
+#include <set>
+static std::set<std::string> sf2_gone;
 static void sf2_cache_drop(const char* path) {
-	if (!path) { sf2_cache.clear(); sf2_cache_bytes = 0; return; }          // (a directory changed: start again)
+	if (!path) { sf2_cache.clear(); sf2_cache_bytes = 0; sf2_gone.clear(); return; }          // (a directory changed: start again)
 	std::map<std::string, Sf2Cached>::iterator it = sf2_cache.find(path);
 	if (it != sf2_cache.end()) { sf2_cache_bytes -= it->second.data.size(); sf2_cache.erase(it); }
 }
 static void sf2_cache_put(const char* path, const Bit8u* d, size_t n, time_t mtime) {
 	sf2_cache_drop(path);
+	sf2_gone.erase(path);
 	if (n > 2u * 1024 * 1024 || sf2_cache_bytes + n > SF2_CACHE_MAX) return;
 	Sf2Cached& c = sf2_cache[path];
-	c.data.assign(d, d + n); c.mtime = mtime; sf2_cache_bytes += n;
+	if (n) c.data.assign(d, d + n); c.mtime = mtime; sf2_cache_bytes += n;
 }
 static int sf2_stat(const char* path, struct stat* st) {
 	{ std::map<std::string, Sf2Cached>::iterator it = sf2_cache.find(path);
@@ -86,13 +91,16 @@ static int sf2_stat(const char* path, struct stat* st) {
 		st->st_mode = S_IFREG | 0666; st->st_size = (off_t)it->second.data.size(); st->st_mtime = it->second.mtime; st->st_nlink = 1;
 		return 0;
 	  } }
+	if (sf2_gone.count(path)) { errno = ENOENT; return -1; }
 	size_t n;
 	if (sf2w_pending_size(path, &n)) {
 		memset(st, 0, sizeof *st);
 		st->st_mode = S_IFREG | 0666; st->st_size = (off_t)n; st->st_mtime = time(0); st->st_nlink = 1;
 		return 0;
 	}
-	return stat(path, st);
+	int r = stat(path, st);
+	if (r != 0 && errno == ENOENT) sf2_gone.insert(path);
+	return r;
 }
 static void sf2_stat_forget(const char* p) { sf2_cache_drop(p); }
 static void sf2_stat_size(const char*, Bit32u) {}
@@ -117,6 +125,20 @@ bool localDrive::FileCreate(DOS_File * * file,char * name,Bit16u /*attributes*/)
 	char* temp_name = dirCache.GetExpandName(newname); //Can only be used in till a new drive_cache action is preformed */
 #ifdef SF2_3DS
 	char sf2_host[CROSS_LEN]; safe_strncpy(sf2_host, temp_name, CROSS_LEN);
+	{	// Created in memory only: the game makes and deletes small work files several times a second
+		// in flight, and each create on the card costs real time. The contents reach the card through
+		// the background writer when the file is closed (its queue keeps one job per file, so this
+		// replaces whatever was queued for the old file).
+		localFile* lf = new localFile(name, (FILE*)0);
+		lf->flags = OPEN_READWRITE;
+		if (lf->sf2_attach_cached(sf2_host, 0, 0, ::time(0), true)) {
+			sf2_cache_put(sf2_host, 0, 0, ::time(0));
+			dirCache.AddEntry(newname, true);
+			*file = lf;
+			return true;
+		}
+		delete lf;
+	}
 	sf2w_cancel(sf2_host);                     // being re-created: older queued contents are void
 	SF2_FORGET(sf2_host);
 #endif
@@ -185,11 +207,12 @@ bool localDrive::FileOpen(DOS_File * * file,char * name,Bit32u flags) {
 	}
 
 #ifdef SF2_3DS
+	if (sf2_gone.count(newname)) return false;   // deleted, or looked for before and not there
 	{ std::map<std::string, Sf2Cached>::iterator it = sf2_cache.find(newname);
 	  if (it != sf2_cache.end()) {               // read before: no need to touch the card
 		localFile* lf = new localFile(name, (FILE*)0);
 		lf->flags = flags;
-		if (lf->sf2_attach_cached(newname, it->second.data.empty() ? 0 : &it->second.data[0], (Bit32u)it->second.data.size(), it->second.mtime)) {
+		if (lf->sf2_attach_cached(newname, it->second.data.empty() ? 0 : &it->second.data[0], (Bit32u)it->second.data.size(), it->second.mtime, false)) {
 			*file = lf; sf2_cache_hits++; return true;
 		}
 		delete lf;
@@ -258,8 +281,17 @@ bool localDrive::FileUnlink(char * name) {
 	CROSS_FILENAME(newname);
 	char *fullname = dirCache.GetExpandName(newname);
 #ifdef SF2_3DS
-	sf2w_cancel(fullname);
-	SF2_FORGET(fullname);
+	{	// Deleted here at once; the card's copy is removed by the background writer (a delete job
+		// replaces any write still queued for the file). No waiting on the card.
+		char host[CROSS_LEN]; safe_strncpy(host, fullname, CROSS_LEN);
+		struct stat sb;
+		if (sf2_stat(host, &sb) != 0) { DOS_SetError(DOSERR_FILE_NOT_FOUND); return false; }
+		sf2_cache_drop(host);
+		sf2_gone.insert(host);
+		sf2w_queue_own(host, 0, 0);
+		dirCache.DeleteEntry(newname);
+		return true;
+	}
 #endif
 	if (unlink(fullname)) {
 		//Unlink failed for some reason try finding it.
@@ -778,13 +810,13 @@ void localFile::mem_load(void) {
 	mem = m; mem_cap = cap; mem_size = (Bit32u)sz; mem_pos = cur > 0 ? (Bit32u)cur : 0; mem_dirty = false;
 	if (sf2_path[0]) { struct stat sb; time_t mt = fstat(fileno(fhandle), &sb) == 0 ? sb.st_mtime : ::time(0); sf2_cache_put(sf2_path, mem, mem_size, mt); }
 }
-bool localFile::sf2_attach_cached(const char* host_path, const Bit8u* d, Bit32u n, time_t mtime) {
+bool localFile::sf2_attach_cached(const char* host_path, const Bit8u* d, Bit32u n, time_t mtime, bool dirty) {
 	Bit32u cap = n ? n : 4096;
 	Bit8u* m = (Bit8u*)malloc(cap);
 	if (!m) return false;
 	if (n) memcpy(m, d, n);
 	safe_strncpy(sf2_path, host_path, sizeof sf2_path);
-	mem = m; mem_cap = cap; mem_size = n; mem_pos = 0; mem_dirty = false;
+	mem = m; mem_cap = cap; mem_size = n; mem_pos = 0; mem_dirty = dirty;
 	struct tm* lt = localtime(&mtime);
 	if (lt) { time = DOS_PackTime((Bit16u)lt->tm_hour, (Bit16u)lt->tm_min, (Bit16u)lt->tm_sec); date = DOS_PackDate((Bit16u)(lt->tm_year + 1900), (Bit16u)(lt->tm_mon + 1), (Bit16u)lt->tm_mday); }
 	return true;

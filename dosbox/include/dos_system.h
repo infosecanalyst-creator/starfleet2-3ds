@@ -143,7 +143,7 @@ private:
 	void mem_writeback(void);
 public:
 	void sf2_attach(const char* host_path);
-	bool sf2_attach_cached(const char* host_path, const Bit8u* d, Bit32u n, time_t mtime);   // contents from the RAM cache, no card handle
+	bool sf2_attach_cached(const char* host_path, const Bit8u* d, Bit32u n, time_t mtime, bool dirty);   // contents from the RAM cache, no card handle
 #endif
 };
 
