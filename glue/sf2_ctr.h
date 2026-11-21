@@ -5,7 +5,9 @@
 #ifdef SF2_3DS
 void sf2ctr_events();      // input + frontend redraw; replaces DOSBox-3DS's GetInput()
 bool sf2ctr_owns_top();    // true while the frontend draws the top screen (skip SDL's flip)
-void sf2ctr_log(const char* fmt, ...);
+void sf2ctr_log(const char* fmt, ...);         // debug.log line, only with sdmc:/3ds/starfleet2/debug.txt
+void sf2ctr_note(const char* fmt, ...);        // rare line (start, exit, failures): always
+bool sf2ctr_debug();                           // debug.txt existed at start-up
 void sf2ctr_log_flush(bool now);              // main thread: hand the log to the SD writer (now: and wait)
 void sf2ctr_log_buffered();                    // from here on, keep log lines in memory
 void sf2ctr_check_install();  // before DOSBox starts: settings and game present?

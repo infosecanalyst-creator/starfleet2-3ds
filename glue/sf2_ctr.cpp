@@ -145,7 +145,7 @@ static void key_logged(sf2ui::Key k, bool down) {
 // The port's own files (settings.txt, lefty.txt, officer.txt): crash-safe, in the background (SF-01).
 static void save_bg(const char* path, const char* data, unsigned n) { sf2w_queue_own(path, (const uint8_t*)data, n); }
 static bool quit_req = false;                  // START menu > EXIT GAME
-static void quit_app() { sf2ctr_log("exit chosen in the START menu"); quit_req = true; }
+static void quit_app() { sf2ctr_note("exit chosen in the START menu"); quit_req = true; }
 static void ui_log(const char* line) { sf2ctr_log("%s", line); }
 static sf2ui::Host host = {key_logged, click, ms, "sdmc:/3ds/starfleet2/manual.txt", "sdmc:/3ds/starfleet2/officer.txt", save_bg, quit_app, "sdmc:/3ds/starfleet2/lefty.txt",
                              "sdmc:/3ds/starfleet2/settings.txt", ui_log};
@@ -186,7 +186,7 @@ void sf2ctr_check_install() {
   char msg[512];
   snprintf(msg, sizeof msg, "Star Fleet II is not fully installed on the SD card. Missing:%s\n\n"
            "Copy the starfleet2 folder (settings, manual and game files) to /3ds/starfleet2/.", missing);
-  sf2ctr_log("%s", msg);
+  sf2ctr_note("%s", msg);
   extern void ctr_sys_error(bool fatal, const char* error);
   ctr_sys_error(true, msg);
 }
@@ -194,6 +194,21 @@ void sf2ctr_check_install() {
 // ------------------------------------------------------------------ logs (sdmc:/3ds/starfleet2/)
 static const char* LOG_PATH = "sdmc:/3ds/starfleet2/debug.log";
 static int log_lines = 0;
+// SF-03: the log was rewritten whole (up to ~150 KB) through the background writer every 5 s,
+// because the performance/state lines every 10 s and every key press kept it changing. Now
+// sf2ctr_log() lines are kept only when sdmc:/3ds/starfleet2/debug.txt exists (checked once,
+// at start-up); sf2ctr_note() lines (start, exit, DOSBox stopping, write failures, cut-off
+// text) always are. Without debug.txt the log is a few lines and is written only when one of
+// those is added.
+static int log_debug = -1;
+bool sf2ctr_debug() {
+  if (log_debug < 0) {
+    FILE* f = fopen("sdmc:/3ds/starfleet2/debug.txt", "r");
+    log_debug = f ? 1 : 0;
+    if (f) fclose(f);
+  }
+  return log_debug != 0;
+}
 // The log is kept in memory and handed to the background SD writer about once a second: opening
 // and appending to a file on the real 3DS's SD card takes 100-200 ms, which stalled the game on
 // every line. Until the writer runs (start-up), and when the app is stopping, lines go straight
@@ -202,11 +217,21 @@ static LightLock log_lock; static bool log_lock_ready = false;   // the SD write
 static std::string log_buf;
 static bool log_dirty = false;
 static bool log_direct = true;
+static void log_line(const char* buf);
 void sf2ctr_log(const char* fmt, ...) {
-  if (log_lines > 2000) return;                 // keep the file small
-  if (!log_lock_ready) { LightLock_Init(&log_lock); log_lock_ready = true; }
+  if (!sf2ctr_debug()) return;                  // SF-03: debug.txt only
   char buf[256];
   va_list ap; va_start(ap, fmt); vsnprintf(buf, sizeof buf, fmt, ap); va_end(ap);
+  log_line(buf);
+}
+void sf2ctr_note(const char* fmt, ...) {        // rare lines: always
+  char buf[256];
+  va_list ap; va_start(ap, fmt); vsnprintf(buf, sizeof buf, fmt, ap); va_end(ap);
+  log_line(buf);
+}
+static void log_line(const char* buf) {
+  if (log_lines > 2000) return;                 // keep the file small
+  if (!log_lock_ready) { LightLock_Init(&log_lock); log_lock_ready = true; }
   svcOutputDebugString(buf, strlen(buf));       // also visible in emulator logs
   char line[300];
   snprintf(line, sizeof line, "%8llu %s\n", (unsigned long long)osGetTime() % 100000000ull, buf);
@@ -274,7 +299,7 @@ extern unsigned int sf2_mixer_underruns;        // counted in mixer.cpp
 
 // Called from GFX_Events() in place of DOSBox-3DS's own input handling.
 void sf2ctr_events() {
-  if (!inited) { init(); sf2ctr_log("Star Fleet II 3DS started"); }
+  if (!inited) { init(); sf2ctr_note("Star Fleet II 3DS started%s", sf2ctr_debug() ? " (debug log on: debug.txt)" : ""); }
   sf2_emu_ticks++;
 
   // Polling HID/APT every emulated millisecond is expensive on the 3DS; 8 ms (125 Hz) is plenty.
@@ -363,7 +388,7 @@ void sf2ctr_events() {
   static u64 perf_t = 0; static unsigned int perf_ticks = 0, perf_under = 0;
   static u64 draw_us = 0; static unsigned int draws = 0;
   if (!perf_t) { perf_t = now; perf_ticks = sf2_emu_ticks; perf_under = sf2_mixer_underruns; }
-  else if (now - perf_t >= 10000) {
+  else if (now - perf_t >= 10000 && sf2ctr_debug()) {   // SF-03: debug.txt only
     unsigned int speed = (unsigned int)((sf2_emu_ticks - perf_ticks) * 100 / (now - perf_t));
     sf2ctr_log("speed %u%% of real time, audio underruns %u, %u redraws, avg %u us",
                speed, sf2_mixer_underruns - perf_under, draws, draws ? (unsigned int)(draw_us / draws) : 0);
@@ -377,8 +402,17 @@ void sf2ctr_events() {
         if (sf2_prof_n[k]) n += snprintf(line + n, sizeof line - n, " %s %ux %llums", sf2_prof_name[k], sf2_prof_n[k], sf2_prof_us[k] / 1000);
       if (n) sf2ctr_log("dos:%s", line);
       memset(sf2_prof_us, 0, sizeof sf2_prof_us); memset(sf2_prof_n, 0, sizeof sf2_prof_n); }
-    for (auto& p : sf2ui::fit_problems()) sf2ctr_log("FIT: %s", p.c_str());
     perf_t = now; perf_ticks = sf2_emu_ticks; perf_under = sf2_mixer_underruns; draw_us = 0; draws = 0;
+  }
+
+  {   // cut-off text (UI rule: all text fits): each new problem once, always
+    static size_t fit_seen = 0; static u64 fit_t = 0;
+    if (now - fit_t >= 10000) {
+      fit_t = now;
+      std::vector<std::string> fp = sf2ui::fit_problems();
+      if (fit_seen > fp.size()) fit_seen = 0;
+      for (; fit_seen < fp.size(); fit_seen++) sf2ctr_note("FIT: %s", fp[fit_seen].c_str());
+    }
   }
 
   static u64 flush_t = 0;                       // hand the log to the SD writer every 5 s

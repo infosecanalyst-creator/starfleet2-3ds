@@ -69,8 +69,9 @@ lives directly in `/3ds`, as `sdmc:/3ds/starfleet2.3dsx`); `sd/3ds/starfleet2/` 
 install's `base` folder; the game itself is not part of this repository). It uploads both over
 Wi-Fi to ftpd (port 5000), checking every file's size on the 3DS.
 
-Logs on the 3DS: `/3ds/starfleet2/debug.log` (speed, audio underruns, text-fit problems every
-10 s) and `/3ds/starfleet2/error.log` (fatal errors).
+Logs on the 3DS: `/3ds/starfleet2/debug.log` (start, exit, write failures, text-fit problems) and
+`/3ds/starfleet2/error.log` (fatal errors). An empty `/3ds/starfleet2/debug.txt` turns on the full
+debug log (speed and audio underruns every 10 s, key presses), buffered and capped at 2000 lines.
 
 ## Licences
 - This port is licensed under the GNU General Public License, version 2 or (at your option) any

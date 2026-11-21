@@ -664,20 +664,20 @@ int main(int argc, char* argv[]) {
 		/* Start up main machine */
 		control->StartUp();
 		/* Shutdown everything */
-		sf2ctr_log("DOSBox finished (the game quit)");
+		sf2ctr_note("DOSBox finished (the game quit)");
 	} catch (char * error) {
-		sf2ctr_log("DOSBox error: %s", error);
+		sf2ctr_note("DOSBox error: %s", error);
 		ctr_sys_error(false,error);
 		gfxExit();
 	}
 	catch (int){
-		sf2ctr_log("DOSBox stopped (killswitch)");
+		sf2ctr_note("DOSBox stopped (killswitch)");
 	}
 	catch (std::exception& e) {
-		sf2ctr_log("DOSBox stopped by an exception: %s", e.what());
+		sf2ctr_note("DOSBox stopped by an exception: %s", e.what());
 	}
 	catch(...){
-		sf2ctr_log("DOSBox stopped by an unknown exception");
+		sf2ctr_note("DOSBox stopped by an unknown exception");
 	}
 #ifdef SF2_3DS
 	sf2ctr_shutdown();                // the click sound's ndspInit() gets its ndspExit()

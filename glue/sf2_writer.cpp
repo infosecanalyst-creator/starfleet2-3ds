@@ -44,25 +44,25 @@ static void note_failure(const std::string& path) {
 static bool write_own(const Job& j) {
   if (j.del) {
     if (remove(j.path.c_str()) == 0 || errno == ENOENT) return true;
-    sf2ctr_log("delete failed: %s (errno %d)", j.path.c_str(), errno);
+    sf2ctr_note("delete failed: %s (errno %d)", j.path.c_str(), errno);
     return false;
   }
   std::string tmp = j.path + ".tmp", bak = j.path + ".bak";
   FILE* f = fopen(tmp.c_str(), "wb");
-  if (!f) { sf2ctr_log("write failed (open): %s (errno %d)", tmp.c_str(), errno); return false; }
+  if (!f) { sf2ctr_note("write failed (open): %s (errno %d)", tmp.c_str(), errno); return false; }
   bool ok = j.data.empty() || fwrite(j.data.data(), 1, j.data.size(), f) == j.data.size();
   if (fflush(f) != 0) ok = false;
   if (fclose(f) != 0) ok = false;
-  if (!ok) { sf2ctr_log("write failed: %s", tmp.c_str()); remove(tmp.c_str()); return false; }
+  if (!ok) { sf2ctr_note("write failed: %s", tmp.c_str()); remove(tmp.c_str()); return false; }
   FILE* old = fopen(j.path.c_str(), "rb");
   bool had = old != 0;
   if (old) fclose(old);
   if (had) {
     remove(bak.c_str());
-    if (rename(j.path.c_str(), bak.c_str()) != 0) { sf2ctr_log("write failed (old aside): %s", j.path.c_str()); remove(tmp.c_str()); return false; }
+    if (rename(j.path.c_str(), bak.c_str()) != 0) { sf2ctr_note("write failed (old aside): %s", j.path.c_str()); remove(tmp.c_str()); return false; }
   }
   if (rename(tmp.c_str(), j.path.c_str()) != 0) {
-    sf2ctr_log("write failed (rename): %s", j.path.c_str());
+    sf2ctr_note("write failed (rename): %s", j.path.c_str());
     if (had) rename(bak.c_str(), j.path.c_str());
     remove(tmp.c_str());
     return false;
@@ -87,7 +87,7 @@ static void write_file(const Job& j) {
     if (!f) f = fopen(j.path.c_str(), "wb");
     if (!f) { if (tries == 0) sf2ctr_log("write refused, retrying: %s (errno %d)", j.path.c_str(), errno); svcSleepThread(200 * 1000 * 1000); }
   }
-  if (!f) { sf2ctr_log("write failed: %s", j.path.c_str()); note_failure(j.path); return; }
+  if (!f) { sf2ctr_note("write failed: %s", j.path.c_str()); note_failure(j.path); return; }
   fseek(f, 0, SEEK_END);
   long old = ftell(f);
   fseek(f, 0, SEEK_SET);
@@ -95,7 +95,7 @@ static void write_file(const Job& j) {
   if (fflush(f) != 0) ok = false;
   if (old > (long)j.data.size() && ftruncate(fileno(f), (off_t)j.data.size()) != 0) ok = false;
   if (fclose(f) != 0) ok = false;
-  if (!ok) { sf2ctr_log("write failed: %s", j.path.c_str()); note_failure(j.path); }
+  if (!ok) { sf2ctr_note("write failed: %s", j.path.c_str()); note_failure(j.path); }
   if (slow_ms) svcSleepThread((s64)slow_ms * 1000000);
   unsigned ms = (unsigned)((svcGetSystemTick() - t0) / (SYSCLOCK_ARM11 / 1000));
   if (ms > 300) sf2ctr_log("slow write: %s (%u bytes) %u ms", j.path.c_str(), (unsigned)j.data.size(), ms);
@@ -120,7 +120,7 @@ static void drain_at_exit() { sf2w_wait(0); }
 
 // Called from every wait loop: if a wait drags on, say so once in the debug log.
 static void waited(int& n, const char* what) {
-  if (++n == 200) sf2ctr_log("still waiting for the background writer (%s)", what);   // ~10 s
+  if (++n == 200) sf2ctr_note("still waiting for the background writer (%s)", what);   // ~10 s
 }
 
 // Sleep until the writer finishes a file (or 50 ms pass). Waking every couple of milliseconds to
@@ -142,7 +142,7 @@ void sf2w_start() {
   if (FILE* t = fopen("sdmc:/3ds/starfleet2/slowsd.txt", "r")) { fclose(t); slow_ms = 4000; trace = true; sf2ctr_log("slow SD test mode"); }
   s32 prio = 0x30; svcGetThreadPriority(&prio, CUR_THREAD_HANDLE);
   worker = threadCreate(run, 0, 64 * 1024, prio > 0x19 ? prio - 1 : prio, -2, true);
-  sf2ctr_log("background writer %s", worker ? "started" : "not started (writing directly)");
+  sf2ctr_note("background writer %s", worker ? "started" : "not started (writing directly)");
   atexit(drain_at_exit);
 }
 
