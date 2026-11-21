@@ -140,6 +140,32 @@ int main(int argc, char** argv) {
     if (!ei.good() && want.str().empty()) { printf("NEW  %s (no expected file; run with --update)\n%s", n.c_str(), got.c_str()); bad++; continue; }
     if (want.str() != got) { printf("DIFF %s\n--- expected\n%s--- got\n%s", n.c_str(), want.str().c_str(), got.c_str()); bad++; }
   }
+  // Flows: a checklist followed over a recorded run of real screens (tests/flows.txt:
+  // "<card title> | dump dump ..."). The report says which step each screen leaves it on.
+  {
+    std::ifstream fl(sdir + "/../flows.txt"); std::string line; int fn = 0;
+    static uint16_t top[TOP_W * TOP_H], bot[BOT_W * BOT_H];
+    while (std::getline(fl, line)) {
+      size_t bar = line.find(" | "); if (line.empty() || line[0] == '#' || bar == std::string::npos) continue;
+      std::string title = line.substr(0, bar); std::istringstream ds(line.substr(bar + 3)); std::string d;
+      std::ostringstream o; o << "checklist: " << title << "\n";
+      int sec = -1; for (size_t i = 0; i < manual.size(); i++) if (manual[i].title == title && !manual[i].steps.empty()) sec = (int)i;
+      if (sec < 0) o << "NOT FOUND\n";
+      bool first = true; manual_open = pause_open = false;
+      while (sec >= 0 && ds >> d) {
+        TextScreen ts; if (!load_dump(sdir + "/" + d + ".txt", ts)) { o << d << ": unreadable\n"; continue; }
+        if (first) { chk_sec = sec; chk_step = 0; chk_begin_step(ts); first = false; }
+        for (int i = 0; i < 3; i++) { clock_ms += 40; frame(ts, top, bot); }
+        if (chk_sec < 0) { o << d << ": DONE\n"; break; }
+        o << d << ": step " << chk_step + 1 << "/" << manual[sec].steps.size() << " " << manual[sec].steps[chk_step].what << "\n";
+      }
+      chk_sec = -1; names.push_back("flow");
+      char nm[32]; snprintf(nm, sizeof nm, "flow_%02d", ++fn); std::string ef = edir + "/" + nm + ".txt", got = o.str();
+      if (update) { std::ofstream(ef) << got; continue; }
+      std::ifstream ei(ef); std::stringstream want; want << ei.rdbuf();
+      if (want.str() != got) { printf("DIFF %s\n--- expected\n%s--- got\n%s", nm, want.str().c_str(), got.c_str()); bad++; }
+    }
+  }
   printf("%zu screens, %d differ, %d with text that does not fit%s\n", names.size(), bad, fits, update ? " (expected files rewritten)" : "");
   return (bad || fits) ? 1 : 0;
 }

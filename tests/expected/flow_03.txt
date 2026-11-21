@@ -1,0 +1,6 @@
+checklist: Orbit a planet
+tut1_46_sysmap_ss33: step 1/6 Fly to the planet with the Targeter
+tut1_48_orbit_new_planet: step 3/6 First visit: the planet is scanned for you
+tut1_49_scanning_planet: step 3/6 First visit: the planet is scanned for you
+tut1_50_short_range_scan_blocking: step 4/6 Planetary map? NO is fine while learning
+tut1_51_landing_parties_prompt: step 4/6 Planetary map? NO is fine while learning

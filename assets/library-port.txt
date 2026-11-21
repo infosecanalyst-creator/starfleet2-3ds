@@ -235,7 +235,7 @@ STEP ORDERS | Read your mission orders first | -
 STEP - | With escorts: STG, Escorts, Formation, pick one | -
 STEP LAUNCH | Tap LAUNCH: the engines start and you undock | We have undocked
 STEP SPD+ | Raise sublight speed if the ship only crawls | -
-STEP SYSTEM | Open the system map to choose where to go | -
+STEP SYSTEM | Open the system map to choose where to go | MAP OF STAR SYSTEM
 
 WHY: You leave a starfort simply by starting the sublight engines. Escorts with no formation stay behind in dock, so give them one first (rank Centurion and above).
 
@@ -245,14 +245,14 @@ IF IT DOESN'T WORK: Check that the game is not frozen (press L), that a sublight
 @shelf PROCEDURES
 @see Tutorial 1: Basic Navigation
 @see Ops 1.1 Navigation Control
-STEP SYSTEM | Open the system map | -
+STEP SYSTEM | Open the system map | MAP OF STAR SYSTEM
 STEP - | Tap the planet to put the target box on it | Planet
-STEP - | Tap Targeter in the menu row | -
+STEP - | Tap Targeter in the menu row | Target #
 STEP SPD+ | Set a sublight speed, 0.5 to 0.9 | -
 STEP A | Press A to enter the target | ENTERED
 STEP ENGINES | Start the engines; the ship turns and goes | Engines engaged
 STEP B | Go back to the bridge and watch the trip | -
-STEP - | The engines stop by themselves on arrival | Establish Orbit?
+STEP - | The engines stop by themselves on arrival | Target reached
 
 WHY: The Targeter is the autopilot: it works out the course, flies there and stops next to the target. Steering by hand is for chasing ships and close work.
 
@@ -262,15 +262,15 @@ IF IT DOESN'T WORK: If the target is far away and you are near the system edge, 
 @shelf PROCEDURES
 @see Tutorial 1: Basic Navigation
 @see Ops 1.1 Navigation Control
-STEP STARS | Open the navigation map of the region | -
+STEP STARS | Open the navigation map of the region | ID/class
 STEP - | Tap the star system you want to reach | -
-STEP - | Tap Targeter; hyperspace speed 8.0 is offered | -
-STEP A | Press A to accept the speed | -
+STEP - | Tap Targeter; hyperspace speed 8.0 is offered | Max. Vel
+STEP A | Press A to accept the speed | Select target
 STEP - | Its system map opens: tap a spot near the edge | -
 STEP A | Press A to enter that second target | -
 STEP ENGINES | Start engines: the ship runs to the system edge | Engines engaged
 STEP - | At the edge it jumps into hyperspace by itself | HYPRSPCE
-STEP - | It drops out on arrival and flies to target 2 | NORM SPC
+STEP - | It drops out on arrival and flies to target 2 | Target bearing
 
 WHY: Hyperdrive is the only way between star systems, and it only works through the Targeter. The ship must reach the edge of the system at 0.6 or faster before it can jump.
 
@@ -281,8 +281,8 @@ IF IT DOESN'T WORK: If the ship sits at the system edge and will not jump, the t
 @see Tutorial 1: Basic Navigation
 @see Ops 1.1 Navigation Control
 STEP - | Fly to the planet with the Targeter | Establish Orbit?
-STEP YES | Answer YES: you enter a high orbit | -
-STEP - | First visit: the planet is scanned for you | -
+STEP YES | Answer YES: you enter a high orbit | Entered orbit
+STEP - | First visit: the planet is scanned for you | SHORT RANGE SCAN
 STEP NO | Planetary map? NO is fine while learning | -
 STEP - | PG UP and PG DN raise and lower your orbit | -
 STEP ENGINES | To leave orbit, start the engines | -
@@ -353,7 +353,7 @@ IF IT DOESN'T WORK: You can never board while its shields are up. The tractor be
 STEP STARFORT | Tap STARFORT and answer YES | -
 STEP - | The ship flies itself to the nearest starfort | -
 STEP YES | On arrival answer YES to dock | Shall we dock?
-STEP - | Wait while the starfort works on your ship | DOCKED
+STEP - | Wait while the starfort works on your ship | Docking procedure complete
 STEP - | Escorts ready: bracket number green, up arrow | -
 STEP LAUNCH | Leave when you are ready | We have undocked
 
@@ -365,12 +365,12 @@ IF IT DOESN'T WORK: To dock by hand, stop within one point of the starfort and t
 @shelf PROCEDURES
 @see Tutorial 1: Basic Navigation
 @see Ops 1.1 Navigation Control
-STEP STARS | Open the navigation map | -
+STEP STARS | Open the navigation map | ID/class
 STEP - | Tap a star within 5 light years of you | -
-STEP - | Tap Probes, then Launch | -
+STEP - | Tap Probes, then Launch | PROBES CONTROL
 STEP A | Press A to launch the probe shown | -
 STEP - | Or Probes, Auto_tg: probes the 5 nearest stars | -
-STEP - | Fly on; the probe reports when it arrives | -
+STEP - | Fly on; the probe reports when it arrives | arrived at RegLoc
 
 WHY: A probe maps a star system for you without the trip, and its DETECT column says Enemy if the Alliance is there. You start with five in the launchers and five in storage.
 
