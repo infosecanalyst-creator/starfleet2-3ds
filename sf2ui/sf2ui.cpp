@@ -1165,8 +1165,18 @@ static void chk_update(const TextScreen& ts) {
   chk_pressed.clear();
   if (chk_step >= (int)st.size()) { say("Checklist done", 3000); chk_sec = -1; dirty(); }
 }
-static void chk_card(Surf& s) {
+static void chk_card(Surf& s, bool small) {
   const std::vector<Step>& st = manual[chk_sec].steps;
+  if (small) {      // away from the flight screens: one line, so the game's page stays readable
+    const int x0 = 4, x1 = TOP_W - 4, y1 = TOP_H - 18, y0 = y1 - 15;
+    s.fill(x0, y0, x1, y1, PROMPT_BG); s.rect(x0, y0, x1, y1, rgb(80, 230, 255));
+    char n[16]; snprintf(n, sizeof n, "%d/%d ", chk_step + 1, (int)st.size());
+    std::string l = std::string(n) + st[chk_step].what;
+    if (!st[chk_step].btn.empty()) l += "  [" + st[chk_step].btn + "]";
+    const Font* f = text_width(l.c_str(), F6x12) <= x1 - x0 - 12 ? &F6x12 : &F5x9;
+    fit_text(s, x0 + 6, y0 + 2, x1 - 6, l.c_str(), *f, BTN_TXT, "checklist line");
+    return;
+  }
   const int x0 = 4, x1 = TOP_W - 4, y1 = TOP_H - 18, y0 = y1 - 56;
   s.fill(x0, y0, x1, y1, PROMPT_BG); s.rect(x0, y0, x1, y1, rgb(80, 230, 255));
   char head[96]; snprintf(head, sizeof head, "%s  %d/%d", manual[chk_sec].title.c_str(), chk_step + 1, (int)st.size());
@@ -2441,7 +2451,7 @@ Redraw frame(const TextScreen& ts, uint16_t* top, uint16_t* bottom) {
     const std::vector<Step>& cst = manual[chk_sec].steps;
     if (chk_step < (int)cst.size() && !cst[chk_step].btn.empty())
       for (auto& b : btns) if (b.label == cst[chk_step].btn) { b.coach = true; ring_active = true; }
-    if (draw_top && ts.text_mode && !explain_until) { chk_card(ts_top); rd.top = true; }
+    if (draw_top && ts.text_mode && !explain_until) { chk_card(ts_top, !is_bridge(ts) && glay.kind != G_MAP); rd.top = true; }
   }
   if (draw_top && explain_until && ts.text_mode && !manual_open && !pause_open) { explain_card(ts_top); rd.top = true; }
   if (focus_mode && !manual_open && !pause_open) {     // ring the button nearest the last focus point

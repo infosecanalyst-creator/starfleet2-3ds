@@ -155,7 +155,9 @@ int main(int argc, char** argv) {
       while (sec >= 0 && ds >> d) {
         TextScreen ts; if (!load_dump(sdir + "/" + d + ".txt", ts)) { o << d << ": unreadable\n"; continue; }
         if (first) { chk_sec = sec; chk_step = 0; chk_begin_step(ts); first = false; }
+        fit_clear(); force_redraw(); explain_until = 0;
         for (int i = 0; i < 3; i++) { clock_ms += 40; frame(ts, top, bot); }
+        for (auto& pr : fit_problems()) { o << "FIT: " << pr << "\n"; bad++; }
         if (chk_sec < 0) { o << d << ": DONE\n"; break; }
         o << d << ": step " << chk_step + 1 << "/" << manual[sec].steps.size() << " " << manual[sec].steps[chk_step].what << "\n";
       }
