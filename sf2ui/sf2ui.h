@@ -8,7 +8,6 @@
 // into the game's own keystrokes through the Host callbacks.
 #pragma once
 #include <stdint.h>
-#include <string>
 
 namespace sf2ui {
 
@@ -95,27 +94,5 @@ namespace sf2ui {
 std::vector<std::string> fit_problems();
 void fit_clear();     // test harness: start a fresh fit report
 void force_redraw();  // test harness: redraw both screens on the next frame
-
-// Rule 17 (never lose progress): the platform's exit save. The platform asks whether a quick save is
-// possible (the game's own Ctrl+Q works on the bridge only), presses it, and while it waits for the
-// game to write its files shows "Saving..." on the touch screen (input is ignored meanwhile). If the
-// save does not finish, exit_unsaved_ask() opens "Not saved! Exit anyway?" (focus on NO): YES calls
-// Host::quit again, NO or B goes back.
-bool can_quick_save();       // the game is on the bridge
-void quick_save();           // press the game's quick save (Ctrl+Q), as SELECT does
-bool keys_pending();         // injected key events still waiting to go in
-// The save sequence: Ctrl+Q, then the full save (Ctrl+V / Alt+V) answering a file-name prompt with
-// EXITSAVE and overwrite / save questions with Y. Step it every poll with what the platform saw:
-// save_written = a save-type file was written since begin, save_quiet = and nothing for a while.
-enum { ES_RUNNING = 0, ES_SAVED = 1, ES_CANT = -1, ES_NOTHING = -2 };
-void exit_save_begin();
-int exit_save_step(bool save_written, bool save_quiet);
-const char* exit_save_note();   // what the sequence did (for the debug log)
-std::string exit_save_screen_changes();   // game screen rows changed since the last call (debug log)
-bool exit_save_refused();       // the game already said this mission can't be saved
-void exit_save_extend();        // the game switched programs: give the current step its full time again
-void exit_save_ui(bool on);  // show / hide the "Saving..." panel
-void exit_unsaved_ask(int reason);   // ask "Not saved! Exit anyway?" (reason 1: the game refused)
-bool exit_prompt_open();     // that question is still open
 
 }  // namespace sf2ui

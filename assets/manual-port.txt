@@ -17,7 +17,7 @@ New to Star Fleet II? This page walks you through your first ten minutes. The ga
 
 6. Questions. When the game asks something, the line just above the buttons shows the question and the buttons become the answers. When nothing is asked, that line says what to do on this screen (the top screen's gold strip says it too).
 
-7. Saving. The game saves a mission under a name you give it (its Save Mission command); after that, SELECT (or START, then QUICK SAVE) on the bridge saves again under that name (the game's Ctrl+Q). When you leave with START, then EXIT GAME, while on the bridge, the port tries the game's own save first and the touch screen says "Saving..." (the top screen shows the game's own screen meanwhile) until a save file is written, for at most 15 seconds: it first answers a "press any key" prompt if one is up, then uses Ctrl+Q, and if that saves nothing it opens the game's Save Mission command and names the save EXITSAVE (answering yes if EXITSAVE already exists). Closing the game from the HOME Menu does the same (as far as the 3DS allows). Practice missions may not be savable: if the game says so, or nothing is saved, EXIT GAME asks "Not saved! Exit anyway?" (NO is ringed; NO keeps playing). Away from the bridge EXIT GAME warns that anything since your last save is lost. Pressing HOME by itself only pauses the game; it does not save.
+7. Saving. The game autosaves every half day of mission time, and Resume picks up from there. To keep your exact place, save the mission yourself on the bridge: START, then SAVE MISSION opens the game's own Save Mission command and the keyboard; type a name and tap ENTER. After that, SELECT (the game's quick save) saves again under that name in one press. START, then EXIT GAME, leaves at once (it does not save for you), and closing from the HOME Menu does the same; pressing HOME by itself only pauses the game.
 
 8. Learning more. The Training Manual tutorials further down this manual (Tutorial 1 onward) teach flying, combat and missions step by step: follow them in Practice. The Keyboard Quick Reference lists the game's own keys; you never need them, because the port presses them for you and the row of buttons under the prompt shows the game's current commands.
 
@@ -102,9 +102,10 @@ Sticks       Off the bridge (orders, reports, any long
              up/down a line at a time (hold to keep
              going; at the end of the text they page
              the game), left/right a page at a time
-START        Menu: resume, manual, quick save,
+START        Menu: resume, manual, save mission,
              game settings, exit
-SELECT       Bridge: quick save (the game's Ctrl+Q)
+SELECT       Bridge: quick save under the last
+             SAVE MISSION name (the game's Ctrl+Q)
              Elsewhere: show or hide the keyboard
 
 # Using this manual

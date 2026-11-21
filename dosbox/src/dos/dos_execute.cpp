@@ -78,11 +78,9 @@ void DOS_UpdatePSPName(void) {
 
 #ifdef SF2_3DS
 void sf2ctr_log(const char* fmt, ...);
-unsigned int sf2_program_ends = 0;       // the game switching overlays (the exit save keeps watching)
 #endif
 void DOS_Terminate(Bit16u pspseg,bool tsr,Bit8u exitcode) {
 #ifdef SF2_3DS
-	sf2_program_ends++;
 	sf2ctr_log("program ended, exit code %u%s", (unsigned)exitcode, tsr ? " (TSR)" : "");
 #endif
 
