@@ -122,6 +122,7 @@ static LoopHandler * loop;
 
 bool SDLNetInited;
 
+unsigned int sf2_emu_ms = 0;            // emulated milliseconds run (3DS performance log)
 static Bit32u ticksRemain;
 static Bit32u ticksLast;
 static Bit32u ticksAdded;
@@ -148,6 +149,7 @@ static Bitu Normal_Loop(void) {
 			GFX_Events();
 			if (ticksRemain>0) {
 				TIMER_AddTick();
+				sf2_emu_ms++;
 				ticksRemain--;
 			} else {increaseticks();return 0;}
 		}

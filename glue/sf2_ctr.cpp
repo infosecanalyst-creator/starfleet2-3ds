@@ -415,9 +415,10 @@ void sf2ctr_events() {
   // performance log every 10 s: emulation speed vs real time, audio underruns, frontend cost
   static u64 perf_t = 0; static unsigned int perf_ticks = 0, perf_under = 0;
   static u64 draw_us = 0; static unsigned int draws = 0;
-  if (!perf_t) { perf_t = now; perf_ticks = sf2_emu_ticks; perf_under = sf2_mixer_underruns; }
+  extern unsigned int sf2_emu_ms;      // (GFX_Events also runs once per main-loop pass, so sf2_emu_ticks over-counts when the game keeps up)
+  if (!perf_t) { perf_t = now; perf_ticks = sf2_emu_ms; perf_under = sf2_mixer_underruns; }
   else if (now - perf_t >= 10000 && sf2ctr_debug()) {   // SF-03: debug.txt only
-    unsigned int speed = (unsigned int)((sf2_emu_ticks - perf_ticks) * 100 / (now - perf_t));
+    unsigned int speed = (unsigned int)((sf2_emu_ms - perf_ticks) * 100 / (now - perf_t));
     sf2ctr_log("speed %u%% of real time, audio underruns %u, %u redraws, avg %u us",
                speed, sf2_mixer_underruns - perf_under, draws, draws ? (unsigned int)(draw_us / draws) : 0);
     { char st[128]; sf2_debug_state(st, sizeof st); sf2ctr_log("state %s", st); }
@@ -435,7 +436,7 @@ void sf2ctr_events() {
         if (sf2_prof_n[k]) n += snprintf(line + n, sizeof line - n, " %s %ux %llums", sf2_prof_name[k], sf2_prof_n[k], sf2_prof_us[k] / 1000);
       if (n) sf2ctr_log("dos:%s", line);
       memset(sf2_prof_us, 0, sizeof sf2_prof_us); memset(sf2_prof_n, 0, sizeof sf2_prof_n); }
-    perf_t = now; perf_ticks = sf2_emu_ticks; perf_under = sf2_mixer_underruns; draw_us = 0; draws = 0;
+    perf_t = now; perf_ticks = sf2_emu_ms; perf_under = sf2_mixer_underruns; draw_us = 0; draws = 0;
   }
 
   {   // cut-off text (UI rule: all text fits): each new problem once, always
