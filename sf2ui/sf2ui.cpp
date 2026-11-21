@@ -79,7 +79,7 @@ static uint32_t busy_since = 0; static bool busy_now = false;
 // Jumping straight to another view: close what's open (Esc) until the game is back at a view, then switch.
 static int view_goal = -1, view_esc = 0; static uint32_t view_next = 0;
 static bool tdb_drive = false; static int tdb_tc, tdb_tr, tdb_steps; static uint32_t tdb_next = 0; static uint32_t tdb_show_until = 0;
-static bool tdb_enter_after = false; static int tdb_best = 9999;
+static bool tdb_enter_after = false; static int tdb_best = 9999; static int tdb_lc = -1, tdb_lr = -1; static uint32_t tdb_press_t = 0;
 
 // ZR focus mode (rule 6): on the game screens the D-Pad and A belong to the game (arrow keys, Enter),
 // so ZR hands them to the touch buttons for a while: the D-Pad moves a gold ring, A presses the ringed
@@ -2001,7 +2001,9 @@ static void generic_bottom(Surf& s, const TextScreen& ts) {
       if (l.label == "DOS shell") btns.back().off = true;   // nothing to do at a DOS prompt on a handheld, and no easy way back
     }
   } else if (glay.kind == G_MAP) {
-    cells(s, ts, glay.c0, glay.r0, glay.c1, glay.r1, *glay.f, glay.ox, glay.oy, glay.cw, glay.lh);
+    { TextScreen m = ts;      // (the game's solid filler blocks beside a map's axis labels are left out)
+      for (int r = glay.r0; r <= glay.r1; r++) for (int c = glay.c0; c <= glay.c1; c++) if (m.ch[r][c] == 0xDB) { m.ch[r][c] = ' '; m.at[r][c] = 0x07; }
+      cells(s, m, glay.c0, glay.r0, glay.c1, glay.r1, *glay.f, glay.ox, glay.oy, glay.cw, glay.lh); }
   } else if (reader_wanted(ts) && (build_reader(ts), !rlines.empty())) {
     reader_on = true;
     draw_reader(s, ts);
@@ -2516,6 +2518,8 @@ Redraw frame(const TextScreen& ts, uint16_t* top, uint16_t* bottom) {
       tdb_next = t + 150;                 // the first arrow only brings the box up: wait for it
     } else if (!find_tdb(ts, c, r) || ++tdb_steps > 80) {
       tdb_drive = false;
+    } else if (tdb_steps > 0 && c == tdb_lc && r == tdb_lr && t - tdb_press_t < 1500) {
+      tdb_steps--; tdb_next = t + 60;     // the game has not drawn the last move yet (slow on the 3DS): wait, don't judge
     } else {
       tdb_show_until = 0;
       int dc = tdb_tc - c, dr = tdb_tr - r, dist = abs(dc) + abs(dr) * 2;
@@ -2525,9 +2529,9 @@ Redraw frame(const TextScreen& ts, uint16_t* top, uint16_t* bottom) {
         tdb_drive = false;
         if (tdb_enter_after && dist <= 1) press(K_ENTER);
       } else if (dr) {
-        press(dr > 0 ? K_DOWN : K_UP);
+        press(dr > 0 ? K_DOWN : K_UP); tdb_lc = c; tdb_lr = r; tdb_press_t = t;
       } else {
-        press(dc > 0 ? K_RIGHT : K_LEFT);
+        press(dc > 0 ? K_RIGHT : K_LEFT); tdb_lc = c; tdb_lr = r; tdb_press_t = t;
       }
       tdb_next = t + 120;
     }
@@ -2757,7 +2761,7 @@ static void snap_to_object(const TextScreen& ts, int& col, int& row, int c0, int
 }
 static void start_drive(int col, int row, int c, int r) {
   bool same = abs(col - c) <= 1 && row == r;           // a second tap on the box locks it in
-  tdb_drive = true; tdb_tc = col; tdb_tr = row; tdb_steps = 0; tdb_best = 9999;
+  tdb_drive = true; tdb_tc = col; tdb_tr = row; tdb_steps = 0; tdb_best = 9999; tdb_lc = tdb_lr = -1;
   tdb_enter_after = same; tdb_next = 0;
 }
 
@@ -2805,7 +2809,7 @@ static void map_tap(int x, int y) {
     // up, then drive it to the tapped spot.
     if (!in_flight(last)) { say("No target box: choose a targeting option first"); return; }
     press(K_RIGHT);
-    tdb_drive = true; tdb_tc = col; tdb_tr = row; tdb_steps = 0; tdb_best = 9999; tdb_enter_after = false;
+    tdb_drive = true; tdb_tc = col; tdb_tr = row; tdb_steps = 0; tdb_best = 9999; tdb_enter_after = false; tdb_lc = tdb_lr = -1;
     tdb_show_until = now() + 2500; tdb_next = now() + 300;
     return;
   }
@@ -3028,8 +3032,8 @@ void buttons(uint32_t held, uint32_t pr, uint32_t rel) {
     quickref_up = true; r_used = true;
     bool br = is_bridge(last), fl = in_flight(last);
     const char* body = br ?
-      (lefty_on ? "D-Left phasers, D-Up torpedoes. L freeze. ZR/ZL hyperspace speed up/down. Circle Pad: left/right heading, up/down sublight speed. Tap the display to steer. D-Right Enter, D-Down back. SELECT re-save. START menu. R + tap: explain."
-                : "X phasers, Y torpedoes. L freeze. ZR/ZL hyperspace speed up/down. Circle Pad: left/right heading, up/down sublight speed. Tap the display to steer. A Enter, B back. SELECT re-save. START menu. R + tap: explain.")
+      (lefty_on ? "D-Left phasers, D-Up torpedoes. L freeze. ZR/ZL hyperspace speed up/down. Circle Pad: left/right heading, up/down sublight speed. Tap the display to steer. D-Right Enter, D-Down back. SELECT: what now? START menu. R + tap: explain."
+                : "X phasers, Y torpedoes. L freeze. ZR/ZL hyperspace speed up/down. Circle Pad: left/right heading, up/down sublight speed. Tap the display to steer. A Enter, B back. SELECT: what now? START menu. R + tap: explain.")
       : fl ? "Tap an item or a spot on the map. A Enter, B back to the bridge. X/Y still fire, Circle Pad still steers. The tabs at the bottom jump straight to another view. START menu. R + tap: explain."
            : "Tap an item to choose it. A Enter (or CONTINUE), B back. Sticks or drag scroll long pages. ZR: move a ring over the buttons with the D-Pad. SELECT keyboard. START menu. R + tap: explain.";
     explain(br ? "QUICK REFERENCE: BRIDGE" : fl ? "QUICK REFERENCE: THIS VIEW" : "QUICK REFERENCE", body);
