@@ -2600,6 +2600,11 @@ Redraw frame(const TextScreen& ts, uint16_t* top, uint16_t* bottom) {
   // strip shows a moving "Working" bar until it does (or 60 s pass), so a slow step never looks dead.
   if (busy_since && changed && view_goal < 0) busy_since = 0;
   if (busy_since && (int32_t)(t - busy_since) > 60000) busy_since = 0;
+  // the game is waiting at a question or a "press key" on the bridge: it is not working on anything
+  if (busy_since && view_goal < 0 && (int32_t)(t - busy_since) > 1500 && ts.text_mode && is_bridge(ts)) {
+    std::string pr = row_str(ts, 24, 0, 24);
+    if (pr.find('?') != std::string::npos || pr.find("PRESS") != std::string::npos) busy_since = 0;
+  }
   bool was_busy = busy_now;
   busy_now = busy_since && (int32_t)(t - busy_since) > 350;
   if (was_busy && !busy_now) dirty();
@@ -2684,7 +2689,15 @@ Redraw frame(const TextScreen& ts, uint16_t* top, uint16_t* bottom) {
         explain(COACH_TITLE[cs], COACH_TEXT[cs]); explain_until = t + 9000;
         if (!draw_top) dirty();     // the next frame redraws the top with the card
       }
-      if (COACH_BUTTON[cs]) for (auto& b : btns) if (b.label == COACH_BUTTON[cs]) { b.coach = true; ring_active = true; }
+      // While the game waits for an answer or a key on the bridge, that is the next thing to tap
+      // (emulator, Nov 21: LAUNCH was ringed while "Comply with the request?" swallowed every key).
+      const char* want = COACH_BUTTON[cs];
+      if (is_bridge(ts)) {
+        std::string pr = row_str(ts, 24, 0, 24);
+        if (pr.find('?') != std::string::npos) want = 0;
+        else if (pr.find("PRESS") != std::string::npos) want = "CONTINUE";
+      }
+      if (want) for (auto& b : btns) if (b.label == want) { b.coach = true; ring_active = true; }
     }
   }
   if (chk_sec >= 0 && !manual_open && !pause_open) {
