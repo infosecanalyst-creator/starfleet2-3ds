@@ -1065,6 +1065,38 @@ static void explain_card(Surf& s) {
   for (size_t i = 0; i < lines.size(); i++) fit_text(s, x0 + 6, y0 + 22 + (int)i * 12, x1 - 6, lines[i].c_str(), F6x12, BTN_TXT, "explain card");
 }
 
+// ------------------------------------------------------------------ "Why can't I...?" (learning design, must)
+// When an officer refuses an order, COMMS says so in the game's own terse words. The port shows
+// the reason and the fix in plain words. Only phrases seen in the real game are listed (add more
+// from tests/screens dumps as they turn up).
+struct Refusal { const char* phrase; const char* title; const char* text; const char* button; };
+static const Refusal REFUSALS[] = {
+  {"Velocity must be set", "WHY WON'T THE SHIP MOVE?",
+   "HOW: tap SPD+ a few times (or LAUNCH / ENGINES, which set a speed for you), then start the engines. WHY: the helm will not start the engines while the set speed is 0.", "SPD+"},
+};
+static bool ring_active = false;         // a blinking ring is on screen (needs a redraw every 500 ms)
+static uint32_t refusal_sig = 0;
+static const char* refusal_button = 0; static uint32_t refusal_until = 0;
+static void check_refusals(const TextScreen& ts, uint32_t t) {
+  if (!is_bridge(ts)) return;
+  std::string comms;
+  for (int r = 15; r <= 22; r++) comms += row_str(ts, r, 1, 40) + "\n";
+  uint32_t h = 2166136261u; for (char c : comms) { h ^= (uint8_t)c; h *= 16777619u; }
+  if (h == refusal_sig) return;            // only when COMMS changes
+  bool first = refusal_sig == 0; refusal_sig = h;
+  if (first) return;                       // not for text already there when the bridge appears
+  // the newest line counts: the phrase must be in the last two lines with text
+  std::vector<std::string> lines;
+  for (int r = 15; r <= 22; r++) { std::string l = trim(row_str(ts, r, 1, 40)); if (!l.empty()) lines.push_back(l); }
+  for (auto& rf : REFUSALS)
+    for (size_t i = lines.size() > 2 ? lines.size() - 2 : 0; i < lines.size(); i++)
+      if (lines[i].find(rf.phrase) != std::string::npos) {
+        explain(rf.title, rf.text); explain_until = t + 10000;
+        refusal_button = rf.button; refusal_until = t + 10000;
+        return;
+      }
+}
+
 // ------------------------------------------------------------------ coach (plan item 8)
 // One card per situation, the first time it comes up, with the next button ringed in blinking
 // cyan while the coach is on. The ring stays (the card goes after 9 s) until the situation changes.
@@ -2117,6 +2149,7 @@ Redraw frame(const TextScreen& ts, uint16_t* top, uint16_t* bottom) {
   bool toast_anim = !toast.empty() && (int32_t)(toast_until - t) > -50;
   bool scroll_due = (marquee || busy_now) && t - last_anim >= 50;
   if (explain_until && (int32_t)(t - explain_until) >= 0) { explain_until = 0; dirty(); }
+  { static uint32_t blink = 0; if (ring_active && t / 500 != blink) { blink = t / 500; dirty(); } }
   if (ts.text_mode) read_orders(ts);
   if (mis_show_pending && ts.text_mode && is_bridge(ts) && !manual_open && !pause_open) {   // the card once, on the bridge
     mis_show_pending = false;
@@ -2164,6 +2197,10 @@ Redraw frame(const TextScreen& ts, uint16_t* top, uint16_t* bottom) {
     if (draw_top) { generic_top(ts_top, ts); top_native = false; }
     rd.top = draw_top; rd.bottom = true;
   }
+  if (ts.text_mode && !manual_open && !pause_open) check_refusals(ts, t);
+  if (refusal_button && (int32_t)(t - refusal_until) >= 0) { refusal_button = 0; dirty(); }
+  ring_active = false;
+  if (refusal_button) for (auto& b : btns) if (b.label == refusal_button) { b.coach = true; ring_active = true; }
   if (coach_on && !manual_open && !pause_open && !kb_open) {
     int cs = coach_step(ts);
     if (cs >= 0) {
@@ -2172,7 +2209,7 @@ Redraw frame(const TextScreen& ts, uint16_t* top, uint16_t* bottom) {
         explain(COACH_TITLE[cs], COACH_TEXT[cs]); explain_until = t + 9000;
         if (!draw_top) dirty();     // the next frame redraws the top with the card
       }
-      if (COACH_BUTTON[cs]) for (auto& b : btns) if (b.label == COACH_BUTTON[cs]) b.coach = true;
+      if (COACH_BUTTON[cs]) for (auto& b : btns) if (b.label == COACH_BUTTON[cs]) { b.coach = true; ring_active = true; }
     }
   }
   if (draw_top && explain_until && ts.text_mode && !manual_open && !pause_open) { explain_card(ts_top); rd.top = true; }
