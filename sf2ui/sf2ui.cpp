@@ -614,7 +614,8 @@ static std::vector<MenuItem> parse_menu(const TextScreen& ts, std::string& promp
   }
   int dividers = 0;
   for (int k = 24; k < 80; k++) if (ts.at[24][k] == 0x08 || ts.ch[24][k] == 0xB3 || ts.ch[24][k] == 0xBA) dividers++;
-  for (auto& m : items) if (m.label.size() > 12) dividers = 0;   // long words are prose, not a menu
+  // long words are prose, not a menu - except under the game's own "Select option" ("Launch Control | Operations")
+  if (prompt.compare(0, 13, "Select option") != 0) for (auto& m : items) if (m.label.size() > 12) dividers = 0;
   if (row_str(ts, 24, 0, 80).find("]:") != std::string::npos) dividers = 0;   // an open window's key hints win
   if (items.size() < 2 || dividers < 2) {
     items.clear();
