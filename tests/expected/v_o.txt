@@ -1,3 +1,4 @@
 kind: plain
 hint: X/Y fire, Circle Pad steers, B backs out
 buttons: [PG UP] [] [PG DN] [] [SPACE] [] [] [SYSTEM MAP] [NAV MAP] [WAR MAP] [HELM] [STARS] [SYSTEM] [WAR] [COMBAT] [FLEET] [ORDERS] [LOG]
+explain cards: 18/18

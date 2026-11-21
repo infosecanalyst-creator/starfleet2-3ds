@@ -79,6 +79,19 @@ static std::string report(const std::string& name, const TextScreen& ts, const s
   o << "buttons:";
   for (auto& b : btns) o << " [" << b.label << (b.off ? " (grey)" : "") << "]";
   o << "\n";
+  // Explain mode (hold R + tap): every button gets a card; each card must fit the top screen
+  if (ts.text_mode) {
+    std::vector<Btn> bs = btns; int cards = 0;
+    buttons(B_R, B_R, 0);
+    for (auto& b : bs) {
+      int x = (b.x0 + b.x1) / 2, y = (b.y0 + b.y1) / 2;
+      explain_until = 0;
+      touch(x, y, true); clock_ms += 40; frame(ts, top, bot); touch(x, y, false); clock_ms += 40; frame(ts, top, bot);
+      if (explain_until) cards++;
+    }
+    buttons(0, 0, B_R); explain_until = 0; clock_ms += 40; frame(ts, top, bot);
+    o << "explain cards: " << cards << "/" << bs.size() << "\n";
+  }
   for (auto& p : fit_problems()) o << "FIT: " << p << "\n";
   if (!png_dir.empty()) { save_ppm(png_dir + "/" + name + "_top.ppm", top, TOP_W, TOP_H); save_ppm(png_dir + "/" + name + "_bot.ppm", bot, BOT_W, BOT_H); }
   return o.str();

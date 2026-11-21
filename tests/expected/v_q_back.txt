@@ -1,3 +1,4 @@
 kind: bridge
 hint: Docked: LAUNCH leaves the starfort
 buttons: [PHASERS] [TORPS] [SHLD+] [SHLD-] [SPD+] [SPD-] [LAUNCH] [ORDERS] [SCANNERS] [MEDICAL] [DEPT.Q] [STARS] [SYSTEM] [WAR] [COMBAT] [FLEET] [ORDERS] [LOG]
+explain cards: 18/18

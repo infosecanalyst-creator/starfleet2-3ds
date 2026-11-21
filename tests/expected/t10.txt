@@ -1,3 +1,4 @@
 kind: menu
 hint: New? Choose Practice first. Help: START > MANUAL
 buttons: [ (grey)] [] [Change default settings] [DOS shell] [View members of Fleet] [Information about SF II] [List your legions] [ENTER] [BACK] [KEYBOARD] [STARS (grey)] [SYSTEM (grey)] [WAR (grey)] [COMBAT (grey)] [FLEET (grey)] [ORDERS (grey)] [LOG (grey)]
+explain cards: 17/17

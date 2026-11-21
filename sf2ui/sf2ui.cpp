@@ -68,6 +68,10 @@ static int tap_x = -1, tap_y = -1;
 // START menu (pause): resume, manual, quick save, game settings, exit.
 static bool pause_open = false, quit_confirm = false;
 static int pause_focus = 0;            // D-Pad focus in the START menu (confirm: 0 YES, 1 NO)
+// Explain mode (plan item 6): hold R and tap anything on the touch screen; a card on the top screen
+// says in plain words what it is. R pressed and released with no tap still changes the tap mode.
+static bool r_held = false, r_used = false;
+static std::string explain_title, explain_text; static uint32_t explain_until = 0;
 // Busy feedback: a button was pressed and the game hasn't answered yet (see frame()).
 static uint32_t busy_since = 0; static bool busy_now = false;
 // Jumping straight to another view: close what's open (Esc) until the game is back at a view, then switch.
@@ -841,8 +845,8 @@ static void bridge_top(Surf& s, const TextScreen& ts) {
     cells_in(s, ts, 53, 15, 58, 16, F6x12, in.x0 + 114, top + 5 * lh, in.x1, top + 7 * lh, lh);
   }
   if (!lefty_loaded) lefty_load();
-  const char* hint = lefty_on ? "D-Lt/Up fire  L freeze  R tap mode  ZR buttons  START menu"
-                              : "X/Y fire  L freeze  R tap mode  ZR buttons  START menu";
+  const char* hint = lefty_on ? "D-Lt/Up fire  L freeze  R mode  R+tap: explain  START menu"
+                              : "X/Y fire  L freeze  R mode  R+tap: explain  START menu";
   s.fill(0, 224, TOP_W, TOP_H, BTN);
   s.hline(0, TOP_W, 224, BTN_EDGE);
   fit_text(s, (TOP_W - text_width(hint, F6x12)) / 2, 226, TOP_W - 2, hint, F6x12, TITLE, "bridge hint");
@@ -912,6 +916,86 @@ static void bridge_top_narrow(Surf& s, const TextScreen& ts) {
 // (13-px rows, down from 14, leave room for the prompt strip and two 24-px button rows 8 px apart
 // under it; the cells start one pixel into the title band so the 12 rows end above the frame)
 static const int TAC_X = 2, TAC_Y = 9, TAC_CW = 8, TAC_LH = 13;
+
+// ------------------------------------------------------------------ explain mode (plan item 6)
+struct Gloss { const char* key; const char* title; const char* text; };
+static const Gloss GLOSSARY[] = {
+  {"PHASERS", "PHASERS (X)", "Short-range beam weapons. They fire only in Condition RED (raise shields to the top twice for red alert). Ready when the P light in DAMAGE is green."},
+  {"TORPS", "TORPEDOES (Y)", "Two tubes, longer range than phasers, limited supply (Torps in DATA). They can't hit mines."},
+  {"SHLD+", "SHIELDS UP", "Raise shield power 5%. Shields soak up damage but use energy. Maximum twice in a row = red alert."},
+  {"SHLD-", "SHIELDS DOWN", "Lower shield power 5% to save energy. Lowest twice in a row cancels red alert."},
+  {"SPD+", "SUBLIGHT SPEED UP", "Sublight speed +0.1 c (up to 1.0). Hyperspace speed: ZR up, ZL down. The engines must be on to move."},
+  {"SPD-", "SUBLIGHT SPEED DOWN", "Sublight speed -0.1 c. To stop at once use STOP (emergency stop)."},
+  {"LAUNCH", "LAUNCH", "Leave the starfort: sets sublight 0.5 if no speed is set and starts the engines."},
+  {"ENGINES", "ENGINES ON", "Starts the engines (F9). If no speed is set it sets sublight 0.5 first."},
+  {"STOP", "EMERGENCY STOP", "All engines stop (F10). The ship coasts to a halt."},
+  {"STARFORT", "AUTOPILOT TO STARFORT", "The game's own autopilot to the nearest Krellan starfort (it asks first). Dock there to resupply, repair and rest the crew."},
+  {"ORDERS", "MISSION ORDERS", "Shows your mission orders again: what to do and how many days you have."},
+  {"ECM ON", "ECM (countermeasures)", "Electronic countermeasures jam enemy targeting so they miss more often. Uses energy. Tap again to switch off."},
+  {"ECM OFF", "ECM (countermeasures)", "ECM is on: enemy targeting is jammed. Tap to switch it off and save energy."},
+  {"FREEZE", "FREEZE (L)", "Pauses the simulation so you can think. Tap again (or L) to carry on."},
+  {"TELEPORT", "TELEPORTERS", "Send a landing party, shock troops or supplies to the planet you orbit, or bring them back."},
+  {"AUTO", "TAP MODE: AUTO", "A tap on the tactical display moves the target box when it is showing, otherwise steers. R changes the mode."},
+  {"STEER", "TAP MODE: STEER", "A tap on the tactical display always turns the ship toward that spot. R changes the mode."},
+  {"TARGET", "TAP MODE: TARGET", "A tap on the tactical display always moves the target box. R changes the mode."},
+  {"STARS", "STAR MAP", "The region's star systems: choose where to travel next."},
+  {"SYSTEM", "SYSTEM MAP", "Planets, ships and bases in the star system you are in. Tap one to aim at it."},
+  {"WAR", "WAR MAP", "Who owns which star systems: Krellan, UGA (the enemy) or neutral."},
+  {"COMBAT", "COMBAT CONTROL", "Weapon settings and targets: Destroy/Disable, automatic or manual targeting."},
+  {"FLEET", "FLEET COMMAND", "Escorts and fleets under your command, and their orders."},
+  {"LOG", "LOG", "Your log of reports and messages, so you can read what you missed."},
+  {"NAV", "NAVIGATION", "Course, speed, targets and autopilot (travel to a planet, ship or system)."},
+  {"ENG", "ENGINEERING", "Damage control and repairs, power, teleporters."},
+  {"CMB", "COMBAT", "Weapons settings, firing modes and targeting."},
+  {"CMP", "COMPUTER", "Databases of what you have found, and the Ship Information System."},
+  {"SEC", "SECURITY", "Internal security, prisoners, boarding parties."},
+  {"COM", "COMMUNICATIONS", "Messages, hails and distress calls."},
+  {"STG", "STRATEGIC COMMAND", "Fleets, escorts and planetary invasions."},
+  {"SCI", "SCIENCE", "Scans, sensor probes and Department Q."},
+  {"CTL", "CONTROLS", "The ship's switches: auto shields (AAS), message filter (CMF), crew rest (RST), ECM."},
+  {"MORE", "MORE", "Shows the rest of the game's commands on this row."},
+  {"CONTINUE", "CONTINUE", "Goes on to the next screen (same as A)."},
+  {"BACK", "BACK", "Backs out of the current menu or screen (same as B)."},
+  {"KEYBOARD", "KEYBOARD", "Opens the on-screen keyboard for the rare times the game wants typing."},
+  {"YES", "YES", "Answers the game's question with yes."},
+  {"NO", "NO", "Answers the game's question with no."},
+};
+static void explain(const char* title, const char* text) {
+  explain_title = title; explain_text = text; explain_until = now() + 7000; dirty();
+}
+static bool explain_button(const std::string& label) {
+  for (auto& g : GLOSSARY) if (label == g.key) { explain(g.title, g.text); return true; }
+  return false;
+}
+// What the tapped spot on the bridge's touch screen is (outside the buttons).
+static void explain_spot(const TextScreen& ts, int x, int y) {
+  if (is_bridge(ts) && y < UP_H) {
+    if (x < 180) explain("TACTICAL DISPLAY", "A close-up around your ship (in the centre, heading up). Tap to steer there. Red dots are torpedoes or mines.");
+    else if (x < 236) explain("NAVIGATION", "Where you are (region and position), the course set, your first target and its distance, and the mode: DOCKED, NORM SPC, HYPRSPCE, EMG STOP...");
+    return;
+  }
+  if (y >= UP_H && y < ROW1_Y0) { explain("PROMPT LINE", "The game's instructions and questions, or what to do next. Alerts show here in red or gold."); return; }
+  explain("EXPLAIN", "Hold R and tap a button or a part of the touch screen to see what it does.");
+}
+static void explain_card(Surf& s) {
+  const int x0 = 4, x1 = TOP_W - 4, y1 = TOP_H - 4;
+  // wrap the text to the card width in the 6x12 font
+  std::vector<std::string> lines; std::string cur, word;
+  int maxc = (x1 - x0 - 12) / F6x12.w;
+  auto flush_word = [&]() {
+    if (word.empty()) return;
+    if ((int)(cur.size() + (cur.empty() ? 0 : 1) + word.size()) > maxc) { lines.push_back(cur); cur.clear(); }
+    if (!cur.empty()) cur += ' ';
+    cur += word; word.clear();
+  };
+  for (char c : explain_text) { if (c == ' ') flush_word(); else word += c; }
+  flush_word(); if (!cur.empty()) lines.push_back(cur);
+  int h = 8 + 16 + (int)lines.size() * 12 + 6, y0 = y1 - h;
+  s.fill(x0, y0, x1, y1, PROMPT_BG);
+  s.rect(x0, y0, x1, y1, TITLE);
+  fit_text(s, x0 + 6, y0 + 4, x1 - 6, explain_title.c_str(), F8x16, TITLE, "explain card");
+  for (size_t i = 0; i < lines.size(); i++) fit_text(s, x0 + 6, y0 + 22 + (int)i * 12, x1 - 6, lines[i].c_str(), F6x12, BTN_TXT, "explain card");
+}
 
 // ------------------------------------------------------------------ bridge situation (plan item 3)
 // The bridge status box (rows 15-16, columns 40-51) reads "STATUS:" over the ship's condition:
@@ -1930,6 +2014,7 @@ Redraw frame(const TextScreen& ts, uint16_t* top, uint16_t* bottom) {
   if (flash_on && (int32_t)(flash_until - t) <= -50) flash_on = false;
   bool toast_anim = !toast.empty() && (int32_t)(toast_until - t) > -50;
   bool scroll_due = (marquee || busy_now) && t - last_anim >= 50;
+  if (explain_until && (int32_t)(t - explain_until) >= 0) { explain_until = 0; dirty(); }
   bool full = changed || drawn_version != ui_version;
   if (!full && !flash_on && !toast_anim && !scroll_due) return rd;
   if (flash_on || toast_anim || scroll_due) last_anim = t;
@@ -1966,6 +2051,7 @@ Redraw frame(const TextScreen& ts, uint16_t* top, uint16_t* bottom) {
     if (draw_top) { generic_top(ts_top, ts); top_native = false; }
     rd.top = draw_top; rd.bottom = true;
   }
+  if (draw_top && explain_until && ts.text_mode && !manual_open && !pause_open) { explain_card(ts_top); rd.top = true; }
   if (focus_mode && !manual_open && !pause_open) {     // ring the button nearest the last focus point
     int best = -1, bd = 1 << 30;
     for (int i = 0; i < (int)btns.size(); i++) {
@@ -2087,6 +2173,20 @@ void touch(int x, int y, bool down) {
       if (sdrag) { sd_acc += sd_ly - y; sd_mom = (float)(sd_ly - y); sd_ly = y; sarea_scroll(); touch_was_down = down; return; }
       sd_ly = y;
     } else if (!down && touch_was_down && sdrag) { sdrag = false; sd_maybe = false; tap_kind = 0; touch_was_down = down; return; }
+  }
+  if (r_held && !manual_open && !pause_open && last.text_mode) {   // explain, press nothing
+    if (down && !touch_was_down) {
+      r_used = true;
+      int i = -1;
+      for (int k = (int)btns.size() - 1; k >= 0 && i < 0; k--)
+        if (x >= btns[k].x0 && x < btns[k].x1 && y >= btns[k].y0 && y < btns[k].y1) i = k;
+      if (i >= 0 && explain_button(btns[i].label)) {
+        if (btns[i].off) { explain_text += " (Greyed out: not available on this screen.)"; }
+      } else if (i >= 0 && !btns[i].label.empty() && btns[i].label.size() > 1) {
+        explain(btns[i].label.c_str(), "One of the game's own commands on this screen; tapping it chooses it.");
+      } else explain_spot(last, x, y);
+    }
+    touch_was_down = down; return;
   }
   if (down && !touch_was_down) {
     tap_kind = 0;
@@ -2249,7 +2349,9 @@ void buttons(uint32_t held, uint32_t pr, uint32_t rel) {
   if (pr & B_X) press(K_INSERT);           // fire phasers
   if (pr & B_Y) press(K_DELETE);           // fire torpedoes
   if (pr & B_L) press(K_F, M_CTRL);        // freeze / unfreeze
-  if (pr & B_R) fire(kind_act(A_MODE));    // tap mode: auto / steer / target
+  // R: held + tap = explain (plan item 6); pressed and released with no tap = tap mode
+  if (pr & B_R) { r_held = true; r_used = false; }
+  if (rel & B_R) { if (r_held && !r_used) fire(kind_act(A_MODE)); r_held = false; }
   if (repeat_due(B_DUP, held, pr)) press(K_UP);
   if (repeat_due(B_DDOWN, held, pr)) press(K_DOWN);
   if (repeat_due(B_DLEFT, held, pr)) press(K_LEFT);
