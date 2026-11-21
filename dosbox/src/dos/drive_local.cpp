@@ -85,6 +85,7 @@ static void sf2_cache_put(const char* path, const Bit8u* d, size_t n, time_t mti
 	if (n) c.data.assign(d, d + n); c.mtime = mtime; sf2_cache_bytes += n;
 }
 static int sf2_stat(const char* path, struct stat* st) {
+	if (sf2w_pending_delete(path)) { errno = ENOENT; return -1; }     // deleted; the card has not caught up yet
 	{ std::map<std::string, Sf2Cached>::iterator it = sf2_cache.find(path);
 	  if (it != sf2_cache.end()) {
 		memset(st, 0, sizeof *st);
@@ -207,7 +208,7 @@ bool localDrive::FileOpen(DOS_File * * file,char * name,Bit32u flags) {
 	}
 
 #ifdef SF2_3DS
-	if (sf2_gone.count(newname)) return false;   // deleted, or looked for before and not there
+	if (sf2w_pending_delete(newname)) return false;   // deleted; the card has not caught up yet
 	{ std::map<std::string, Sf2Cached>::iterator it = sf2_cache.find(newname);
 	  if (it != sf2_cache.end()) {               // read before: no need to touch the card
 		localFile* lf = new localFile(name, (FILE*)0);
@@ -217,6 +218,20 @@ bool localDrive::FileOpen(DOS_File * * file,char * name,Bit32u flags) {
 		}
 		delete lf;
 	  } }
+	{	// written but not on the card yet (it may not even exist there): its queued contents are the file
+		std::vector<Bit8u> q;
+		if (sf2w_pending(newname, q)) {
+			localFile* lf = new localFile(name, (FILE*)0);
+			lf->flags = flags;
+			if (lf->sf2_attach_cached(newname, q.empty() ? 0 : &q[0], (Bit32u)q.size(), ::time(0), false)) {
+				sf2_cache_put(newname, q.empty() ? 0 : &q[0], q.size(), ::time(0));
+				*file = lf; sf2_cache_hits++; return true;
+			}
+			delete lf;
+			sf2w_wait(newname);                    // (no memory for a copy: let it land, then open it on the card)
+		}
+	}
+	if (sf2_gone.count(newname)) return false;   // looked for before and not there
 	sf2w_wait_busy(newname);                   // opening a file while it is written stalls ~20 s on a 3DS
 #endif
 	FILE * hand = fopen_wrap(newname,type);
@@ -536,8 +551,18 @@ bool localDrive::Rename(char * oldname,char * newname) {
 	strcat(newnew,newname);
 	CROSS_FILENAME(newnew);
 #ifdef SF2_3DS
-	SF2_FORGET(0);
-	int temp=sf2w_rename(newold,dirCache.GetExpandName(newnew));
+	// The rename is done on the card itself, so everything queued for either name must be there
+	// first: a file made in memory and not written yet, or a delete of the old target that would
+	// otherwise run after the rename and remove the renamed file (emulator, Nov 21: PLAYERS.DAT lost).
+	char sf2_to[CROSS_LEN]; safe_strncpy(sf2_to, dirCache.GetExpandName(newnew), CROSS_LEN);
+	sf2w_wait(0);                              // (all of it: the directory is read again from the card afterwards)
+	int temp=sf2w_rename(newold,sf2_to);
+	if (temp == 0) {
+		std::map<std::string, Sf2Cached>::iterator it = sf2_cache.find(newold);
+		if (it != sf2_cache.end()) { Sf2Cached c = it->second; sf2_cache_drop(newold); sf2_cache_put(sf2_to, c.data.empty() ? 0 : &c.data[0], c.data.size(), c.mtime); }
+		else sf2_cache_drop(sf2_to);
+		sf2_gone.insert(newold); sf2_gone.erase(sf2_to);
+	}
 #else
 	int temp=rename(newold,dirCache.GetExpandName(newnew));
 #endif

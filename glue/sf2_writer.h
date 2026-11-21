@@ -22,4 +22,5 @@ void sf2w_wait(const char* path);                          // until the file's w
 void sf2w_cancel(const char* path);                        // the file is being deleted: drop its writes
 int  sf2w_rename(const char* from, const char* to);        // rename on the card; queued writes follow the file
 void sf2w_wait_busy(const char* path);                     // until a write in progress of this file ends
+bool sf2w_pending_delete(const char* path);                // a delete of the file is queued or in progress
 bool sf2w_pending_size(const char* path, size_t* n);      // size of the latest queued contents, if any

@@ -177,7 +177,7 @@ bool sf2w_pending(const char* path, std::vector<uint8_t>& out) {
   LightLock_Lock(&lock);
   for (auto& j : jobs) if (same_path(j.path, path) && !j.del) { out = j.data; found = true; }
   // Being written right now: the card holds a half-written file, so serve what is being written.
-  if (!found && same_path(busy_path, path)) { out = cur.data; found = true; }
+  if (!found && same_path(busy_path, path) && !cur.del) { out = cur.data; found = true; }
   LightLock_Unlock(&lock);
   if (trace && found) sf2ctr_log("wr %s %u", path, (unsigned)out.size());
   return found;
@@ -237,12 +237,26 @@ int sf2w_rename(const char* from, const char* to) {
   return r;
 }
 
+// A delete of this file is queued or in progress: the file is gone as far as the game is concerned.
+bool sf2w_pending_delete(const char* path) {
+  if (!started) return false;
+  bool found = false;
+  LightLock_Lock(&lock);
+  for (auto& j : jobs) if (same_path(j.path, path)) found = j.del;
+  if (!found && same_path(busy_path, path) && cur.del) {
+    found = true;
+    for (auto& j : jobs) if (same_path(j.path, path)) found = j.del;    // (a newer write is queued behind it)
+  }
+  LightLock_Unlock(&lock);
+  return found;
+}
+
 bool sf2w_pending_size(const char* path, size_t* n) {
   if (!started) return false;
   bool found = false;
   LightLock_Lock(&lock);
-  for (auto& j : jobs) if (same_path(j.path, path)) { *n = j.data.size(); found = true; }
-  if (!found && same_path(busy_path, path)) { *n = cur.data.size(); found = true; }   // mid-write
+  for (auto& j : jobs) if (same_path(j.path, path) && !j.del) { *n = j.data.size(); found = true; }
+  if (!found && same_path(busy_path, path) && !cur.del) { *n = cur.data.size(); found = true; }   // mid-write
   LightLock_Unlock(&lock);
   return found;
 }
