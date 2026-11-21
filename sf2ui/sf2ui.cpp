@@ -801,6 +801,7 @@ static void bottom_rows(Surf& s, const TextScreen& ts) {
   bool anykey = items.empty() && !yesno &&
                 (prompt.find("PRESS") != std::string::npos || screen_has(ts, "PRESS ANY KEY", 18, 24) || screen_has(ts, "PRESS KEY", 18, 24));
   row_mode = !items.empty() ? (window_hints(ts) ? R_WINDOW : R_MENU) : yesno ? R_YESNO : anykey ? R_ANYKEY : R_DEFAULT;
+  if (screen_has(ts, "SIGN-ON OPTIONS") && prompt.find("www.") != std::string::npos) prompt = "Tap an option";   // (the game's advert line does not fit and is no prompt)
   prompt_strip(s, ts, prompt);
   const int rx1 = is_bridge(ts) ? BRIDGE_ROW_X1 : BOT_W - 6;   // the row's right end
   if (!items.empty()) {
@@ -1843,7 +1844,10 @@ static void generic_bottom(Surf& s, const TextScreen& ts) {
       static std::string seen_first; static int seen_sel = -1;
       int sel = -1;
       for (int i = 0; i < n; i++) if (glay.items[i].sel) sel = i % rows;
-      if (glay.items[0].label != seen_first) { seen_first = glay.items[0].label; menu_top = 0; seen_sel = -1; }
+      if (glay.items[0].label != seen_first) { seen_first = glay.items[0].label; menu_top = 0; seen_sel = -1;
+        // coach: the sign-on menu opens with Practice (and Start a new mission) in view
+        if (coach_on) for (int i = 0; i < n; i++) if (glay.items[i].label.compare(0, 8, "Practice") == 0) { menu_top = i - 2 < 0 ? 0 : i - 2; if (menu_top > n - VIS) menu_top = n - VIS; }
+      }
       if (sel >= 0 && sel != seen_sel) {
         seen_sel = sel;
         if (sel < menu_top) menu_top = sel;

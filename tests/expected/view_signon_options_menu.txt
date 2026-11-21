@@ -1,6 +1,6 @@
 kind: menu
 hint: New? Choose Practice first. Help: START > MANUAL
-buttons: [ (grey)] [] [Change default settings] [DOS shell (grey)] [View members of Fleet] [Information about SF II] [List your legions] [ENTER] [BACK] [KEYBOARD] [STARS (grey)] [SYSTEM (grey)] [WAR (grey)] [COMBAT (grey)] [FLEET (grey)] [ORDERS (grey)] [LOG (grey)]
+buttons: [] [] [Start a new mission] [Log on another officer] [Practice (demo) mission] [Resume a saved game] [Review your Service Record] [ENTER] [BACK] [KEYBOARD] [STARS (grey)] [SYSTEM (grey)] [WAR (grey)] [COMBAT (grey)] [FLEET (grey)] [ORDERS (grey)] [LOG (grey)]
 explain cards: 17/17
 quick reference: QUICK REFERENCE
 start menu: [RESUME] [MISSION] [MANUAL] [COACH: ON] [GAME SETTINGS] [EXIT GAME (grey)]
