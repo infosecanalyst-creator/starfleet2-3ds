@@ -826,6 +826,7 @@ static void bottom_rows(Surf& s, const TextScreen& ts) {
     }
   // a message box that says PRESS KEY wins over the menu row drawn behind it
   if (!yesno && pop_r0 >= 0 && pop_text.find("PRESS KEY") != std::string::npos) items.clear();
+  if (screen_has(ts, "Enter file name")) { items.clear(); yesno = false; prompt = "Save as:"; }
   bool anykey = items.empty() && !yesno &&
                 (prompt.find("PRESS") != std::string::npos || screen_has(ts, "PRESS ANY KEY", 18, 24) || screen_has(ts, "PRESS KEY", 18, 24) ||
                  (pop_r0 >= 0 && pop_text.find("PRESS KEY") != std::string::npos));
@@ -928,7 +929,8 @@ static bool cursor_question(const TextScreen& ts) {
 static bool wants_text(const TextScreen& ts) {
   if (cursor_question(ts)) return false;
   return screen_has(ts, "Enter your name") || screen_has(ts, "enter your password") ||
-         screen_has(ts, "Enter new password") || screen_has(ts, "NOTEPAD") || screen_has(ts, "Notepad");
+         screen_has(ts, "Enter new password") || screen_has(ts, "NOTEPAD") || screen_has(ts, "Notepad") ||
+         screen_has(ts, "Enter file name");       // saving a mission by name (seen Nov 21: no keyboard, no prompt)
 }
 static void keyboard(Surf& s) {
   static const char* rows[4] = {"1234567890", "QWERTYUIOP", "ASDFGHJKL-", "ZXCVBNM,./"};
@@ -1376,6 +1378,7 @@ static std::string advise(const TextScreen& ts, const char** button) {
   std::vector<std::string> say_list;
   auto add = [&](const std::string& t, const char* b) { if (say_list.empty() && b) *button = b; say_list.push_back(t); };
   if (!ts.text_mode) return "Wait for the picture to finish, or press A.";
+  if (screen_has(ts, "Enter file name")) return "Type a name for this save (8 letters at most) and tap ENTER.";
   if (chk_sec >= 0 && chk_step < (int)manual[chk_sec].steps.size()) {       // a checklist is being followed: its step is the answer
     const Step& stp = manual[chk_sec].steps[chk_step];
     static std::string keep; keep = stp.btn;
@@ -1493,7 +1496,11 @@ static int coach_step(const TextScreen& ts) {
 // DOCKED, GREEN, YELLOW, ORANGE, RED (and ORBIT). "s:" / "c:" beside it are the set and current
 // sublight speeds. ECM's indicator (row 18, col 41) has a coloured background while it is on.
 static Situation bridge_situation(const TextScreen& ts) {
-  if (row_str(ts, 15, 40, 52).find("STATUS") == std::string::npos) return SIT_UNKNOWN;
+  // At an alert the box reads "RED" / "ALERT" (or ORANGE) with no "STATUS:" line (both expert
+  // reviews, Nov 21: alerts were not recognised, so first combat had no ECM button and no coach).
+  std::string a0 = row_str(ts, 15, 40, 52);
+  if (row_str(ts, 16, 40, 52).find("ALERT") != std::string::npos && (a0.find("RED") != std::string::npos || a0.find("ORANGE") != std::string::npos)) return SIT_ALERT;
+  if (a0.find("STATUS") == std::string::npos) return SIT_UNKNOWN;
   std::string w = row_str(ts, 16, 40, 52);
   if (row_str(ts, 1, 26, 50).find("ORBITAL") != std::string::npos) return SIT_ORBIT;     // the display shows the planet below
   if (w.find("DOCKED") != std::string::npos) return SIT_DOCKED;
@@ -1550,7 +1557,13 @@ static void bridge_bottom(Surf& s, const TextScreen& ts) {
     case SIT_CRUISE:
       if (cur > 0.0f) row(4, "STOP", key_act(K_F10)); else row(4, "ENGINES", kind_act(A_ENGINES));
       row(5, "STARFORT", key_act(K_J, M_ALT)); break;
-    case SIT_ALERT: row(4, ecm_on(ts) ? "ECM OFF" : "ECM ON", key_act(K_E, M_ALT)); row(5, "FREEZE", key_act(K_F, M_CTRL)); break;
+    case SIT_ALERT:
+      // red alert: ECM and FREEZE; orange (enemy space, nobody shooting yet): the engines stay in reach
+      if (row_str(ts, 15, 40, 52).find("ORANGE") != std::string::npos) {
+        if (cur > 0.0f) row(4, "STOP", key_act(K_F10)); else row(4, "ENGINES", kind_act(A_ENGINES));
+        row(5, ecm_on(ts) ? "ECM OFF" : "ECM ON", key_act(K_E, M_ALT));
+      } else { row(4, ecm_on(ts) ? "ECM OFF" : "ECM ON", key_act(K_E, M_ALT)); row(5, "FREEZE", key_act(K_F, M_CTRL)); }
+      break;
     case SIT_ORBIT: row(4, "TELEPORT", key_act(K_P, M_ALT)); row(5, "ENGINES", kind_act(A_ENGINES)); break;
     default:
       add_btn(AX0, ry(4), AX1, ry(4) + 24, TAP_LABEL[tap_mode], &F8x16, kind_act(A_MODE), 0, true);
@@ -2752,6 +2765,11 @@ Redraw frame(const TextScreen& ts, uint16_t* top, uint16_t* bottom) {
     rd.top = draw_top; rd.bottom = true;
   }
   if (ts.text_mode && !manual_open && !pause_open) check_refusals(ts, t);
+  { // saving by name: say what the keyboard is for (the game's own box is under the bridge panels)
+    static bool save_card = false; bool sv = ts.text_mode && screen_has(ts, "Enter file name");
+    if (sv && !save_card && !manual_open && !pause_open) { explain("SAVE THE MISSION", "Type a name of up to 8 letters and tap ENTER. If a name is already shown, ENTER alone saves over that file. Resume it later from the sign-on menu: Resume a saved game."); explain_until = t + 12000; }
+    save_card = sv;
+  }
   {   // the game's message box, in full, on the top screen (the bridge panels can only show slices)
     static std::string shown;
     if (pop_text != shown && !manual_open && !pause_open) {
