@@ -826,6 +826,7 @@ static const FullWord FULLWORDS[] = {
 };
 static std::string full_word(const std::string& l) { for (auto& w : FULLWORDS) if (l == w.abbr) return w.full; return l; }
 static std::string abbr_word(const std::string& l) { for (auto& w : FULLWORDS) if (l == w.full) return w.abbr; return l; }
+static bool mission_on = false;          // a mission is being flown (set by the lights row, cleared at sign-on)
 static bool grid_open = false, grid_shown = false;   // the bridge's menu grid: asked for (main menu) / on screen now
 static void bottom_rows(Surf& s, const TextScreen& ts) {
   grid_shown = false;
@@ -975,7 +976,6 @@ static void bottom_rows(Surf& s, const TextScreen& ts) {
   // The views only exist during a mission (the status lights are on the top row then).
   // (full-screen pages inside a mission, like the fleet display and the databases, have no lights
   // row: the tabs stay live there. UI review: they were greyed mid-mission.)
-  static bool mission_on = false;
   if (row_str(ts, 0, 0, 80).find("LOW PWR") != std::string::npos) mission_on = true;
   else if (screen_has(ts, "SIGN-ON OPTIONS") || screen_has(ts, "Enter your name") || screen_has(ts, "MISSIONS RECORD", 0, 3) || screen_has(ts, "FLEET HEADQUARTERS")) mission_on = false;
   bool in_mission = mission_on;
@@ -2042,7 +2042,7 @@ static void scroll_bar(Surf& s, int x, int y0, int y1, int pos, int max, int vis
 // ---- P2-1 text reader: the page's text on the touch screen in 6x12 (frames dropped, long rows
 // wrapped at 50 columns), dragged or stick-scrolled; the game's own page keys stay in a row below.
 static char hotkey_at(const TextScreen& ts, int col, int row);
-struct RLine { std::string ch, at; std::vector<int16_t> src; };   // src: row * 80 + col per cell, -1 none
+struct RLine { std::string ch, at; std::vector<int16_t> src;  bool small = false; };   // src: row * 80 + col per cell, -1 none
 static std::vector<RLine> rlines;
 static int rd_scroll = 0, rd_max = 0;
 static uint32_t rd_sig = 0;
@@ -2051,8 +2051,9 @@ static bool frame_cell(uint8_t c) { return c >= 0xB0 && c <= 0xDF; }   // box li
 static bool blank_cell(uint8_t c) { return c <= ' ' || c == 0xFF || frame_cell(c); }
 // Rows of prose that the game wrapped itself are joined into one paragraph and wrapped again at 50
 // columns; short rows, indented rows and table rows (with wide gaps) stay rows of their own.
+static bool rd_wide_table = false;
 static void build_reader(const TextScreen& ts) {
-  rlines.clear();
+  rlines.clear(); rd_wide_table = false;
   int minc = 80, maxe = -1;
   int first[24], last_c[24];
   for (int r = 0; r < 24; r++) {
@@ -2066,20 +2067,41 @@ static void build_reader(const TextScreen& ts) {
       if (blank_cell(ts.ch[r][c]) && blank_cell(ts.ch[r][c + 1]) && blank_cell(ts.ch[r][c + 2])) return true;
     return false;
   };
-  struct Para { std::string ch, at; std::vector<int16_t> src; int ind; };
+  struct Para { std::string ch, at; std::vector<int16_t> src; int ind; int fixed; };   // fixed: 1 a table row (never wrapped), 2 one in the small font
   std::vector<Para> paras;
   bool blank_before = true;
+  // Tables (UI review 7: 80-column rows wrapped at 50 lost their header and their columns): a block
+  // of table rows keeps its columns; the gaps every row shares shrink to one space, and if the
+  // rows still do not fit 50 columns they are set in the 5x9 font (64 columns).
+  int tb_end = -1; std::vector<int> tb_cols; int tb_fixed = 0;
   for (int r = 0; r < 24; r++) {
+    if (r > tb_end && first[r] >= 0 && table_row(r) && last_c[r] - minc + 1 > RD_COLS) {
+      int e = r; while (e + 1 < 24 && first[e + 1] >= 0 && (table_row(e + 1) || last_c[e + 1] - first[e + 1] < 40)) e++;
+      int lo = 80, hi = -1; for (int y = r; y <= e; y++) { lo = std::min(lo, first[y]); hi = std::max(hi, last_c[y]); }
+      std::vector<int> cols; bool gap = false;
+      for (int c = lo; c <= hi; c++) {
+        bool all_blank = true; for (int y = r; y <= e && all_blank; y++) if (!blank_cell(ts.ch[y][c])) all_blank = false;
+        if (!all_blank) { cols.push_back(c); gap = false; } else if (!gap) { cols.push_back(c); gap = true; }
+      }
+      if (e > r && (int)cols.size() <= RD_COLS) { tb_end = e; tb_cols = cols; tb_fixed = 1; }
+      else if (e > r + 1) rd_wide_table = true;     // a real table too wide to read here: the page stays whole on the top screen
+    }
+    if (r <= tb_end && first[r] >= 0) {
+      Para p{"", "", {}, 0, tb_fixed};
+      for (int c : tb_cols) { uint8_t x = ts.ch[r][c]; p.ch += (char)(blank_cell(x) ? ' ' : x); p.at += (char)ts.at[r][c]; p.src.push_back((int16_t)(r * 80 + c)); }
+      while (!p.ch.empty() && p.ch.back() == ' ') { p.ch.pop_back(); p.at.pop_back(); p.src.pop_back(); }
+      paras.push_back(p); blank_before = false; continue;
+    }
     if (first[r] < 0) {
-      if (!blank_before) paras.push_back(Para{"", "", {}, 0});
+      if (!blank_before) paras.push_back(Para{"", "", {}, 0, 0});
       blank_before = true; continue;
     }
     int ind = first[r] - minc;
     bool join = !blank_before && !paras.empty() && r > 0 && first[r - 1] >= 0 &&
-                first[r - 1] == first[r] && last_c[r - 1] >= minc + (maxe - minc) * 3 / 4 &&
+                r - 1 > tb_end && first[r - 1] == first[r] && last_c[r - 1] >= minc + (maxe - minc) * 3 / 4 &&
                 last_c[r - 1] - first[r - 1] >= 40 &&   // only long rows were wrapped prose (names, credits stay rows)
                 !table_row(r) && !table_row(r - 1) && (ts.at[r][first[r]] & 15) == (ts.at[r - 1][first[r - 1]] & 15);
-    if (!join) paras.push_back(Para{"", "", {}, ind});
+    if (!join) paras.push_back(Para{"", "", {}, ind, 0});
     Para& p = paras.back();
     if (join) { p.ch += ' '; p.at += (char)7; p.src.push_back(-1); }
     int c0 = join ? first[r] : minc + ind;
@@ -2092,6 +2114,7 @@ static void build_reader(const TextScreen& ts) {
   while (!paras.empty() && paras.back().ch.empty()) paras.pop_back();
   for (auto& p : paras) {
     if (p.ch.empty()) { rlines.push_back(RLine()); continue; }
+    if (p.fixed) { RLine l; l.ch = p.ch; l.at = p.at; l.src = p.src; l.small = p.fixed == 2; rlines.push_back(l); continue; }
     int ind = std::min(p.ind, 20), pos = 0, n = (int)p.ch.size();
     while (pos < n) {
       int lead = ind;
@@ -2148,7 +2171,8 @@ static void draw_reader(Surf& s, const TextScreen& ts) {
       int bgc = (a >> 4) & 7;
       uint16_t bg = bgc ? VGA[bgc] : BG;
       uint16_t fg = (a & 15) == bgc ? (bgc ? VGA[0] : BTN_TXT) : READ_FG[a & 15];
-      draw_cell(s, RD_X0 + (int)k * 6, RD_Y0 + i * 12, 6, 12, (uint8_t)l.ch[k], fg, bg, F6x12);
+      if (l.small) draw_cell(s, (int)k * 5, RD_Y0 + i * 12, 5, 12, (uint8_t)l.ch[k], fg, bg, F5x9);
+      else draw_cell(s, RD_X0 + (int)k * 6, RD_Y0 + i * 12, 6, 12, (uint8_t)l.ch[k], fg, bg, F6x12);
     }
   }
   scroll_bar(s, 310, RD_Y0, RD_Y0 + RD_LINES * 12, rd_scroll, rd_max, RD_LINES);
@@ -2169,6 +2193,7 @@ static char reader_hotkey(int x, int y) {
   int li = rd_scroll + (y - RD_Y0) / 12, k = (x - RD_X0) / 6;
   if (y < RD_Y0 || li < 0 || li >= (int)rlines.size() || k < 0) return 0;
   const RLine& l = rlines[li];
+  if (l.small) k = x / 5;
   if (k >= (int)l.ch.size() || l.ch[k] == ' ' || l.src[k] < 0) return 0;
   return hotkey_at(last, l.src[k] % 80, l.src[k] / 80);
 }
@@ -2207,6 +2232,10 @@ static void reader_top(Surf& s, const char* hint) {
   s.fill(bx0 + 2 + ta, by0 + 2, bx0 + 2 + tb, by1 - 2, TITLE);
   const char* ends = rd_max <= 0 ? "" : rd_scroll >= rd_max ? "End of the page" : rd_scroll == 0 ? "Top of the page" : "";
   if (*ends) fit_text(s, (TOP_W - text_width(ends, F6x12)) / 2, 150, TOP_W - 8, ends, F6x12, HINT, "reader top");
+  if (mission_on && !mis_goal.empty() && tut_num == 0) {       // (UI review 8: the top screen was nearly empty on text pages)
+    std::vector<std::string> gl = wrap_words("Your mission: " + mis_goal + ".", (TOP_W - 24) / F6x12.w);
+    for (size_t i = 0; i < gl.size() && i < 3; i++) fit_text(s, 12, 176 + (int)i * 12, TOP_W - 8, gl[i].c_str(), F6x12, BTN_TXT, "reader goal");
+  }
   s.fill(0, 224, TOP_W, TOP_H, BTN);
   s.hline(0, TOP_W, 224, BTN_EDGE);
   fit_text(s, (TOP_W - text_width(hint, F6x12)) / 2, 226, TOP_W - 2, hint, F6x12, TITLE, "top hint");
@@ -2360,7 +2389,7 @@ static void generic_bottom(Surf& s, const TextScreen& ts) {
     static const char* labs[7] = {"PG UP", "\x1b", "\x18", "\x19", "\x1a", "PG DN", "SPACE"};
     static const Key keys[7] = {K_PGUP, K_LEFT, K_UP, K_DOWN, K_RIGHT, K_PGDN, K_SPACE};
     for (int i = 0; i < 7; i++) { int a, b; split_gap(6, BOT_W - 6, 7, i, a, b); add_btn(a, 140, b, 164, labs[i], &F8x16, key_act(keys[i])); }
-  } else if (reader_wanted(ts) && (build_reader(ts), !rlines.empty())) {
+  } else if (reader_wanted(ts) && (build_reader(ts), !rlines.empty() && !rd_wide_table)) {
     reader_on = true;
     draw_reader(s, ts);
   } else {
