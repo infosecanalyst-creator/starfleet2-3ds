@@ -34,7 +34,7 @@ static std::vector<Ev> queue;          // pending key events
 static uint32_t next_key_ms = 0;
 static const uint32_t KEY_GAP_MS = 35; // spacing between injected key events
 
-enum ActKind { A_NONE, A_GRID, A_STEPBACK, A_STEPSKIP, A_KEY, A_MODE, A_MANUAL, A_KB, A_SECTION, A_CLOSE, A_TYPE, A_SIGNON, A_SAVE, A_VIEW, A_PAUSE, A_QUIT, A_QUIT_YES, A_SETTINGS, A_LEFTY, A_SECLIST, A_ROWPAGE, A_RDLINE, A_MENUSCROLL, A_LAUNCH, A_ENGINES, A_MISSION, A_COACH, A_FOLLOW };
+enum ActKind { A_NONE, A_GRID, A_STEPBACK, A_STEPSKIP, A_KEY, A_MODE, A_MANUAL, A_KB, A_SECTION, A_CLOSE, A_TYPE, A_SIGNON, A_SAVE, A_VIEW, A_PAUSE, A_QUIT, A_QUIT_YES, A_SETTINGS, A_LEFTY, A_SECLIST, A_ROWPAGE, A_RDLINE, A_MENUSCROLL, A_LAUNCH, A_ENGINES, A_MISSION, A_COACH, A_FOLLOW, A_LISTPICK };
 struct Act { ActKind kind; Key key; uint8_t mods; int arg; };
 enum { M_SHIFT = 1, M_CTRL = 2, M_ALT = 4 };
 
@@ -735,7 +735,7 @@ static const char* context_hint(const TextScreen& ts) {
     if (row_str(ts, 24, 0, 24).find("PRESS") != std::string::npos) return "Read COMMS (top screen), then tap CONTINUE";
     return "Tap the display to steer the ship";
   }
-  if (!kb_open && autologin == 0 && signon_list(ts, 0)) return "Tap SIGN ON AS, or pick a commander, then ENTER";
+  if (!kb_open && autologin == 0 && signon_list(ts, 0)) return "Tap SIGN ON AS, or tap a commander's name";
   if (kb_open) {
     if (at_name_prompt(ts)) return off_name.empty() ? "Type your officer name, then tap ENTER"
                                                     : "Tap SIGN ON AS, or type a new name and ENTER";
@@ -2372,6 +2372,16 @@ static void generic_bottom(Surf& s, const TextScreen& ts) {
     { TextScreen m = ts;      // (the game's solid filler blocks beside a map's axis labels are left out)
       for (int r = glay.r0; r <= glay.r1; r++) for (int c = glay.c0; c <= glay.c1; c++) if (m.ch[r][c] == 0xDB) { m.ch[r][c] = ' '; m.at[r][c] = 0x07; }
       cells(s, m, glay.c0, glay.r0, glay.c1, glay.r1, *glay.f, glay.ox, glay.oy, glay.cw, glay.lh); }
+  } else if (glay.kind == G_PLAIN && screen_has(ts, "FLEET COMMANDERS", 0, 1) && screen_has(ts, "Select Commander", 24, 24)) {
+    // the commander list: each officer is a button (UI review: the rows were not tappable)
+    int sel = -1; std::vector<int> rows_;
+    for (int r = 3; r < 23; r++) { if (trim(row_str(ts, r, 8, 24)).empty()) continue; if ((ts.at[r][2] >> 4) == 7) sel = (int)rows_.size(); rows_.push_back(r); }
+    int n = std::min((int)rows_.size(), 10);
+    for (int i = 0; i < n; i++) {
+      int a, b, y0, y1; split_gap(6, BOT_W - 6, 2, i % 2, a, b); split_gap(6, UP_H - 4, 5, i / 2, y0, y1);
+      std::string lab = trim(row_str(ts, rows_[i], 8, 24)); const Font* lf = text_width(lab.c_str(), F8x16) <= b - a - 8 ? &F8x16 : &F6x12;
+      add_btn(a, y0, b, y1, lab, lf, kind_act(A_LISTPICK, i - (sel < 0 ? 0 : sel)), -1, i == sel);
+    }
   } else if (glay.kind == G_WIN) {
     int rows = glay.r1 - glay.r0 + 1, maxtop = rows > WIN_ROWS ? rows - WIN_ROWS : 0;
     static uint32_t win_sig = 0;         // another window starts at its top
@@ -2778,6 +2788,9 @@ static void fire(const Act& a) {
     case A_STEPBACK: if (chk_sec >= 0 && chk_step > 0) { chk_step--; chk_begin_step(last); chk_had = true; pause_open = false; say("Checklist: back one step", 2500); } break;
     case A_STEPSKIP: if (chk_sec >= 0) { chk_step++; pause_open = false; if (chk_step >= (int)manual[chk_sec].steps.size()) chk_finish(last); else { chk_begin_step(last); say("Checklist: step skipped", 2500); } } break;
     case A_GRID: grid_open = !grid_open; break;
+    case A_LISTPICK:        // a row of the commander list: move the game's highlight there, then Enter
+      for (int i = 0; i < abs(a.arg); i++) press(a.arg > 0 ? K_DOWN : K_UP);
+      press(K_ENTER); busy_since = now(); break;
     case A_COACH: coach_on = !coach_on; if (coach_on) coach_seen = 0; save_settings(); break;
     case A_MISSION: {
       bool pause_was = pause_open;
