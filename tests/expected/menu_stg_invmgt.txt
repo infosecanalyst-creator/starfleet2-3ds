@@ -1,6 +1,6 @@
 kind: reader
 hint: Drag or sticks to scroll ³ A: Enter ³ B: back
-buttons: [PG UP] [] [] [] [] [PG DN] [SPACE] [FLEET] [REGION] [SYSTEM] [PLANET] [ESCORT] [INVMGT] [STARS (grey)] [SYSTEM (grey)] [WAR (grey)] [COMBAT (grey)] [FLEET (grey)] [ORDERS (grey)] [LOG (grey)]
+buttons: [PG UP] [] [] [] [] [PG DN] [SPACE] [FLEET] [REGION] [SYSTEM] [PLANET] [ESCORT] [INVMGT] [STARS] [SYSTEM] [WAR] [COMBAT] [FLEET] [ORDERS] [LOG]
 explain cards: 20/20
 quick reference: QUICK REFERENCE
 start menu: [RESUME] [WHAT NOW?] [MANUAL] [COACH: ON] [SAVE (grey)] [GAME SETTINGS (grey)] [EXIT GAME (grey)]

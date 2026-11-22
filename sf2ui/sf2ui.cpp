@@ -750,6 +750,7 @@ static const char* context_hint(const TextScreen& ts) {
   if (row_mode == R_WINDOW) return "Tap one of the keys below";
   if (glay_kind() == 1) return menu_scrolls ? "Tap an item; drag or tap the arrows for more" : "Tap an item to choose it";
   if (glay_kind() == 2) return screen_has(ts, "MAP OF STAR SYSTEM") ? "Tap a planet or starfort, then tap TARGETER" : "Tap a star: the box jumps to it. Then TARGETER";
+  if (glay_kind() == 3) return "The game's window. Its keys are the buttons below";
   if (row_mode == R_ANYKEY) return lefty_on ? "Read the screen, then tap CONTINUE (or D-Rt)" : "Read the screen, then tap CONTINUE (or A)";
   { bool blank = true; for (int r = 0; r < 25 && blank; r++) for (int c = 0; c < 80; c++) if (ts.ch[r][c] > ' ' && ts.ch[r][c] != 0xFF) { blank = false; break; }
     if (blank) return "Loading..."; }
@@ -972,7 +973,12 @@ static void bottom_rows(Surf& s, const TextScreen& ts) {
   // A segmented row of tabs: the one row allowed 4-px gaps (Ryan, Nov 20).
   static const char* views[7] = {"STARS", "SYSTEM", "WAR", "COMBAT", "FLEET", "ORDERS", "LOG"};
   // The views only exist during a mission (the status lights are on the top row then).
-  bool in_mission = row_str(ts, 0, 0, 80).find("LOW PWR") != std::string::npos;
+  // (full-screen pages inside a mission, like the fleet display and the databases, have no lights
+  // row: the tabs stay live there. UI review: they were greyed mid-mission.)
+  static bool mission_on = false;
+  if (row_str(ts, 0, 0, 80).find("LOW PWR") != std::string::npos) mission_on = true;
+  else if (screen_has(ts, "SIGN-ON OPTIONS") || screen_has(ts, "Enter your name") || screen_has(ts, "MISSIONS RECORD", 0, 3) || screen_has(ts, "FLEET HEADQUARTERS")) mission_on = false;
+  bool in_mission = mission_on;
   for (int i = 0; i < 7; i++) {
     int a, b; split_gap(6, BOT_W - 6, 7, i, a, b, TAB_GAP);
     add_btn(a, ROW2_Y0, b, ROW2_Y1, views[i], &F6x12, kind_act(A_VIEW, i));
@@ -1387,6 +1393,9 @@ static void chk_update(const TextScreen& ts) {
   for (int i = chk_step + 4; i < (int)st.size() && chk_far.size() == st.size(); i++) {
     if (st[i].done.empty() || chk_far[i] || !screen_has_ci(ts, st[i].done)) continue;
     int same = 0; for (auto& x : st) if (x.done == st[i].done) same++;
+    // (not when a step on the way talks about the same text: "Establish orbit? Answer NO this time"
+    // comes before the step that proves itself with "Establish orbit?"; emulator, Nov 21)
+    for (int k = chk_step; k < i; k++) if (st[k].what.find(st[i].done) != std::string::npos) same++;
     if (same == 1) { chk_step = i + 1; chk_begin_step(ts); dirty(); break; }
   }
   chk_pressed.clear();
@@ -1807,7 +1816,7 @@ static void steer_to(const TextScreen& ts, int px, int py) {
 // Every screen apart from the bridge is split by its content, so nothing appears on both
 // screens: a menu becomes big buttons on the touch screen, a map goes on the touch screen to
 // be tapped, and the rest of the game's screen stays on top.
-enum Kind { G_PLAIN, G_MENU, G_MAP };
+enum Kind { G_PLAIN, G_MENU, G_MAP, G_WIN };   // G_WIN: a window the game opened over the bridge
 struct GLine { int row, col, end; char key; std::string label; bool sel; };
 struct GLayout {
   Kind kind;
@@ -1966,6 +1975,32 @@ static bool find_map(const TextScreen& ts, GLayout& g) {
   return fit_map(g, b0, c0, b1, c1);
 }
 
+// A window the game opened over the bridge (damage control, the log, help pages, the landing-party
+// table): a double-line box, at most 53 columns wide so its text is readable on the touch screen
+// in the 6x12 font. (UI review 3: these screens were a squashed 80x25 on top plus an arrow pad.)
+static int win_top = 0;                 // first row shown when the window is taller than the touch screen
+static const int WIN_ROWS = 11, WIN_Y0 = 4;
+static bool find_window(const TextScreen& ts, GLayout& g) {
+  int best = 0;
+  if (row_str(ts, 1, 0, 80).find("COMBAT") != std::string::npos && row_str(ts, 1, 0, 80).find("INFORMATION") != std::string::npos) return false;   // combat control: its grid is the subject, not its menu box
+  for (int r = 0; r < 22; r++)
+    for (int c = 0; c < 68; c++) {
+      if (ts.ch[r][c] != 0xC9) continue;
+      int c2 = c + 1; while (c2 < 80 && ts.ch[r][c2] != 0xBB && ts.ch[r][c2] != 0xC9) c2++;
+      if (c2 >= 80 || ts.ch[r][c2] != 0xBB || c2 - c < 12 || c2 - c + 1 > 53) continue;
+      int r2 = r + 1; while (r2 < 25 && ts.ch[r2][c] != 0xC8) r2++;
+      if (r2 >= 25 || ts.ch[r2][c2] != 0xBC || r2 - r < 3) continue;
+      int sides = 0; for (int y = r + 1; y < r2; y++) if (ts.ch[y][c] == 0xBA || ts.ch[y][c] == 0xCC || ts.ch[y][c] == 0xC7) sides++;
+      if (sides * 2 < r2 - r - 1) continue;
+      int area = (c2 - c) * (r2 - r);
+      if (area > best) { best = area; g.r0 = r; g.c0 = c; g.r1 = r2; g.c1 = c2; }
+    }
+  if (!best) return false;
+  g.kind = G_WIN; g.f = &F6x12; g.cw = 6; g.lh = 12;
+  g.ox = (BOT_W - 8 - (g.c1 - g.c0 + 1) * 6) / 2; if (g.ox < 0) g.ox = 0;
+  g.oy = WIN_Y0;
+  return true;
+}
 static void analyse(const TextScreen& ts) {
   glay.kind = G_PLAIN; glay.items.clear(); glay.r0 = glay.c0 = 0; glay.r1 = glay.c1 = -1;
   if (kb_open) return;
@@ -1982,6 +2017,8 @@ static void analyse(const TextScreen& ts) {
   }
   if (!in_flight(ts)) have_map = false;
   if (find_menu(ts, glay)) return;
+  glay.kind = G_PLAIN; glay.r1 = glay.c1 = -1;
+  if (in_flight(ts) && find_window(ts, glay)) return;
   glay.kind = G_PLAIN; glay.r1 = glay.c1 = -1;
 }
 
@@ -2216,7 +2253,7 @@ static void generic_top(Surf& s, const TextScreen& ts) {
         return_after_window = true;
       }
     }
-    const char* note = glay.kind == G_MENU ? "Menu on the touch screen" : "Map on the touch screen";
+    const char* note = glay.kind == G_MENU ? "Menu on the touch screen" : glay.kind == G_WIN ? "On the touch screen" : "Map on the touch screen";
     if (return_after_window) note = "";
     else if (glay.kind == G_MAP && x1 - x0 >= 194 && y1 - y0 >= 94) { ct_on = true; ct_x0 = x0 + 2; ct_y0 = y0 + 2; ct_x1 = x1 - 2; ct_y1 = y1 - 2; }
     const Font* nf = text_width(note, F6x12) <= x1 - x0 - 4 ? &F6x12 : &F5x9;
@@ -2306,6 +2343,23 @@ static void generic_bottom(Surf& s, const TextScreen& ts) {
     { TextScreen m = ts;      // (the game's solid filler blocks beside a map's axis labels are left out)
       for (int r = glay.r0; r <= glay.r1; r++) for (int c = glay.c0; c <= glay.c1; c++) if (m.ch[r][c] == 0xDB) { m.ch[r][c] = ' '; m.at[r][c] = 0x07; }
       cells(s, m, glay.c0, glay.r0, glay.c1, glay.r1, *glay.f, glay.ox, glay.oy, glay.cw, glay.lh); }
+  } else if (glay.kind == G_WIN) {
+    int rows = glay.r1 - glay.r0 + 1, maxtop = rows > WIN_ROWS ? rows - WIN_ROWS : 0;
+    static uint32_t win_sig = 0;         // another window starts at its top
+    uint32_t sig = (uint32_t)(glay.r0 * 80 + glay.c0) * 131u + (uint32_t)(glay.r1 * 80 + glay.c1);
+    for (int c = glay.c0; c <= glay.c1; c++) sig = sig * 16777619u ^ ts.ch[glay.r0][c];
+    if (sig != win_sig) { win_sig = sig; win_top = 0; }
+    if (win_top > maxtop) win_top = maxtop;
+    if (win_top < 0) win_top = 0;
+    int show = std::min(rows, WIN_ROWS);
+    cells(s, ts, glay.c0, glay.r0 + win_top, glay.c1, glay.r0 + win_top + show - 1, F6x12, glay.ox, WIN_Y0, 6, 12);
+    if (maxtop) {
+      scroll_bar(s, 312, WIN_Y0, WIN_Y0 + WIN_ROWS * 12, win_top, maxtop, WIN_ROWS);
+      sarea = ScrollArea{true, 0, 0, 310, WIN_Y0 + WIN_ROWS * 12, 12, &win_top, maxtop};
+    }
+    static const char* labs[7] = {"PG UP", "\x1b", "\x18", "\x19", "\x1a", "PG DN", "SPACE"};
+    static const Key keys[7] = {K_PGUP, K_LEFT, K_UP, K_DOWN, K_RIGHT, K_PGDN, K_SPACE};
+    for (int i = 0; i < 7; i++) { int a, b; split_gap(6, BOT_W - 6, 7, i, a, b); add_btn(a, 140, b, 164, labs[i], &F8x16, key_act(keys[i])); }
   } else if (reader_wanted(ts) && (build_reader(ts), !rlines.empty())) {
     reader_on = true;
     draw_reader(s, ts);
@@ -3226,6 +3280,7 @@ void touch(int x, int y, bool down) {
       else if (is_bridge(last) && x < 180 && y < UP_H) { tap_kind = 1; tap_x = x; tap_y = y; }
       else if (!is_bridge(last) && y < UP_H && glay.kind == G_MAP) { tap_kind = 2; tap_x = x; tap_y = y; }
       else if (reader_on && y < RD_Y0 + RD_LINES * 12) { tap_kind = 3; tap_x = x; tap_y = y; }
+      else if (glay.kind == G_WIN && y >= WIN_Y0 && y < WIN_Y0 + WIN_ROWS * 12) { tap_kind = 4; tap_x = x; tap_y = y; }
     }
   } else if (down && touch_was_down) {
 
@@ -3246,6 +3301,10 @@ void touch(int x, int y, bool down) {
       map_tap(tap_x, tap_y);
     } else if (tap_kind == 3) {
       char k = reader_hotkey(tap_x, tap_y);
+      if (k) { Key kk = key_for_char(k); if (kk != K_NONE) { press(kk); busy_since = now(); } }
+    } else if (tap_kind == 4) {          // a word in the window with a hotkey letter
+      int col = glay.c0 + (tap_x - glay.ox) / 6, row = glay.r0 + win_top + (tap_y - WIN_Y0) / 12;
+      char k = col >= glay.c0 && col <= glay.c1 && row <= glay.r1 ? hotkey_at(last, col, row) : 0;
       if (k) { Key kk = key_for_char(k); if (kk != K_NONE) { press(kk); busy_since = now(); } }
     }
     tap_kind = 0;
