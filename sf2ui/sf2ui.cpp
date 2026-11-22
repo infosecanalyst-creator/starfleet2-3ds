@@ -802,6 +802,13 @@ static void bottom_rows(Surf& s, const TextScreen& ts) {
   std::vector<MenuItem> items = parse_menu(ts, prompt);
 
   bool yesno = (prompt.find('?') != std::string::npos && items.empty()) || cursor_question(ts);
+  // A question alone on an otherwise empty screen ("Do you wish to give up on this mission?" after
+  // Quit): the game takes only Y or N (emulator, Nov 21: no buttons, the player was stuck).
+  if (!yesno) {
+    int rows_used = 0; std::string q;
+    for (int r = 0; r < 25; r++) { std::string t = trim(row_str(ts, r, 0, 80)); if (!t.empty()) { rows_used++; if (t.back() == '?') q = t; } }
+    if (rows_used <= 2 && !q.empty()) { yesno = true; items.clear(); prompt = q; }
+  }
   // On the bridge the helm's questions ("Establish orbit?", "Shall we dock?") come up in the prompt
   // field while the menu row stays drawn beside them; the game then takes only Y or N.
   // (Emulator, Nov 21: no YES/NO buttons there, so the player was stuck.)

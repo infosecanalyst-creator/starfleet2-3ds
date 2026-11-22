@@ -1,7 +1,7 @@
 kind: plain
-hint: Sticks scroll the page ³ A: Enter ³ B: back
-buttons: [PG UP] [] [PG DN] [] [SPACE] [] [] [ENTER] [BACK] [KEYBOARD] [STARS (grey)] [SYSTEM (grey)] [WAR (grey)] [COMBAT (grey)] [FLEET (grey)] [ORDERS (grey)] [LOG (grey)]
-explain cards: 17/17
+hint: Tap YES or NO
+buttons: [PG UP] [] [PG DN] [] [SPACE] [] [] [YES] [NO] [STARS (grey)] [SYSTEM (grey)] [WAR (grey)] [COMBAT (grey)] [FLEET (grey)] [ORDERS (grey)] [LOG (grey)]
+explain cards: 16/16
 quick reference: QUICK REFERENCE
 start menu: [RESUME] [WHAT NOW?] [MANUAL] [COACH: ON] [SAVE (grey)] [GAME SETTINGS (grey)] [EXIT GAME (grey)]
 what now: Read the page, then tap CONTINUE (or A). B goes back.
