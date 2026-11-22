@@ -788,6 +788,8 @@ static void prompt_strip(Surf& s, const TextScreen& ts, const std::string& promp
   bool showing_toast = !toast.empty() && (int32_t)(toast_until - now()) > 0;
   std::string line = showing_toast ? toast : prompt;
   if (!showing_toast && kb_open && ts.cursor_y >= 0 && ts.cursor_y < 25) line = trim(row_str(ts, ts.cursor_y, 0, 80));
+  // (saving by name: the game's box lies under the bridge panels, so the cursor's row is a mix of them)
+  if (!showing_toast && kb_open && screen_has(ts, "Enter file name")) line = "Save as: " + typed + "_";
   if (!showing_toast && row_mode == R_YESNO) {    // the question itself, readable beside YES/NO
     std::string q = dialog_question(ts);           // (on the bridge its window is cut by the tiles)
     if (!q.empty()) line = q;
@@ -3009,6 +3011,11 @@ Redraw frame(const TextScreen& ts, uint16_t* top, uint16_t* bottom) {
           if (comms_seen.size() > 24) comms_seen.erase(comms_seen.begin());
           if (settled && (alert_text.empty() || (int32_t)(alert_until - t) <= 0 || !alert_red)) {
             alert_text = "MSG: " + line; alert_red = false; alert_until = t + 3000; dirty();
+          }
+          static int firsts = 0;
+          if (settled && coach_on && chk_sec < 0 && !explain_until) {
+            if (!(firsts & 1) && line.find("Entered orbit") != std::string::npos) { firsts |= 1; explain("IN ORBIT", "Your first orbit. This is where scans and landing parties happen: the scan report comes up in COMMS. ENGINES leaves orbit."); }
+            else if (!(firsts & 2) && line.find("Docking procedure complete") != std::string::npos) { firsts |= 2; explain("DOCKED", "Docked. The starfort repairs and resupplies the ship, and the mission clock stands still here."); }
           }
         }
       }
