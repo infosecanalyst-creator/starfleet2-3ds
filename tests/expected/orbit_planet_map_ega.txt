@@ -1,0 +1,2 @@
+kind: graphics
+buttons: [START] [BRIDGE] [HOW TO] [FIX IT] [REF] [BOOKS] [Speed, distance and time units] [Ranks and your career] [Ranks and what each one commands] [Getting started] [] [] [LEFT HAND: OFF] [CLOSE MANUAL]

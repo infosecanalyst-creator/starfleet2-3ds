@@ -4,4 +4,4 @@ buttons: [1] [2] [3] [4] [5] [6] [7] [8] [9] [0] [Q] [W] [E] [R] [T] [Y] [U] [I]
 explain cards: 53/53
 quick reference: QUICK REFERENCE
 start menu: [RESUME] [WHAT NOW?] [MANUAL] [COACH: ON] [SAVE (grey)] [GAME SETTINGS (grey)] [EXIT GAME (grey)]
-what now: Read the page, then tap CONTINUE (or A). B goes back.
+what now: Use the buttons on the touch screen; B goes back.

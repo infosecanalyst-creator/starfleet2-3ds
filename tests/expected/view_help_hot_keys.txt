@@ -1,5 +1,5 @@
 kind: plain
-hint: X/Y fire, Circle Pad steers, B backs out
+hint: The buttons are this page's keys. B backs out
 buttons: [PG UP] [] [PG DN] [] [SPACE] [] [] [ENTER] [BACK] [KEYBOARD] [STARS] [SYSTEM] [WAR] [COMBAT] [FLEET] [ORDERS] [LOG]
 explain cards: 17/17
 quick reference: QUICK REFERENCE: THIS VIEW

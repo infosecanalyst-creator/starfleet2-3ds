@@ -1,0 +1,7 @@
+kind: bridge
+hint: Red alert! X phasers, Y torpedoes, L freeze
+buttons: [PHASERS] [TORPS] [SHLD+] [SHLD-] [SPD+] [SPD-] [ECM ON] [GO] [FREEZE] [COMBAT CC] [WEAPONS] [STARS] [SYSTEM] [WAR] [COMBAT] [FLEET] [ORDERS] [LOG]
+explain cards: 18/18
+quick reference: QUICK REFERENCE: BRIDGE
+start menu: [RESUME] [WHAT NOW?] [MANUAL] [COACH: ON] [SAVE] [GAME SETTINGS (grey)] [EXIT GAME (grey)]
+what now: 1) An enemy must be within 5 points for phasers (X), 10 for torpedoes (Y); fire when the P and T under DAMAGE are green. Switch ECM off before firing. FREEZE (L) stops time while you think. 2) You are in orbit: the scan report is in COMMS. Tap the planet on the touch screen to send a landing party (not on a gas giant, Cls G). 3) ENGINES leaves orbit. [ring PHASERS]

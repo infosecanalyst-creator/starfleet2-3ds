@@ -1,5 +1,5 @@
 kind: map
-hint: Tap a star or ship to aim, tap it again to select
+hint: Tap a star: the box jumps to it. Then TARGETER
 buttons: [SCANNERS] [MEDICAL] [DEPT.Q] [STARS] [SYSTEM] [WAR] [COMBAT] [FLEET] [ORDERS] [LOG]
 explain cards: 10/10
 quick reference: QUICK REFERENCE: THIS VIEW

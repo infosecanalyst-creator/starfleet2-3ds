@@ -1,11 +1,11 @@
 checklist: Travel to a planet in this system
 tut1_03_bridge_docked_main_menu: step 1/8 Open the system map
-tut1_04_sysmap_start: step 2/8 Tap the planet to put the target box on it
-tut1_05_sysmap_tdb_on_planet: step 2/8 Tap the planet to put the target box on it
-tut1_06_targeter: step 4/8 Speed 0.9 is offered; Circle Pad up or down changes it
-tut1_07_targeter_speed05: step 4/8 Speed 0.9 is offered; Circle Pad up or down changes it
-tut1_08_target_entered: step 6/8 Go back to the bridge
+tut1_04_sysmap_start: step 2/8 Tap the planet: the box jumps to it
+tut1_05_sysmap_tdb_on_planet: step 2/8 Tap the planet: the box jumps to it
+tut1_06_targeter: step 4/8 Speed 0.9 is offered; SPD- / SPD+ change it
+tut1_07_targeter_speed05: step 4/8 Speed 0.9 is offered; SPD- / SPD+ change it
+tut1_08_target_entered: step 7/8 Start the engines; the ship turns and goes
 tut1_10_f9_engines_start: step 8/8 The engines stop by themselves on arrival
 tut1_13_sysmap_undocked: step 8/8 The engines stop by themselves on arrival
 tut1_15_bridge_underway: step 8/8 The engines stop by themselves on arrival
-tut1_16_target_reached: DONE
+tut1_16_target_reached: DONE (WELL DONE: Checklist done: Travel to a planet in this system.)

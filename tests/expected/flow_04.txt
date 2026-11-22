@@ -1,5 +1,5 @@
 checklist: Use sensor probes
-tut1_28_bridge_in_orbit: step 1/6 Open the navigation map
-tut1_29_navmap: step 2/6 Tap a star within 5 light years of you
-tut1_31_probe_display: step 4/6 Press A to launch the probe shown
-tut1_33_probe_report_popup: DONE
+tut1_28_bridge_in_orbit: step 1/8 Open the navigation map
+tut1_29_navmap: step 2/8 Tap a star within 5 light years of you
+tut1_31_probe_display: step 4/8 Tap LAUNCH CONTROL
+tut1_33_probe_report_popup: DONE (WELL DONE: Checklist done: Use sensor probes.)

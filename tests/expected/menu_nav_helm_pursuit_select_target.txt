@@ -1,7 +1,7 @@
 kind: bridge
 hint: Tap a target, tap it again to lock on
-buttons: [PHASERS] [TORPS] [SHLD+] [SHLD-] [SPD+] [SPD-] [LAUNCH] [ORDERS] [EVASIVE] [ORBIT] [DOCK] [MORE] [STARS] [SYSTEM] [WAR] [COMBAT] [FLEET] [ORDERS] [LOG]
-explain cards: 19/19
+buttons: [PHASERS (grey)] [TORPS (grey)] [SHLD+] [SHLD-] [SPD+] [SPD-] [LAUNCH] [WHAT NOW?] [EVASIVE] [ORBIT] [DOCK] [EMERG. HYPERSPACE] [PURSUIT] [TARGETS] [CIRCLE] [BACK] [STARS] [SYSTEM] [WAR] [COMBAT] [FLEET] [ORDERS] [LOG]
+explain cards: 23/23
 quick reference: QUICK REFERENCE: BRIDGE
 start menu: [RESUME] [WHAT NOW?] [MANUAL] [COACH: ON] [SAVE] [GAME SETTINGS (grey)] [EXIT GAME (grey)]
-what now: Goal: Discover at least one mineral-rich planet in UGA or neutral space. 1) Tap LAUNCH to leave the starfort. 2) Then SYSTEM shows the planets here; STARS shows other star systems. [ring LAUNCH]
+what now: 1) Pick where to go first: tap SYSTEM, tap a planet, TARGETER, ENTER, then B. 2) Then LAUNCH leaves the starfort and the ship flies there. (STARS shows other star systems.) [ring SYSTEM]

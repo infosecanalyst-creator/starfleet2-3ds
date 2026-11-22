@@ -3,8 +3,8 @@ tut1_28_bridge_in_orbit: step 1/10 Open the navigation map of the region
 tut1_29_navmap: step 2/10 Tap the star system you want to reach
 tut1_34_navmap_tdb_ss33: step 2/10 Tap the star system you want to reach
 tut1_35_hyper_targeter: step 4/10 Press A to accept the speed
-tut1_37_target_system_map: step 5/10 Its system map opens: tap a spot near the edge
-tut1_41_navmap_helm_jump_report: step 5/10 Its system map opens: tap a spot near the edge
-tut1_42_bridge_to_system_edge: step 5/10 Its system map opens: tap a spot near the edge
-tut1_43_bridge_hyperspace: step 5/10 Its system map opens: tap a spot near the edge
-tut1_44_emerged_target2_loaded: step 5/10 Its system map opens: tap a spot near the edge
+tut1_37_target_system_map: step 5/10 Its map opens: tap a spot near an edge
+tut1_41_navmap_helm_jump_report: step 9/10 At the edge it jumps by itself
+tut1_42_bridge_to_system_edge: step 9/10 At the edge it jumps by itself
+tut1_43_bridge_hyperspace: step 10/10 It drops out and flies to target 2
+tut1_44_emerged_target2_loaded: DONE (WELL DONE: Checklist done: Jump to another star system.)

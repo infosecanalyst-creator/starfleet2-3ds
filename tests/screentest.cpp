@@ -110,6 +110,7 @@ static std::string report(const std::string& name, const TextScreen& ts, const s
         bool there = false; for (auto& x : btns) if (!x.off && x.label == advise_button) there = true;
         if (!there) o << "FIT: What now? rings " << advise_button << ", which is not on this screen\n";
       }
+      if (!png_dir.empty()) save_ppm(png_dir + "/" + name + "_card_top.ppm", top, TOP_W, TOP_H);   // the card where it is drawn
       advise_button = 0;
       break;
     }
@@ -165,8 +166,16 @@ int main(int argc, char** argv) {
         if (first) { chk_sec = sec; chk_step = 0; chk_begin_step(ts); first = false; }
         fit_clear(); force_redraw(); explain_until = 0;
         for (int i = 0; i < 3; i++) { clock_ms += 40; frame(ts, top, bot); }
+        // the recorded run has no button presses: a step with a button and no proof text counts as pressed
+        for (int i = 0; i < 4 && chk_sec >= 0 && chk_step < (int)manual[chk_sec].steps.size(); i++) {
+          const Step& cs = manual[chk_sec].steps[chk_step];
+          if (!cs.done.empty() || cs.btn.empty()) break;
+          chk_pressed = cs.btn; force_redraw(); clock_ms += 40; frame(ts, top, bot); clock_ms += 40; frame(ts, top, bot);
+        }
         for (auto& pr : fit_problems()) { o << "FIT: " << pr << "\n"; bad++; }
-        if (chk_sec < 0) { o << d << ": DONE\n"; break; }
+        if (!png.empty()) { char pn[32]; snprintf(pn, sizeof pn, "flow_%02d_", fn + 1); save_ppm(png + "/" + pn + d + "_top.ppm", top, TOP_W, TOP_H); }
+        if (chk_sec < 0) { o << d << ": DONE" << (explain_until ? " (" + explain_title + ": " + explain_text + ")" : std::string()) << "\n"; break; }
+        if (chk_sec != sec) { o << "  -> " << manual[chk_sec].title << (explain_until ? " (" + explain_title + ": " + explain_text + ")" : std::string()) << "\n"; sec = chk_sec; }
         o << d << ": step " << chk_step + 1 << "/" << manual[sec].steps.size() << " " << manual[sec].steps[chk_step].what << "\n";
       }
       chk_sec = -1; names.push_back("flow");

@@ -1,7 +1,7 @@
 kind: bridge
-hint: Alert! X phasers, Y torpedoes, ECM
-buttons: [PHASERS] [TORPS] [SHLD+] [SHLD-] [SPD+] [SPD-] [STOP] [ECM ON] [NAV] [ENG] [CMB] [CMP] [SEC] [MORE] [STARS] [SYSTEM] [WAR] [COMBAT] [FLEET] [ORDERS] [LOG]
-explain cards: 21/21
+hint: Orange: Alliance space. Tap the display to steer
+buttons: [PHASERS (grey)] [TORPS (grey)] [SHLD+] [SHLD-] [SPD+] [SPD-] [STOP] [STARFORT] [SHIP MENUS] [STARS] [SYSTEM] [WAR] [COMBAT] [FLEET] [ORDERS] [LOG]
+explain cards: 16/16
 quick reference: QUICK REFERENCE: BRIDGE
 start menu: [RESUME] [WHAT NOW?] [MANUAL] [COACH: ON] [SAVE] [GAME SETTINGS (grey)] [EXIT GAME (grey)]
-what now: Goal: Discover at least one mineral-rich planet in UGA or neutral space. 1) Enemy near and shields are down: tap SHLD+. 2) Fire when the P and T lights are green: X phasers, Y torpedoes. FREEZE stops time while you think. 3) In hyperspace: nothing to do until the ship arrives. [ring SHLD+]
+what now: Goal: Discover at least one mineral-rich planet in UGA or neutral space. 1) ORANGE: you are in Alliance or neutral space, nobody in range. Shields at 0% is normal here. 2) In hyperspace: nothing to do until the ship arrives.

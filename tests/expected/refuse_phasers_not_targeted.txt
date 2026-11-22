@@ -1,7 +1,7 @@
 kind: bridge
-hint: Tap display: steer ³ X/Y: fire
-buttons: [PHASERS] [TORPS] [SHLD+] [SHLD-] [SPD+] [SPD-] [ENGINES] [STARFORT] [NAV] [ENG] [CMB] [CMP] [SEC] [MORE] [STARS] [SYSTEM] [WAR] [COMBAT] [FLEET] [ORDERS] [LOG]
-explain cards: 21/21
+hint: Tap the display to steer the ship
+buttons: [PHASERS (grey)] [TORPS (grey)] [SHLD+] [SHLD-] [SPD+] [SPD-] [ENGINES] [STARFORT] [SHIP MENUS] [STARS] [SYSTEM] [WAR] [COMBAT] [FLEET] [ORDERS] [LOG]
+explain cards: 16/16
 quick reference: QUICK REFERENCE: BRIDGE
 start menu: [RESUME] [WHAT NOW?] [MANUAL] [COACH: ON] [SAVE] [GAME SETTINGS (grey)] [EXIT GAME (grey)]
 what now: Goal: Discover at least one mineral-rich planet in UGA or neutral space. Choose where to go: SYSTEM for a planet here, STARS for another star system. [ring SYSTEM]

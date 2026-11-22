@@ -4,4 +4,4 @@ buttons: [PG UP] [] [] [] [] [PG DN] [SPACE] [DIST] [SELECT] [EXIT] [STARS (
 explain cards: 17/17
 quick reference: QUICK REFERENCE
 start menu: [RESUME] [WHAT NOW?] [MANUAL] [COACH: ON] [SAVE (grey)] [GAME SETTINGS (grey)] [EXIT GAME (grey)]
-what now: Read the page, then tap CONTINUE (or A). B goes back.
+what now: Use the buttons on the touch screen; B goes back.
