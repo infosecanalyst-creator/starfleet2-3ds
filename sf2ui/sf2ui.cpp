@@ -1270,6 +1270,7 @@ static const Gloss GLOSSARY[] = {
   {"ORDERS", "MISSION ORDERS", "Shows your mission orders again: what to do and how many days you have."},
   {"ECM ON", "ECM (countermeasures)", "Electronic countermeasures jam weapon locks, theirs AND yours: switch it off before you fire. Uses energy."},
   {"ECM OFF", "ECM (countermeasures)", "ECM is on: weapon locks are jammed, theirs and yours. Tap to switch it off before you fire, and to save energy."},
+  {"BACK TO THE BRIDGE", "BACK TO THE BRIDGE", "Closes the planet's map (B does the same)."},
   {"RESUME", "RESUME (L)", "The clock is frozen. This (or L) starts it again."},
   {"BEAM DOWN", "BEAM DOWN", "Sends the teams in the table down to the planet (the game's Activate). With no teams it just closes the table."},
   {"BEAM UP", "BEAM UP", "Brings back every team that is not marked to stay."},
@@ -2692,6 +2693,15 @@ static void manual_bottom(Surf& s) {
 // ------------------------------------------------------------------ graphics (title art) screens
 static void graphics_bottom(Surf& s) {
   s.fill(0, 0, BOT_W, BOT_H, BG);
+  if (mission_on) {       // a picture inside a mission is the planet's map: only Esc leaves it (harness, Nov 26)
+    fit_text(s, (BOT_W - text_width("PLANET MAP", F8x16)) / 2, 30, BOT_W, "PLANET MAP", F8x16, TITLE, "planet map");
+    const char* l1 = "The map and the planet's data are on the";
+    const char* l2 = "top screen: minerals, life, cities, defenses.";
+    fit_text(s, (BOT_W - text_width(l1, F6x12)) / 2, 60, BOT_W - 6, l1, F6x12, BTN_TXT, "planet map");
+    fit_text(s, (BOT_W - text_width(l2, F6x12)) / 2, 74, BOT_W - 6, l2, F6x12, BTN_TXT, "planet map");
+    add_btn(40, 110, 280, 160, "BACK TO THE BRIDGE", &F8x16, key_act(K_ESC));
+    return;
+  }
   fit_text(s, (BOT_W - text_width("STAR FLEET II", F8x16)) / 2, 40, BOT_W, "STAR FLEET II", F8x16, TITLE, "title");
   fit_text(s, (BOT_W - text_width("Krellan Commander", F6x12)) / 2, 62, BOT_W, "Krellan Commander", F6x12, BTN_TXT, "title");
   add_btn(40, 100, 280, 150, "CONTINUE", &F8x16, key_act(K_ENTER));

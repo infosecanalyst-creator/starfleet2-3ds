@@ -153,6 +153,8 @@ static const Refusal REFUSALS[] = {
   {"Use not allowed - Krellans on planet", "WHY WON'T THE POD LAUNCH?", "HOW: beam your landing party up first (tap the planet on the touch screen) and make sure no Krellan troops or base are there. WHY: the pod kills everything on the planet, including our own people.", 0},  // [T][B]
 
   // ---------------------------------------------------------------- general
+  {": not loaded", "WHY WON'T THE TORPEDOES FIRE?", "HOW: wait a few seconds and tap TORPS again. WHY: both tubes fire together and then reload. Tapping faster only queues shots and wastes torpedoes.", 0},   // harness Nov 26: "Torp #1: not loaded"
+  {"Target already disabled", "WHY DID THE SHOT STOP?", "HOW: stop firing at this ship; board it (SHIP MENUS, then ENGINEERING, TELEPORTERS, Boarding party) or pick another target. WHY: with weapons set to disable, the crew will not fire on a ship that is already helpless.", 0},   // harness Nov 26
   {"WITH GAME FROZEN", "WHY CAN'T I CHANGE THIS NOW?", "HOW: tap FREEZE (or press L) to let time run again, then make the change. WHY: this setting cannot be changed while the game is paused.", "FREEZE"},  // [T] "CANNOT CHANGE WITH GAME FROZEN"
   {"AVAILABLE AT THIS RANK", "WHY CAN'T I USE THIS YET?", "HOW: carry on with your missions; this unlocks when you are promoted. WHY: your rank is too low for this command.", 0},  // [D][F][C] "FUNCTION NOT AVAILABLE AT THIS RANK" / "NOT AVAILABLE AT THIS RANK"
   {"No repair teams available", "WHY IS NOTHING BEING REPAIRED?", "HOW: tap SHIP MENUS, then ENGINEERING, open Damage Control and move a team from a less important system, or dock at a starfort. WHY: all your repair teams are already busy.", "SHIP MENUS"},  // [T][O]

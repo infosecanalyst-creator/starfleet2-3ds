@@ -32,8 +32,8 @@ STEP PROBES | Tap PROBES | Launch Control
 STEP LAUNCH CONTROL | Tap LAUNCH CONTROL | PROBES CONTROL
 STEP LAUNCH | Tap LAUNCH: a probe flies to that star | -
 STEP B | Press B. Probe 2 or 3 more stars this way | -
-STEP - | Wait for a probe report to pop up | arrived at RegLoc
-STEP CONTINUE | Read it: any planets? Then CONTINUE | -
+STEP - | Wait for a probe report in COMMS | arrived at RegLoc
+STEP - | Read it: how many planets in the system? | -
 STEP - | Tap a star whose report showed planets | -
 STEP TARGETER | Tap TARGETER: speed 8 is offered | Max. Vel :  8
 STEP ENTER | Tap ENTER to accept the speed | Select target
@@ -60,7 +60,7 @@ STEP YES | Go to nearest starfort? Answer YES | Setting new targets
 STEP - | Wait: the ship flies home by itself | Shall we dock?
 STEP YES | Shall we dock? Answer YES | Docking procedure complete
 
-WHY: Your orders for 1-A are to discover at least one mineral-rich planet in Alliance (UGA) or neutral space, in 10 days. Probes tell you which stars have planets without the trip. The scan you get on entering orbit tells you what a planet is worth: the planet in Tutorial 1 read "Fair minerals", and your orders want a rich one.
+WHY: Your orders for 1-A are to discover at least one mineral-rich planet in Alliance (UGA) or neutral space, in 10 days. Probes tell you which stars have planets without the trip. The scan you get on entering orbit tells you what a planet is worth: only a scan that reads "Rich minerals" counts. "Fair minerals" does not, and a gas giant (Class G) is worth nothing. In a practice mission the probe report arrives in COMMS: "1 planet in system" or "0 planets in system". On the STARS map, DATABASE then STARS lists every system with its planet count. You have 5 probes, so pick stars with care. ORDERS shows objective 2 as INCOMPLETE until a rich planet is found.
 
 IF IT DOESN'T WORK: The star you start at has no planet worth scanning, so you must jump. If ORDERS still says INCOMPLETE under objective 2, the planet was not rich enough: do the planet steps again at the next planet, or probe and jump to another star (cards "Travel to a planet in this system" and "Jump to another star system"). We have not yet seen this objective turn complete, so if a rich planet does not do it, try a landing party with the Explore/Survey job. A probe reaches 5 light years at most. No STARFORT button while you are in orbit? Tap ENGINES to leave orbit first.
 
