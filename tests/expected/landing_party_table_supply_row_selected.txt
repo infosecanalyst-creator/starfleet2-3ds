@@ -1,7 +1,7 @@
 kind: plain
-hint: The game's window. Its keys are the buttons below
-buttons: [PG UP] [] [] [] [] [PG DN] [SPACE] [ENTER] [BACK] [KEYBOARD] [STARS] [SYSTEM] [WAR] [COMBAT] [FLEET] [ORDERS] [LOG]
-explain cards: 17/17
+hint: + TEAM adds 10 people to the lit row
+buttons: [] [] [- TEAM] [+ TEAM] [BEAM DOWN] [CANCEL] [STARS] [SYSTEM] [WAR] [COMBAT] [FLEET] [ORDERS] [LOG]
+explain cards: 13/13
 quick reference: QUICK REFERENCE: THIS VIEW
 start menu: [RESUME] [WHAT NOW?] [MANUAL] [COACH: ON] [SAVE (grey)] [GAME SETTINGS (grey)] [EXIT GAME (grey)]
-what now: Goal: Discover at least one mineral-rich planet in UGA or neutral space. This is one of the ship's pages. The buttons below are its keys; B goes back to the bridge.
+what now: Landing parties. The lit row is a mission: the arrows change the row, + TEAM puts a team of 10 on it. For a first look: one team on eXplore/survey, then BEAM DOWN. CANCEL sends nobody. [ring + TEAM]

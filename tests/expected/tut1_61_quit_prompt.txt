@@ -4,4 +4,4 @@ buttons: [PHASERS (grey)] [TORPS (grey)] [SHLD+] [SHLD-] [SPD+] [SPD-] [LAUNCH] 
 explain cards: 17/17
 quick reference: QUICK REFERENCE: BRIDGE
 start menu: [RESUME] [WHAT NOW?] [MANUAL] [COACH: ON] [SAVE] [GAME SETTINGS (grey)] [EXIT GAME (grey)]
-what now: Goal: Discover at least one mineral-rich planet in UGA or neutral space. The game asks: Do you want to stop? Answer YES or NO below.
+what now: Goal: Discover at least one mineral-rich planet in UGA or neutral space. The clock is FROZEN (the mission time blinks white). Look around as long as you like; L carries on.

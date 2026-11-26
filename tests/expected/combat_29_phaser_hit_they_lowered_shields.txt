@@ -1,0 +1,7 @@
+kind: bridge
+hint: Red alert! X phasers, Y torpedoes, L freeze
+buttons: [PHASERS] [TORPS] [SHLD+] [SHLD-] [SPD+] [SPD-] [ECM ON] [GO] [FREEZE] [SHIP MENUS] [STARS] [SYSTEM] [WAR] [COMBAT] [FLEET] [ORDERS] [LOG]
+explain cards: 17/17
+quick reference: QUICK REFERENCE: BRIDGE
+start menu: [RESUME] [WHAT NOW?] [MANUAL] [COACH: ON] [SAVE] [GAME SETTINGS (grey)] [EXIT GAME (grey)]
+what now: 1) Torpedoes are locked on (T in TARGET DATA): tap TORPS. Both tubes fire, then reload for a few seconds. 2) Phasers are locked on (P in TARGET DATA): tap PHASERS. 3) FREEZE stops time while you think. [ring TORPS]

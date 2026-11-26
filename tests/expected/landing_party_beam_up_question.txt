@@ -4,4 +4,4 @@ buttons: [PHASERS (grey)] [TORPS (grey)] [SHLD+] [SHLD-] [SPD+] [SPD-] [ENGINES]
 explain cards: 17/17
 quick reference: QUICK REFERENCE: BRIDGE
 start menu: [RESUME] [WHAT NOW?] [MANUAL] [COACH: ON] [SAVE] [GAME SETTINGS (grey)] [EXIT GAME (grey)]
-what now: Goal: Discover at least one mineral-rich planet in UGA or neutral space. The game asks: Beam landing party up? Answer YES or NO below.
+what now: Goal: Discover at least one mineral-rich planet in UGA or neutral space. The game asks: Beam landing party up? YES opens the list of teams on the planet; there you choose who stays.

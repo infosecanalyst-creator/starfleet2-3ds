@@ -1,0 +1,7 @@
+kind: bridge
+hint: Red alert! X phasers, Y torpedoes, L freeze
+buttons: [PHASERS] [TORPS] [SHLD+] [SHLD-] [SPD+] [SPD-] [ECM ON] [GO] [FREEZE] [SHIP MENUS] [STARS] [SYSTEM] [WAR] [COMBAT] [FLEET] [ORDERS] [LOG]
+explain cards: 17/17
+quick reference: QUICK REFERENCE: BRIDGE
+start menu: [RESUME] [WHAT NOW?] [MANUAL] [COACH: ON] [SAVE] [GAME SETTINGS (grey)] [EXIT GAME (grey)]
+what now: 1) No weapon has a lock yet. Get closer: phasers reach 5 points, torpedoes 10. The lit PHASERS or TORPS button means a lock. 2) FREEZE stops time while you think. 3) You are in orbit: the scan report is in COMMS. Tap the planet on the touch screen to send a landing party (not on a gas giant, Cls G).

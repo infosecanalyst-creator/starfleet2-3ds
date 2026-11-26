@@ -1,0 +1,7 @@
+kind: bridge
+hint: Tap a target, tap it again to lock on
+buttons: [PHASERS] [TORPS] [SHLD+] [SHLD-] [SPD+] [SPD-] [ECM ON] [GO] [FREEZE] [DAMAGE CONTROL] [TELEPORTERS] [PROBES] [TRACTOR BEAM] [POWER SYSTEMS] [ENGINE DATA] [BACK] [STARS] [SYSTEM] [WAR] [COMBAT] [FLEET] [ORDERS] [LOG]
+explain cards: 23/23
+quick reference: QUICK REFERENCE: BRIDGE
+start menu: [RESUME] [WHAT NOW?] [MANUAL] [COACH: ON] [SAVE] [GAME SETTINGS (grey)] [EXIT GAME (grey)]
+what now: 1) Phasers are locked on (P in TARGET DATA): tap PHASERS. 2) FREEZE stops time while you think. 3) You are in orbit: the scan report is in COMMS. Tap the planet on the touch screen to send a landing party (not on a gas giant, Cls G). [ring PHASERS]

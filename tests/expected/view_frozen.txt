@@ -4,4 +4,4 @@ buttons: [PHASERS (grey)] [TORPS (grey)] [SHLD+] [SHLD-] [SPD+] [SPD-] [STOP] [S
 explain cards: 16/16
 quick reference: QUICK REFERENCE: BRIDGE
 start menu: [RESUME] [WHAT NOW?] [MANUAL] [COACH: ON] [SAVE] [GAME SETTINGS (grey)] [EXIT GAME (grey)]
-what now: 1) ORANGE: you are in Alliance or neutral space, nobody in range. Shields at 0% is normal here. 2) Flying by hand. SYSTEM lets you pick a destination and the ship flies itself.
+what now: 1) The clock is FROZEN (the mission time blinks white). Look around as long as you like; L carries on. 2) ORANGE: you are in Alliance or neutral space, nobody in range. Shields at 0% is normal here. 3) Flying by hand. SYSTEM lets you pick a destination and the ship flies itself.

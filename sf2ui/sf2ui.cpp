@@ -288,7 +288,7 @@ static bool is_bridge(const TextScreen& ts) {
   std::string r9 = row_str(ts, 9, 59, 79), r14 = row_str(ts, 14, 40, 52), r17 = row_str(ts, 17, 40, 60);
   auto has = [](const std::string& h, const char* n) { return h.find(n) != std::string::npos; };
   return has(r0, "LOW PWR") && has(r1, "NAV") && (has(r1, "TACTICAL") || has(r1, "ORBITAL")) && has(r1, "VEL") &&
-         has(r1, "DAMAGE") && has(r2, "LRS") && has(r9, "DATA") && has(r14, "ss") && has(r17, "ENERGY");
+         has(r1, "DAMAGE") && has(r2, "LRS") && has(r9, "DATA") && (has(r14, "ss") || has(row_str(ts, 14, 30, 50), "TARGET ID")) && has(r17, "ENERGY");
 }
 // Any flight screen (the bridge and its variants: Damage Control, overlay windows) keeps the
 // LOW PWR status line on row 0; reading screens never have it.
@@ -710,6 +710,24 @@ static int alert_level(const TextScreen& ts) {
   std::string w = a1.find("ALERT") != std::string::npos ? a0 : a0.find("STATUS") != std::string::npos ? a1 : std::string();
   return w.find("RED") != std::string::npos ? 2 : w.find("ORANGE") != std::string::npos ? 1 : 0;
 }
+// The clock is frozen: the game changes nothing but the colour of the mission time (blinking white).
+static bool frozen(const TextScreen& ts) {
+  for (int c = 11; c <= 16; c++) if (ts.at[11][c] == 0x8F) return true;
+  return false;
+}
+// The landing-party table (teleporters): 0 not up, 1 assigning teams, 2 recalling teams.
+static int lp_table(const TextScreen& ts) {
+  if (row_str(ts, 15, 40, 80).find("Mission") == std::string::npos || row_str(ts, 15, 40, 80).find("Tms") == std::string::npos) return 0;
+  std::string p = row_str(ts, 24, 0, 30);
+  return p.find("teams to stay") != std::string::npos ? 2 : p.find("Assign mission") != std::string::npos ? 1 : 0;
+}
+// Which weapons have a lock: the Wpn letters in TARGET DATA (bit 0 phasers, bit 1 torpedoes).
+static int weapon_locks(const TextScreen& ts) {
+  if (row_str(ts, 9, 59, 79).find("TARGET DATA") == std::string::npos) return 0;
+  int m = 0;
+  for (int r = 11; r <= 14; r++) { std::string w = row_str(ts, r, 74, 79); if (w.find('P') != std::string::npos) m |= 1; if (w.find('T') != std::string::npos) m |= 2; }
+  return m;
+}
 static bool practice_on(const TextScreen& ts) {     // the sign-on menu's settings block: "Practice Mode  On"
   for (int r = 14; r < 24; r++) { std::string row = row_str(ts, r, 0, 80); size_t p = row.find("Practice Mode");
     if (p != std::string::npos) return trim(row.substr(p + 13, 12)).compare(0, 2, "On") == 0; }
@@ -733,6 +751,8 @@ static const char* context_hint(const TextScreen& ts) {
       default: break;
     }
     if (row_str(ts, 24, 0, 24).find("PRESS") != std::string::npos) return "Read COMMS (top screen), then tap CONTINUE";
+    if (frozen(ts)) return "FROZEN: the clock is stopped. L carries on";
+    if (row_str(ts, 24, 0, 24).find("Select target") != std::string::npos) return "D-Pad moves the target box, ENTER picks";
     return "Tap the display to steer the ship";
   }
   if (!kb_open && autologin == 0 && signon_list(ts, 0)) return "Tap SIGN ON AS, or tap a commander's name";
@@ -750,6 +770,8 @@ static const char* context_hint(const TextScreen& ts) {
   if (row_mode == R_WINDOW) return "Tap one of the keys below";
   if (glay_kind() == 1) return menu_scrolls ? "Tap an item; drag or tap the arrows for more" : "Tap an item to choose it";
   if (glay_kind() == 2) return screen_has(ts, "MAP OF STAR SYSTEM") ? "Tap a planet or starfort, then tap TARGETER" : "Tap a star: the box jumps to it. Then TARGETER";
+  if (lp_table(ts) == 1) return "+ TEAM adds 10 people to the lit row";
+  if (lp_table(ts) == 2) return "- TEAM brings a team back; ALL BACK: everyone";
   if (glay_kind() == 3) return "The game's window. Its keys are the buttons below";
   if (row_mode == R_ANYKEY) return lefty_on ? "Read the screen, then tap CONTINUE (or D-Rt)" : "Read the screen, then tap CONTINUE (or A)";
   { bool blank = true; for (int r = 0; r < 25 && blank; r++) for (int c = 0; c < 80; c++) if (ts.ch[r][c] > ' ' && ts.ch[r][c] != 0xFF) { blank = false; break; }
@@ -790,6 +812,7 @@ static void prompt_strip(Surf& s, const TextScreen& ts, const std::string& promp
   if (!showing_toast && kb_open && ts.cursor_y >= 0 && ts.cursor_y < 25) line = trim(row_str(ts, ts.cursor_y, 0, 80));
   // (saving by name: the game's box lies under the bridge panels, so the cursor's row is a mix of them)
   if (!showing_toast && kb_open && screen_has(ts, "Enter file name")) line = "Save as: " + typed + "_";
+  if (!showing_toast && !kb_open && row_str(ts, 14, 30, 50).find("TARGET ID") != std::string::npos) line = "Box is on: " + trim(row_str(ts, 15, 16, 62));
   if (!showing_toast && row_mode == R_YESNO) {    // the question itself, readable beside YES/NO
     std::string q = dialog_question(ts);           // (on the bridge its window is cut by the tiles)
     if (!q.empty()) line = q;
@@ -870,6 +893,13 @@ static void bottom_rows(Surf& s, const TextScreen& ts) {
   // a message box that says PRESS KEY wins over the menu row drawn behind it
   if (!yesno && pop_r0 >= 0 && pop_text.find("PRESS KEY") != std::string::npos) items.clear();
   if (screen_has(ts, "Enter file name")) { items.clear(); yesno = false; prompt = "Save as:"; }
+  if (int lp = lp_table(ts)) {         // the landing-party table: Enter activates, Esc drops the plan, Shift+A recalls all
+    items.clear(); yesno = false;
+    items.push_back(MenuItem{lp == 2 ? "BEAM UP" : "BEAM DOWN", -1, false, 13, 0});
+    items.push_back(MenuItem{"CANCEL", -1, false, 27, 0});
+    if (lp == 2) items.push_back(MenuItem{"ALL BACK", -1, false, 'A', M_SHIFT});
+    prompt = lp == 2 ? "How many teams stay?" : "Teams to send down";
+  }
   bool anykey = items.empty() && !yesno &&
                 (prompt.find("PRESS") != std::string::npos || screen_has(ts, "PRESS ANY KEY", 18, 24) || screen_has(ts, "PRESS KEY", 18, 24) ||
                  (pop_r0 >= 0 && pop_text.find("PRESS KEY") != std::string::npos));
@@ -1240,6 +1270,13 @@ static const Gloss GLOSSARY[] = {
   {"ORDERS", "MISSION ORDERS", "Shows your mission orders again: what to do and how many days you have."},
   {"ECM ON", "ECM (countermeasures)", "Electronic countermeasures jam weapon locks, theirs AND yours: switch it off before you fire. Uses energy."},
   {"ECM OFF", "ECM (countermeasures)", "ECM is on: weapon locks are jammed, theirs and yours. Tap to switch it off before you fire, and to save energy."},
+  {"RESUME", "RESUME (L)", "The clock is frozen. This (or L) starts it again."},
+  {"BEAM DOWN", "BEAM DOWN", "Sends the teams in the table down to the planet (the game's Activate). With no teams it just closes the table."},
+  {"BEAM UP", "BEAM UP", "Brings back every team that is not marked to stay."},
+  {"ALL BACK", "ALL BACK", "Sets every row to 0 teams staying: everyone comes back when you tap BEAM UP."},
+  {"CANCEL", "CANCEL", "Closes the table and forgets the plan. Nobody is sent."},
+  {"+ TEAM", "ADD A TEAM", "One more team (10 people) on the lit mission. The game picks the mix of crew and shock troops."},
+  {"- TEAM", "REMOVE A TEAM", "One team fewer on the lit mission."},
   {"FREEZE", "FREEZE (L)", "Stops the clock so you can think. FREEZE again (or L) carries on."},
   {"TELEPORT", "TELEPORTERS", "Send a landing party, shock troops or supplies to the planet you orbit, or bring them back."},
   {"AUTO", "TAP MODE: AUTO", "A tap on the tactical display moves the target box when it is showing, otherwise steers. This button changes the mode."},
@@ -1553,7 +1590,12 @@ static std::string advise(const TextScreen& ts, const char** button) {
   *button = 0;
   std::vector<std::string> say_list;
   auto add = [&](const std::string& t, const char* b) { if (say_list.empty() && b) *button = b; say_list.push_back(t); };
-  if (!ts.text_mode) return "Wait for the picture to finish, or press A.";
+  if (!ts.text_mode) return mission_on ? "This is the planet's map. BACK (or B) returns to the bridge." : "Wait for the picture to finish, or press A.";
+  if (int lp = lp_table(ts)) {
+    *button = lp == 1 ? "+ TEAM" : "ALL BACK";
+    return lp == 1 ? "Landing parties. The lit row is a mission: the arrows change the row, + TEAM puts a team of 10 on it. For a first look: one team on eXplore/survey, then BEAM DOWN. CANCEL sends nobody."
+                   : "These teams are on the planet. The number is how many STAY: - TEAM brings one back, ALL BACK brings everyone. Then BEAM UP.";
+  }
   if (screen_has(ts, "Enter file name")) return "Type a name for this save (8 letters at most) and tap ENTER.";
   if (chk_sec >= 0 && chk_step < (int)manual[chk_sec].steps.size()) {       // a checklist is being followed: its step is the answer
     const Step& stp = manual[chk_sec].steps[chk_step];
@@ -1575,20 +1617,28 @@ static std::string advise(const TextScreen& ts, const char** button) {
     if (!asked && dq.find("planetary map") != std::string::npos) {
       asked = true;
       add("The scan report is in COMMS: class, life, minerals, surveyed or not. The game asks: Display planetary map? NO is fine (YES shows a picture of the planet; BACK leaves it).", "NO");
+    } else if (frozen(ts)) {
+      add("The clock is FROZEN (the mission time blinks white). Look around as long as you like; L carries on.", 0);
     } else if (!asked && !dq.empty()) {
       asked = true; add("The game asks: " + dq + " Answer YES or NO below.", 0);
     } else if (asked) {
       const char* why = prompt.find("orbit") != std::string::npos ? "YES circles the planet (needed to scan it or send landing parties); NO stays beside it." :
                         prompt.find("dock") != std::string::npos ? "YES docks: the starfort repairs and resupplies the ship." :
                         prompt.find("Comply") != std::string::npos ? "A routine request from the starfort: YES is the usual answer." :
+                        prompt.find("Beam landing party up") != std::string::npos ? "YES opens the list of teams on the planet; there you choose who stays." :
+                        prompt.find("Answer") != std::string::npos && screen_has(ts, "disable rather than destroy", 14, 23) ? "YES is the better answer for freighters and starliners: a disabled ship can be captured and is worth more than a wreck." :
                         prompt.find("Answer") != std::string::npos ? (screen_has(ts, "landing part", 14, 23) ? "NO is fine on a first visit; YES opens the landing-party table." : "The question is in COMMS on the top screen.") : "Answer YES or NO below.";
       bool safe = prompt.find("orbit") != std::string::npos || prompt.find("dock") != std::string::npos || prompt.find("Comply") != std::string::npos;
       add("The game asks: " + prompt + " " + why, safe ? "YES" : 0);      // (YES is only ringed where it is harmless)
     } else if (prompt.find("PRESS") != std::string::npos) add("Read the message in COMMS, then tap CONTINUE.", "CONTINUE");
     if (asked) {
     } else if (alert == 2) {
+      int locks = weapon_locks(ts);
       if (shields >= 0 && shields < 100) add("Red alert and the shields are not at 100%: tap SHLD+.", "SHLD+");
-      add("An enemy must be within 5 points for phasers (X), 10 for torpedoes (Y); fire when the P and T under DAMAGE are green. Switch ECM off before firing. FREEZE (L) stops time while you think.", "PHASERS");
+      if (locks & 2) add("Torpedoes are locked on (T in TARGET DATA): tap TORPS. Both tubes fire, then reload for a few seconds.", "TORPS");
+      if (locks & 1) add("Phasers are locked on (P in TARGET DATA): tap PHASERS.", (locks & 2) ? 0 : "PHASERS");
+      if (!locks) add("No weapon has a lock yet. Get closer: phasers reach 5 points, torpedoes 10. The lit PHASERS or TORPS button means a lock.", 0);
+      add("FREEZE stops time while you think.", 0);
     } else if (alert == 1) {
       add("ORANGE: you are in Alliance or neutral space, nobody in range. Shields at 0% is normal here.", 0);
     }
@@ -1740,9 +1790,10 @@ static void bridge_bottom(Surf& s, const TextScreen& ts) {
   auto ry = [](int r) { return 6 + r * 32; };
   // weapons fire only at red alert (the game answers "not energized" otherwise): greyed until then
   const int alert = alert_level(ts);
-  add_btn(AX0, ry(0), AX1, ry(0) + 24, "PHASERS", &F8x16, key_act(K_INSERT));
+  const int locks = weapon_locks(ts);        // a weapon with a lock is lit: that is when firing does something
+  add_btn(AX0, ry(0), AX1, ry(0) + 24, "PHASERS", &F8x16, key_act(K_INSERT), -1, (locks & 1) != 0);
   if (alert != 2) btns.back().off = true;
-  add_btn(AX0, ry(1), AX1, ry(1) + 24, "TORPS", &F8x16, key_act(K_DELETE));
+  add_btn(AX0, ry(1), AX1, ry(1) + 24, "TORPS", &F8x16, key_act(K_DELETE), -1, (locks & 2) != 0);
   if (alert != 2) btns.back().off = true;
   add_btn(AX0, ry(2), AXM, ry(2) + 24, "SHLD+", &F6x12, key_act((Key)(K_F1 + 7)));
   add_btn(AXM + GAP, ry(2), AX1, ry(2) + 24, "SHLD-", &F6x12, key_act((Key)(K_F1 + 6)));
@@ -1771,7 +1822,7 @@ static void bridge_bottom(Surf& s, const TextScreen& ts) {
         row(4, ecm_on(ts) ? "ECM OFF" : "ECM ON", key_act(K_E, M_ALT));
         if (cur > 0.0f) add_btn(AX0, ry(5), AXM, ry(5) + 24, "STOP", &F6x12, key_act(K_F10));
         else add_btn(AX0, ry(5), AXM, ry(5) + 24, "GO", &F6x12, kind_act(A_ENGINES));
-        add_btn(AXM + GAP, ry(5), AX1, ry(5) + 24, "FREEZE", &F5x9, key_act(K_F, M_CTRL));
+        add_btn(AXM + GAP, ry(5), AX1, ry(5) + 24, frozen(ts) ? "RESUME" : "FREEZE", &F5x9, key_act(K_F, M_CTRL));
       }
       break;
     // (ENGINES keeps its row; the teleporters are a tap on the planet, so the way home stays in reach)
@@ -1897,7 +1948,7 @@ static bool bl_corner(uint8_t c) { return c == 0xC0 || c == 0xC8 || c == 0xD4 ||
 static bool fit_map(GLayout& g, int r0, int c0, int r1, int c1) {
   int cols = c1 - c0 + 1, rows = r1 - r0 + 1;
   int cw = std::min(8, BOT_W / cols), lh = std::min(14, UP_H / rows);
-  if (cw < 4 || lh < 8) return false;                    // too big for the touch screen
+  if (cw < 4 || lh < 7) return false;                    // too big for the touch screen
   g.f = (cw >= 8 && lh >= 14) ? &F8x14 : (cw >= 6 && lh >= 12) ? &F6x12 : &F5x9;
   g.cw = cw; g.lh = lh;                                  // (5x9 in 4-px cells: its spacing column is dropped)
   g.r0 = r0; g.r1 = r1; g.c0 = c0; g.c1 = c1;
@@ -1988,7 +2039,7 @@ static bool find_window(const TextScreen& ts, GLayout& g) {
   for (int r = 0; r < 22; r++)
     for (int c = 0; c < 68; c++) {
       if (ts.ch[r][c] != 0xC9) continue;
-      int c2 = c + 1; while (c2 < 80 && ts.ch[r][c2] != 0xBB && ts.ch[r][c2] != 0xC9) c2++;
+      int c2 = c + 1; while (c2 < 80 && ts.ch[r][c2] != 0xBB) c2++;
       if (c2 >= 80 || ts.ch[r][c2] != 0xBB || c2 - c < 12 || c2 - c + 1 > 53) continue;
       int r2 = r + 1; while (r2 < 25 && ts.ch[r2][c] != 0xC8) r2++;
       if (r2 >= 25 || ts.ch[r2][c2] != 0xBC || r2 - r < 3) continue;
@@ -2006,7 +2057,7 @@ static bool find_window(const TextScreen& ts, GLayout& g) {
 static void analyse(const TextScreen& ts) {
   glay.kind = G_PLAIN; glay.items.clear(); glay.r0 = glay.c0 = 0; glay.r1 = glay.c1 = -1;
   if (kb_open) return;
-  if (!dialog_question(ts).empty()) return;   // a question is up: YES/NO, not the menu behind it
+  if (!dialog_question(ts).empty() && !lp_table(ts)) return;   // a question is up: YES/NO, not the menu behind it
   // The Targeter window opens over a corner of the star maps, which hides the frame the map is
   // found by: keep the map where it was while that window is up (emulator, Nov 21).
   static GLayout last_map; static bool have_map = false; static uint8_t map_edge[80];
@@ -2398,9 +2449,15 @@ static void generic_bottom(Surf& s, const TextScreen& ts) {
       scroll_bar(s, 312, WIN_Y0, WIN_Y0 + WIN_ROWS * 12, win_top, maxtop, WIN_ROWS);
       sarea = ScrollArea{true, 0, 0, 310, WIN_Y0 + WIN_ROWS * 12, 12, &win_top, maxtop};
     }
+    if (lp_table(ts)) {      // (harness, Nov 26: Up/Down pick the row, + and - change its teams; digits do nothing)
+      static const char* ll[4] = {"\x18", "\x19", "- TEAM", "+ TEAM"};
+      const Act la[4] = {key_act(K_UP), key_act(K_DOWN), key_act(K_MINUS), key_act(K_EQUALS, M_SHIFT)};
+      for (int i = 0; i < 4; i++) { int a, b; split_gap(6, BOT_W - 6, 4, i, a, b); add_btn(a, 140, b, 164, ll[i], &F8x16, la[i]); }
+    } else {
     static const char* labs[7] = {"PG UP", "\x1b", "\x18", "\x19", "\x1a", "PG DN", "SPACE"};
     static const Key keys[7] = {K_PGUP, K_LEFT, K_UP, K_DOWN, K_RIGHT, K_PGDN, K_SPACE};
     for (int i = 0; i < 7; i++) { int a, b; split_gap(6, BOT_W - 6, 7, i, a, b); add_btn(a, 140, b, 164, labs[i], &F8x16, key_act(keys[i])); }
+    }
   } else if (reader_wanted(ts) && (build_reader(ts), !rlines.empty() && !rd_wide_table)) {
     reader_on = true;
     draw_reader(s, ts);
@@ -3014,7 +3071,8 @@ Redraw frame(const TextScreen& ts, uint16_t* top, uint16_t* bottom) {
           }
           static int firsts = 0;
           if (settled && coach_on && chk_sec < 0 && !explain_until) {
-            if (!(firsts & 1) && line.find("Entered orbit") != std::string::npos) { firsts |= 1; explain("IN ORBIT", "Your first orbit. This is where scans and landing parties happen: the scan report comes up in COMMS. ENGINES leaves orbit."); }
+            if (!(firsts & 4) && line.find("Enemy ship disabled") != std::string::npos) { firsts |= 4; explain("SHIP DISABLED", "It cannot move or fight now. Stop firing: a captured ship is worth far more than a wreck. Board it with SHIP MENUS, ENGINEERING, TELEPORTERS, Boarding party."); }
+            else if (!(firsts & 1) && line.find("Entered orbit") != std::string::npos) { firsts |= 1; explain("IN ORBIT", "Your first orbit. This is where scans and landing parties happen: the scan report comes up in COMMS. ENGINES leaves orbit."); }
             else if (!(firsts & 2) && line.find("Docking procedure complete") != std::string::npos) { firsts |= 2; explain("DOCKED", "Docked. The starfort repairs and resupplies the ship, and the mission clock stands still here."); }
           }
         }
