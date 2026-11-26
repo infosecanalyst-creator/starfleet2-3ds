@@ -15,9 +15,9 @@ tut1_21_sysmap_manual_wrong_way: step 20/21 Establish orbit? This time answer YE
 tut1_22_sysmap_manual_steered: step 20/21 Establish orbit? This time answer YES
 tut1_23_bridge_manual_course: step 20/21 Establish orbit? This time answer YES
 tut1_24_f10_emergency_stop: step 20/21 Establish orbit? This time answer YES
-tut1_25_orbit_entered: step 21/21 The planet offers supplies: answer YES
-tut1_26_orbit_resupply_prompt: step 21/21 The planet offers supplies: answer YES
+tut1_25_orbit_entered: step 21/21 It offers supplies: answer YES or NO
   -> Tutorial 1B: probe and jump to a star (WELL DONE: PART 1A DONE. You flew to a planet by autopilot and by hand, and now you are in orbit. Orbit is where scans and landing parties happen. Next: probe a star and jump to it. Next: Tutorial 1B: probe and jump to a star (its steps follow on this screen).)
+tut1_26_orbit_resupply_prompt: step 1/27 Tap STARS: the star map opens
 tut1_28_bridge_in_orbit: step 1/27 Tap STARS: the star map opens
 tut1_29_navmap: step 2/27 Tap the star just above the pink box
 tut1_31_probe_display: step 7/27 Wait for the probe report to pop up

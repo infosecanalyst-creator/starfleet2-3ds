@@ -1129,6 +1129,7 @@ static void bridge_top(Surf& s, const TextScreen& ts) {
   const char* hint = alert_level(ts) == 2 ? (lefty_on ? "D-Lt/Up fire  L freeze  R+tap: explain  SELECT: what now?"
                                                       : "X/Y fire  L freeze  R+tap: explain  SELECT: what now?")
                                           : "SELECT: what now?  R+tap: explain  L: freeze  START: menu";
+  if (frozen(ts)) hint = "FROZEN: the clock is stopped. Press L to carry on";
   // every other 8 s the strip shows the mission goal instead (plan item 4), when it fits
   std::string goal_line = mis_goal.empty() || tut_num > 0 ? "" : "Goal: " + mis_goal;
   const Font* hf = &F6x12;

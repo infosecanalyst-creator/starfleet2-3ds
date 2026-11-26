@@ -153,6 +153,7 @@ static const Refusal REFUSALS[] = {
   {"Use not allowed - Krellans on planet", "WHY WON'T THE POD LAUNCH?", "HOW: beam your landing party up first (tap the planet on the touch screen) and make sure no Krellan troops or base are there. WHY: the pod kills everything on the planet, including our own people.", 0},  // [T][B]
 
   // ---------------------------------------------------------------- general
+  {"Already surveyed!", "WHY CAN'T I SEND AN EXPLORE TEAM?", "HOW: move to another mission row with the arrows, or tap CANCEL. WHY: this planet has been explored already, so an explore/survey team has nothing to do here.", 0},   // emulator Nov 26
   {": not loaded", "WHY WON'T THE TORPEDOES FIRE?", "HOW: wait a few seconds and tap TORPS again. WHY: both tubes fire together and then reload. Tapping faster only queues shots and wastes torpedoes.", 0},   // harness Nov 26: "Torp #1: not loaded"
   {"Target already disabled", "WHY DID THE SHOT STOP?", "HOW: stop firing at this ship; board it (SHIP MENUS, then ENGINEERING, TELEPORTERS, Boarding party) or pick another target. WHY: with weapons set to disable, the crew will not fire on a ship that is already helpless.", 0},   // harness Nov 26
   {"WITH GAME FROZEN", "WHY CAN'T I CHANGE THIS NOW?", "HOW: tap FREEZE (or press L) to let time run again, then make the change. WHY: this setting cannot be changed while the game is paused.", "FREEZE"},  // [T] "CANNOT CHANGE WITH GAME FROZEN"

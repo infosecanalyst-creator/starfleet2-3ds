@@ -292,7 +292,7 @@ STEP B | Press B for the bridge | -
 STEP ENGINES | Tap ENGINES: the ship flies back | -
 STEP - | Wait until the helm asks about orbit | Establish orbit?
 STEP YES | Establish orbit? This time answer YES | Entered orbit
-STEP YES | The planet offers supplies: answer YES | Just send us
+STEP - | It offers supplies: answer YES or NO | Do you wish to be resupplied
 
 WHY: This is the game's own first tutorial, played with this port's buttons. It teaches the three things every mission needs: the maps, the Targeter and the engines. Nothing here counts on your service record.
 
