@@ -852,6 +852,7 @@ static const FullWord FULLWORDS[] = {
 static std::string full_word(const std::string& l) { for (auto& w : FULLWORDS) if (l == w.abbr) return w.full; return l; }
 static std::string abbr_word(const std::string& l) { for (auto& w : FULLWORDS) if (l == w.full) return w.abbr; return l; }
 static bool mission_on = false;          // a mission is being flown (set by the lights row, cleared at sign-on)
+static TextScreen bridge_keep; static bool bridge_kept = false;   // the last full bridge screen (for the top screen under a window)
 static bool grid_open = false, grid_shown = false;   // the bridge's menu grid: asked for (main menu) / on screen now
 static void bottom_rows(Surf& s, const TextScreen& ts) {
   grid_shown = false;
@@ -3159,6 +3160,7 @@ Redraw frame(const TextScreen& ts, uint16_t* top, uint16_t* bottom) {
     graphics_bottom(ts_bot); rd.bottom = true;
   } else if (is_bridge(ts)) {
     if (draw_top) { ct_on = false; if (top_w == BOT_W) bridge_top_narrow(ts_top, ts); else bridge_top(ts_top, ts); top_native = true; }
+    memcpy(&bridge_keep, &ts, sizeof ts); bridge_kept = true;
     reader_on = false;
     if (kb_open) keyboard(ts_bot); else bridge_bottom(ts_bot, ts);
     bottom_rows(ts_bot, ts);
@@ -3168,7 +3170,22 @@ Redraw frame(const TextScreen& ts, uint16_t* top, uint16_t* bottom) {
     if (kb_open) { reader_on = false; keyboard(ts_bot); }   // (the top must not keep a stale reader page)
     else generic_bottom(ts_bot, ts);
     bottom_rows(ts_bot, ts);      // (before the top: it decides row_mode, which the top's hint reads)
-    if (draw_top) { generic_top(ts_top, ts); top_native = false; }
+    // A window over the bridge: the top screen stays the dashboard. The cells under the window
+    // come from the last full bridge screen, the rest is live. (UI review 8: it was the whole
+    // 80x25 screen shrunk.)
+    bool dash = false;
+    if (draw_top && glay.kind == G_WIN && bridge_kept && top_w != BOT_W) {
+      static TextScreen mix; memcpy(&mix, &ts, sizeof ts);
+      for (int r = glay.r0; r <= glay.r1; r++) for (int c = glay.c0; c <= glay.c1; c++) { mix.ch[r][c] = bridge_keep.ch[r][c]; mix.at[r][c] = bridge_keep.at[r][c]; }
+      // (only when what is still visible around the window is that same bridge: its frame lines match)
+      int frame = 0, same = 0;
+      for (int r = 0; r < 24; r++) for (int c = 0; c < 80; c++) {
+        if (r >= glay.r0 && r <= glay.r1 && c >= glay.c0 && c <= glay.c1) continue;
+        if (is_box(bridge_keep.ch[r][c])) { frame++; if (ts.ch[r][c] == bridge_keep.ch[r][c]) same++; }
+      }
+      if (frame > 40 && same * 20 >= frame * 19 && is_bridge(mix)) { ct_on = false; bridge_top(ts_top, mix); top_native = true; dash = true; }
+    }
+    if (draw_top && !dash) { generic_top(ts_top, ts); top_native = false; }
     rd.top = draw_top; rd.bottom = true;
   }
   if (ts.text_mode && !manual_open && !pause_open) check_refusals(ts, t);
