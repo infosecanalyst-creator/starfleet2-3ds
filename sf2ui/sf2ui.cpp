@@ -752,7 +752,7 @@ static const char* context_hint(const TextScreen& ts) {
     }
     if (row_str(ts, 24, 0, 24).find("PRESS") != std::string::npos) return "Read COMMS (top screen), then tap CONTINUE";
     if (frozen(ts)) return "FROZEN: the clock is stopped. L carries on";
-    if (row_str(ts, 24, 0, 24).find("Select target") != std::string::npos) return "D-Pad moves the target box, ENTER picks";
+    if (row_str(ts, 24, 0, 24).find("Select target") != std::string::npos) return "Tap a ship: the box goes there. ENTER picks it";
     return "Tap the display to steer the ship";
   }
   if (!kb_open && autologin == 0 && signon_list(ts, 0)) return "Tap SIGN ON AS, or tap a commander's name";
@@ -1846,7 +1846,20 @@ static int course_set(const TextScreen& ts) {
   size_t p = r.find("set:");
   return p == std::string::npos ? -1 : parse_int_after(r, p + 4);
 }
+static void start_drive(int col, int row, int c, int r);
 static void steer_to(const TextScreen& ts, int px, int py) {
+  // "Select target" (manual weapon lock, tractor beam): the tap moves the game's target box there
+  if (row_str(ts, 24, 0, 24).find("Select target") != std::string::npos) {
+    int col = 28 + (px - TAC_X) / TAC_CW, row = 2 + (py - TAC_Y) / TAC_LH, c, r;
+    if (col < 29) col = 29; if (col > 48) col = 48; if (row < 3) row = 3; if (row > 12) row = 12;
+    // an enemy ship next to the tap is what was meant
+    int best = 99;  int bc = col, br = row;
+    for (int y = row - 1; y <= row + 1; y++) for (int x = col - 2; x <= col + 2; x++)
+      if (y >= 2 && y <= 13 && x >= 28 && x <= 49 && ts.ch[y][x] == 0x9A) { int d = abs(x - col) + 2 * abs(y - row); if (d < best) { best = d; bc = x; br = y; } }
+    if (find_tdb(ts, c, r, 28, 2, 49, 13)) { start_drive(bc, br, c, r); busy_since = now(); }
+    else say("No target box on the display yet", 2000);
+    return;
+  }
   if (row_str(ts, 1, 26, 50).find("ORBITAL") != std::string::npos) {     // in orbit a tap on the planet opens the teleporters
     press(K_P, M_ALT); busy_since = now(); say("Teleporters: landing parties and transfers", 2500); return;
   }
@@ -3182,6 +3195,18 @@ Redraw frame(const TextScreen& ts, uint16_t* top, uint16_t* bottom) {
     tut_started = true;
     int first = chk_find("Tutorial 1A: fly to a planet and orbit");
     if (first >= 0) { chk_sec = first; chk_step = 0; chk_begin_step(ts); dirty(); }
+  }
+  // The shield and speed buttons answer where the stylus is: the new value shows on the prompt
+  // strip (UI review 12: the value was only on the top screen).
+  if (ts.text_mode && is_bridge(ts) && !manual_open && !pause_open) {
+    static int was_sh = -2; static float was_set = -2.0f; static bool was_bridge = false;
+    int sh = pct_at(ts, 22, 44, 58); float set = bridge_speed(ts, 15);
+    if (was_bridge && (int32_t)(t - busy_since) < 2500) {
+      char m[48];
+      if (sh >= 0 && was_sh >= 0 && sh != was_sh) { snprintf(m, sizeof m, "Shields %d%%", sh); say(m, 2000); }
+      else if (set >= 0.0f && was_set >= 0.0f && set != was_set) { snprintf(m, sizeof m, set >= 1.0f ? "Speed set: %.0f (hyperspace)" : "Speed set: %.1f", set); say(m, 2000); }
+    }
+    was_sh = sh; was_set = set; was_bridge = true;
   }
   bool chk_moved = false;
   if (!manual_open && !pause_open) { int was = chk_step, ws = chk_sec; chk_update(ts); if (was != chk_step || ws != chk_sec) chk_moved = true; }
