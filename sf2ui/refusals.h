@@ -154,6 +154,10 @@ static const Refusal REFUSALS[] = {
 
   // ---------------------------------------------------------------- general
   {"Already surveyed!", "WHY CAN'T I SEND AN EXPLORE TEAM?", "HOW: move to another mission row with the arrows, or tap CANCEL. WHY: this planet has been explored already, so an explore/survey team has nothing to do here.", 0},   // emulator Nov 26
+  {"Maximum range is 5 light years", "WHY WON'T THE PROBE LAUNCH?", "HOW: tap CONTINUE, then pick a star closer to your ship (within 5 squares of the pink box on the STARS map). WHY: a probe reaches 5 light years at most.", 0},   // harness Nov 27
+  {"No detailed planet scan yet done", "WHY IS THERE NO DATA ON THIS PLANET?", "HOW: fly there and enter orbit; the scan runs by itself. WHY: the database only knows planets you have scanned from orbit.", 0},   // harness Nov 27
+  {"ILLEGAL TARGET", "WHY CAN'T I TARGET THIS?", "HOW: put the target box on an enemy ship (tap the ship; if the name does not show, move the box one step right), then ENTER. WHY: there is nothing under the box to aim at.", 0},   // harness Nov 27
+  {"Already docked", "ALREADY DOCKED", "You are docked at the starfort. LAUNCH leaves it.", "LAUNCH"},   // harness Nov 27
   {": not loaded", "WHY WON'T THE TORPEDOES FIRE?", "HOW: wait a few seconds and tap TORPS again. WHY: both tubes fire together and then reload. Tapping faster only queues shots and wastes torpedoes.", 0},   // harness Nov 26: "Torp #1: not loaded"
   {"Target already disabled", "WHY DID THE SHOT STOP?", "HOW: stop firing at this ship; board it (SHIP MENUS, then ENGINEERING, TELEPORTERS, Boarding party) or pick another target. WHY: with weapons set to disable, the crew will not fire on a ship that is already helpless.", 0},   // harness Nov 26
   {"WITH GAME FROZEN", "WHY CAN'T I CHANGE THIS NOW?", "HOW: tap FREEZE (or press L) to let time run again, then make the change. WHY: this setting cannot be changed while the game is paused.", "FREEZE"},  // [T] "CANNOT CHANGE WITH GAME FROZEN"

@@ -1,5 +1,5 @@
 kind: plain
-hint: Sticks scroll the page ³ A: Enter ³ B: back
+hint: Your mission score. BACK (or B) closes it
 buttons: [PG UP] [] [PG DN] [] [SPACE] [] [] [PERSONAL] [KRELLAN] [VALUES] [ORDERS] [STARS] [SYSTEM] [WAR] [COMBAT] [FLEET] [ORDERS] [LOG]
 explain cards: 18/18
 quick reference: QUICK REFERENCE

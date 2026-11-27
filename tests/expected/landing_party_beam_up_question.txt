@@ -1,5 +1,5 @@
 kind: bridge
-hint: YES opens the list of teams to bring back
+hint: YES: bring teams back. NO: send more teams
 buttons: [PHASERS (grey)] [TORPS (grey)] [SHLD+] [SHLD-] [SPD+] [SPD-] [ENGINES] [STARFORT] [YES] [NO] [STARS] [SYSTEM] [WAR] [COMBAT] [FLEET] [ORDERS] [LOG]
 explain cards: 17/17
 quick reference: QUICK REFERENCE: BRIDGE

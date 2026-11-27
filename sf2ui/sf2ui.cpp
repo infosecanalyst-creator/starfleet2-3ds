@@ -775,7 +775,11 @@ static const char* context_hint(const TextScreen& ts) {
       {"switch to Practice mode", "YES: Practice does not count on your record"},
       {"planetary map", "NO is fine (YES shows a picture of the planet)"},
       {"landing parties to this planet", "NO is fine on a first visit"},
-      {"Beam landing party up", "YES opens the list of teams to bring back"},
+      {"Beam landing party up", "YES: bring teams back. NO: send more teams"},
+      {"claim victory", "YES: the game tells you how to end the mission"},
+      {"Confirm firing", "YES drops the pod: it wrecks the planet below"},
+      {"Detonate all probes", "YES clears used probes so stored ones load"},
+      {"Exit to DOS", "NO. (YES closes Star Fleet II)"},
       {"be resupplied", "YES tops up your supplies"},
       {"Establish orbit", "YES: orbit is where the planet is scanned"},
       {"Shall we dock", "YES: the starfort repairs and resupplies"},
@@ -788,6 +792,8 @@ static const char* context_hint(const TextScreen& ts) {
     for (auto& tp : TIPS) if (screen_has(ts, tp.q)) return tp.tip;
     return "Tap YES or NO";
   }
+  if (in_flight(ts) == false && row_str(ts, 24, 24, 80).find("Personal") != std::string::npos && row_str(ts, 24, 24, 80).find("Krellan") != std::string::npos)
+    return "Your mission score. BACK (or B) closes it";
   if (screen_has(ts, "COMMANDER'S LOG") && screen_has(ts, "PLEASE STANDBY")) return "The ship's log opens once at the start: tap EXIT";
   if (glay_kind() == 2 && in_flight(ts) && row_str(ts, 24, 0, 30).find("Select target") != std::string::npos && !screen_has(ts, "TARGETER"))
     return "Tap where you want to arrive, then ENTER";
@@ -1644,7 +1650,7 @@ static std::string advise(const TextScreen& ts, const char** button) {
   if (!ts.text_mode) return mission_on ? "This is the planet's map. BACK (or B) returns to the bridge." : "Wait for the picture to finish, or press A.";
   if (int lp = lp_table(ts)) {
     *button = lp == 1 ? "+ TEAM" : "ALL BACK";
-    return lp == 1 ? "Landing parties. The lit row is a mission: the arrows change the row, + TEAM puts a team of 10 on it. For a first look: one team on eXplore/survey, then BEAM DOWN. CANCEL sends nobody."
+    return lp == 1 ? "Landing parties. The lit row is a mission: the arrows change the row, + TEAM puts a team of 10 on it. For a first look: one team on eXplore/survey, then BEAM DOWN; their report comes about a day later. CANCEL sends nobody."
                    : "These teams are on the planet. The number is how many STAY: - TEAM brings one back, ALL BACK brings everyone. Then BEAM UP.";
   }
   if (screen_has(ts, "Enter file name")) return "Type a name for this save (8 letters at most) and tap ENTER.";
@@ -3308,6 +3314,12 @@ Redraw frame(const TextScreen& ts, uint16_t* top, uint16_t* bottom) {
     if (!in_flight(ts) && !screen_has(ts, "give up on this mission")) leave_until = 0;
     else if (screen_has(ts, "give up on this mission")) { if (tut_num > 0) press(K_N); leave_until = 0; }
     else if (p24.find("want to stop") != std::string::npos) press(K_Y);
+    else if (p24.find("claim victory") != std::string::npos) {
+      // (harness, Nov 27: once the goal is met the game's Quit only says "return to starfort")
+      press(K_Y); leave_until = 0;
+      if (tut_num > 0) explain("TUTORIAL COMPLETE", "The game does not let you quit a finished tutorial from its menu. Press START and tap EXIT GAME, then start Star Fleet II again. Or fly on: nothing here counts.");
+      else explain("GOAL MET", "The mission's goal is met, so the game ends it at the starfort: tap STARFORT, answer YES, then YES to dock and YES to conclude the mission.");
+    }
     else if (is_bridge(ts) && m24.find("Quit") != std::string::npos) press(K_Q);
     else if (is_bridge(ts) && m24.find("Spcl srvcs") != std::string::npos) press(K_S);
     else if (is_bridge(ts) && m24.find(" Cmp ") != std::string::npos) press(K_C);

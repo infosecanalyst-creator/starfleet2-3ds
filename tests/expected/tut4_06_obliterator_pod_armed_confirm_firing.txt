@@ -1,5 +1,5 @@
 kind: bridge
-hint: Tap YES or NO
+hint: YES drops the pod: it wrecks the planet below
 buttons: [PHASERS] [TORPS] [SHLD+] [SHLD-] [SPD+] [SPD-] [ECM ON] [FREEZE] [GO] [HOME] [YES] [NO] [STARS] [SYSTEM] [WAR] [COMBAT] [FLEET] [ORDERS] [LOG]
 explain cards: 19/19
 quick reference: QUICK REFERENCE: BRIDGE
