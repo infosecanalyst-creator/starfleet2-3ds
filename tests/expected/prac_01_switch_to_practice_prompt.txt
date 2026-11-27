@@ -1,5 +1,5 @@
 kind: reader
-hint: Tap YES or NO
+hint: YES: Practice does not count on your record
 buttons: [PG UP] [] [] [] [] [PG DN] [SPACE] [YES] [NO] [STARS (grey)] [SYSTEM (grey)] [WAR (grey)] [COMBAT (grey)] [FLEET (grey)] [ORDERS (grey)] [LOG (grey)]
 explain cards: 16/16
 quick reference: QUICK REFERENCE

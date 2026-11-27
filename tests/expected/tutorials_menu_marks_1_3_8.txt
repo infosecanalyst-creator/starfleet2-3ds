@@ -1,0 +1,7 @@
+kind: menu
+hint: Tap an item; drag or tap the arrows for more
+buttons: [ (grey)] [] [1 Basic navigation (done)] [2 Teleporters 1 - landing parties] [3 Teleporters 2 - transfers (done)] [4 Weapons] [5 Escorts] [ENTER] [BACK] [KEYBOARD] [STARS] [SYSTEM] [WAR] [COMBAT] [FLEET] [ORDERS] [LOG]
+explain cards: 17/17
+quick reference: QUICK REFERENCE
+start menu: [RESUME] [WHAT NOW?] [MANUAL] [COACH: ON] [SAVE (grey)] [GAME SETTINGS (grey)] [EXIT GAME (grey)]
+what now: Tap a tutorial. Start with 1 (Basic navigation): its checklist follows you step by step.

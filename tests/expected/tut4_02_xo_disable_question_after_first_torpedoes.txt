@@ -1,0 +1,7 @@
+kind: bridge
+hint: YES: a disabled ship can be captured
+buttons: [PHASERS] [TORPS] [SHLD+] [SHLD-] [SPD+] [SPD-] [ECM ON] [FREEZE] [GO] [HOME] [YES] [NO] [STARS] [SYSTEM] [WAR] [COMBAT] [FLEET] [ORDERS] [LOG]
+explain cards: 19/19
+quick reference: QUICK REFERENCE: BRIDGE
+start menu: [RESUME] [WHAT NOW?] [MANUAL] [COACH: ON] [SAVE] [LEAVE MISSION] [EXIT GAME (grey)]
+what now: The game asks: Answer? YES is the better answer for freighters and starliners: a disabled ship can be captured and is worth more than a wreck.

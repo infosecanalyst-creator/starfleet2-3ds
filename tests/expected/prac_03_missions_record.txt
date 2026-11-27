@@ -1,7 +1,7 @@
 kind: plain
-hint: A mission is highlighted: tap SELECT below
+hint: A mission is highlighted: tap the SELECT key below
 buttons: [PG UP] [] [PG DN] [] [SPACE] [] [] [SELECT] [BACK] [VIEW] [STARS (grey)] [SYSTEM (grey)] [WAR (grey)] [COMBAT (grey)] [FLEET (grey)] [ORDERS (grey)] [LOG (grey)]
 explain cards: 17/17
 quick reference: QUICK REFERENCE
 start menu: [RESUME] [WHAT NOW?] [MANUAL] [COACH: ON] [SAVE (grey)] [GAME SETTINGS (grey)] [EXIT GAME (grey)]
-what now: This chart is your career: one square per mission. The next mission is highlighted: tap the SELECT button below. [ring SELECT]
+what now: This chart is your career: one square per mission. VIEW shows the orders of the lit one; B goes back.

@@ -1,0 +1,7 @@
+kind: map
+hint: Your career, one square per mission. B goes back
+buttons: [BACK] [VIEW] [STARS (grey)] [SYSTEM (grey)] [WAR (grey)] [COMBAT (grey)] [FLEET (grey)] [ORDERS (grey)] [LOG (grey)]
+explain cards: 9/9
+quick reference: QUICK REFERENCE
+start menu: [RESUME] [WHAT NOW?] [MANUAL] [COACH: ON] [SAVE (grey)] [GAME SETTINGS (grey)] [EXIT GAME (grey)]
+what now: This chart is your career: one square per mission. VIEW shows the orders of the lit one; B goes back.

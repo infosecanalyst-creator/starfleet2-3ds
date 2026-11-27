@@ -71,6 +71,8 @@ static std::string report(const std::string& name, const TextScreen& ts, const s
   reader_on = menu_scrolls = focus_mode = false; tdb_drive = false; view_goal = -1; busy_since = 0;
   row_page = 0; menu_top = 0; rd_sig = 0; rd_scroll = 0; toast.clear(); toast_until = 0;
   memset(&last, 0, sizeof last);
+  chk_sec = -1; chk_wait_end = false; explain_until = 0; tut_finished = false; goal_met = false; leave_until = 0; btn_sig_t = 0; bridge_kept = false;
+  mis_goal.clear(); mis_title.clear(); tut_num = 0;
   fit_clear(); force_redraw();
   for (int i = 0; i < 6; i++) { clock_ms += 40; frame(ts, top, bot); }
   std::ostringstream o;

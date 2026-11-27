@@ -1,7 +1,7 @@
 kind: bridge
-hint: Tap YES or NO
-buttons: [PHASERS] [TORPS] [SHLD+] [SHLD-] [SPD+] [SPD-] [ECM ON] [GO] [FREEZE] [YES] [NO] [STARS] [SYSTEM] [WAR] [COMBAT] [FLEET] [ORDERS] [LOG]
-explain cards: 18/18
+hint: NO is fine on a first visit
+buttons: [PHASERS] [TORPS] [SHLD+] [SHLD-] [SPD+] [SPD-] [ECM ON] [FREEZE] [GO] [HOME] [YES] [NO] [STARS] [SYSTEM] [WAR] [COMBAT] [FLEET] [ORDERS] [LOG]
+explain cards: 19/19
 quick reference: QUICK REFERENCE: BRIDGE
-start menu: [RESUME] [WHAT NOW?] [MANUAL] [COACH: ON] [SAVE] [GAME SETTINGS (grey)] [EXIT GAME (grey)]
-what now: Goal: Discover at least one mineral-rich planet in UGA or neutral space (not done yet). The game asks: Answer? NO is fine on a first visit; YES opens the landing-party table.
+start menu: [RESUME] [WHAT NOW?] [MANUAL] [COACH: ON] [SAVE] [LEAVE MISSION] [EXIT GAME (grey)]
+what now: The game asks: Answer? NO is fine on a first visit; YES opens the landing-party table.

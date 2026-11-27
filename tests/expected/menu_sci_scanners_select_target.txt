@@ -3,5 +3,5 @@ hint: Tap a target, tap it again to lock on
 buttons: [PHASERS (grey)] [TORPS (grey)] [SHLD+] [SHLD-] [SPD+] [SPD-] [AUTO] [FREEZE] [SCANNERS] [MEDICAL] [DEPT.Q] [STARS] [SYSTEM] [WAR] [COMBAT] [FLEET] [ORDERS] [LOG]
 explain cards: 18/18
 quick reference: QUICK REFERENCE: BRIDGE
-start menu: [RESUME] [WHAT NOW?] [MANUAL] [COACH: ON] [SAVE] [GAME SETTINGS (grey)] [EXIT GAME (grey)]
-what now: Goal: Discover at least one mineral-rich planet in UGA or neutral space. Follow the prompt line above the buttons. SHIP MENUS opens the ship's departments; B backs out of them.
+start menu: [RESUME] [WHAT NOW?] [MANUAL] [COACH: ON] [SAVE] [LEAVE MISSION] [EXIT GAME (grey)]
+what now: Follow the prompt line above the buttons. SHIP MENUS opens the ship's departments; B backs out of them.

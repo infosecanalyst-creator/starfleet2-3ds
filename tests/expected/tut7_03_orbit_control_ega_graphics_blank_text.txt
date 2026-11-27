@@ -1,0 +1,2 @@
+kind: graphics
+buttons: [BACK TO THE BRIDGE]

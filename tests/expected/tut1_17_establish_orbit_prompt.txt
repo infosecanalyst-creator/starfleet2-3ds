@@ -1,7 +1,7 @@
 kind: bridge
-hint: Tap YES or NO
+hint: YES: orbit is where the planet is scanned
 buttons: [PHASERS (grey)] [TORPS (grey)] [SHLD+] [SHLD-] [SPD+] [SPD-] [ENGINES] [STARFORT] [YES] [NO] [STARS] [SYSTEM] [WAR] [COMBAT] [FLEET] [ORDERS] [LOG]
 explain cards: 17/17
 quick reference: QUICK REFERENCE: BRIDGE
-start menu: [RESUME] [WHAT NOW?] [MANUAL] [COACH: ON] [SAVE] [GAME SETTINGS (grey)] [EXIT GAME (grey)]
-what now: Goal: Discover at least one mineral-rich planet in UGA or neutral space. The game asks: Establish orbit? YES circles the planet (needed to scan it or send landing parties); NO stays beside it. [ring YES]
+start menu: [RESUME] [WHAT NOW?] [MANUAL] [COACH: ON] [SAVE] [LEAVE MISSION] [EXIT GAME (grey)]
+what now: The game asks: Establish orbit? YES circles the planet (needed to scan it or send landing parties); NO stays beside it. [ring YES]

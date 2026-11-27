@@ -3,5 +3,5 @@ hint: Tap one of the keys below
 buttons: [EXIT] [LAUNCH] [STARS] [SYSTEM] [WAR] [COMBAT] [FLEET] [ORDERS] [LOG]
 explain cards: 9/9
 quick reference: QUICK REFERENCE: THIS VIEW
-start menu: [RESUME] [WHAT NOW?] [MANUAL] [COACH: ON] [SAVE (grey)] [GAME SETTINGS (grey)] [EXIT GAME (grey)]
-what now: Goal: Discover at least one mineral-rich planet in UGA or neutral space. A window or submenu is open on this map: use the buttons below, or B to close it.
+start menu: [RESUME] [WHAT NOW?] [MANUAL] [COACH: ON] [SAVE (grey)] [LEAVE MISSION] [EXIT GAME (grey)]
+what now: A window or submenu is open on this map: use the buttons below, or B to close it.

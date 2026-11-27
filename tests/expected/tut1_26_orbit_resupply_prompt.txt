@@ -1,7 +1,7 @@
 kind: bridge
-hint: Tap YES or NO
+hint: YES tops up your supplies
 buttons: [PHASERS (grey)] [TORPS (grey)] [SHLD+] [SHLD-] [SPD+] [SPD-] [ENGINES] [STARFORT] [YES] [NO] [STARS] [SYSTEM] [WAR] [COMBAT] [FLEET] [ORDERS] [LOG]
 explain cards: 17/17
 quick reference: QUICK REFERENCE: BRIDGE
-start menu: [RESUME] [WHAT NOW?] [MANUAL] [COACH: ON] [SAVE] [GAME SETTINGS (grey)] [EXIT GAME (grey)]
-what now: Goal: Discover at least one mineral-rich planet in UGA or neutral space. The game asks: Answer? The question is in COMMS on the top screen.
+start menu: [RESUME] [WHAT NOW?] [MANUAL] [COACH: ON] [SAVE] [LEAVE MISSION] [EXIT GAME (grey)]
+what now: The game asks: Answer? The question is in COMMS on the top screen.

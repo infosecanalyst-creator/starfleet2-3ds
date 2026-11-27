@@ -9,27 +9,27 @@ tut1_10_f9_engines_start: step 6/21 Tap LAUNCH: the ship undocks and goes
 tut1_13_sysmap_undocked: step 7/21 Wait: the helm reports Target reached
 tut1_15_bridge_underway: step 7/21 Wait: the helm reports Target reached
 tut1_16_target_reached: step 10/21 Tap ENGINES
-tut1_17_establish_orbit_prompt: step 20/21 Establish orbit? This time answer YES
-tut1_20_manual_f9: step 20/21 Establish orbit? This time answer YES
-tut1_21_sysmap_manual_wrong_way: step 20/21 Establish orbit? This time answer YES
-tut1_22_sysmap_manual_steered: step 20/21 Establish orbit? This time answer YES
-tut1_23_bridge_manual_course: step 20/21 Establish orbit? This time answer YES
-tut1_24_f10_emergency_stop: step 20/21 Establish orbit? This time answer YES
+tut1_17_establish_orbit_prompt: step 10/21 Tap ENGINES
+tut1_20_manual_f9: step 12/21 Tap STOP
+tut1_21_sysmap_manual_wrong_way: step 15/21 Tap TARGETER
+tut1_22_sysmap_manual_steered: step 15/21 Tap TARGETER
+tut1_23_bridge_manual_course: step 15/21 Tap TARGETER
+tut1_24_f10_emergency_stop: step 15/21 Tap TARGETER
 tut1_25_orbit_entered: step 21/21 It offers supplies: answer YES or NO
-  -> Tutorial 1B: probe and jump to a star (WELL DONE: PART 1A DONE. You flew to a planet by autopilot and by hand, and now you are in orbit. Orbit is where scans and landing parties happen. Next: probe a star and jump to it. Next: Tutorial 1B: probe and jump to a star (its steps follow on this screen).)
-tut1_26_orbit_resupply_prompt: step 1/27 Tap STARS: the star map opens
+tut1_26_orbit_resupply_prompt: step 21/21 It offers supplies: answer YES or NO
+  -> Tutorial 1B: probe and jump to a star (WELL DONE: PART 1A DONE. You flew to a planet by autopilot and by hand, and now you are in orbit. Orbit is where scans and landing parties happen. Next: Tutorial 1B: probe and jump to a star (its steps follow on this screen).)
 tut1_28_bridge_in_orbit: step 1/27 Tap STARS: the star map opens
 tut1_29_navmap: step 2/27 Tap the star just above the pink box
 tut1_31_probe_display: step 7/27 Wait for the probe report to pop up
-tut1_33_probe_report_popup: step 9/27 Tap the star one left, one up: SS-33
+tut1_33_probe_report_popup: step 9/27 Tap SS-33, just below-left of that star
 tut1_34_navmap_tdb_ss33: step 10/27 Tap TARGETER: speed 8 is offered
 tut1_35_hyper_targeter: step 11/27 Tap ENTER to accept speed 8
-tut1_37_target_system_map: step 12/27 Tap an empty spot on the bottom edge
+tut1_37_target_system_map: step 13/27 Tap ENTER: that is where you arrive
 tut1_41_navmap_helm_jump_report: step 16/27 Wait: the ship runs to the edge and jumps
 tut1_42_bridge_to_system_edge: step 16/27 Wait: the ship runs to the edge and jumps
 tut1_43_bridge_hyperspace: step 17/27 Wait: it drops out at SS-33
 tut1_44_emerged_target2_loaded: step 18/27 When the ship has stopped, tap SYSTEM
-tut1_46_sysmap_ss33: step 19/27 Tap the planet (the letter A)
+tut1_46_sysmap_ss33: step 20/27 Tap TARGETER
 tut1_48_orbit_new_planet: step 25/27 Read the scan report in COMMS
 tut1_49_scanning_planet: step 25/27 Read the scan report in COMMS
 tut1_50_short_range_scan_blocking: step 27/27 Landing parties? Answer NO

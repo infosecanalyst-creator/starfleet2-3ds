@@ -1,0 +1,7 @@
+kind: map
+hint: Tap a star: the box jumps to it. Then TARGETER
+buttons: [CONTINUE] [BACK] [KEYBOARD] [STARS] [SYSTEM] [WAR] [COMBAT] [FLEET] [ORDERS] [LOG]
+explain cards: 10/10
+quick reference: QUICK REFERENCE
+start menu: [RESUME] [WHAT NOW?] [MANUAL] [COACH: ON] [SAVE (grey)] [GAME SETTINGS (grey)] [EXIT GAME (grey)]
+what now: Use the buttons on the touch screen; B goes back.

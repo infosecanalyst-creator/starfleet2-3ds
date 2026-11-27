@@ -1,0 +1,7 @@
+kind: bridge
+hint: Docked: LAUNCH leaves the starfort
+buttons: [PHASERS (grey)] [TORPS (grey)] [SHLD+] [SHLD-] [SPD+] [SPD-] [LAUNCH] [WHAT NOW?] [SYSTEM MAP] [NAV MAP] [WAR MAP] [HELM] [STARS] [SYSTEM] [WAR] [COMBAT] [FLEET] [ORDERS] [LOG]
+explain cards: 19/19
+quick reference: QUICK REFERENCE: BRIDGE
+start menu: [RESUME] [WHAT NOW?] [MANUAL] [COACH: ON] [SAVE] [LEAVE MISSION] [EXIT GAME (grey)]
+what now: 1) The clock is FROZEN (the mission time blinks white). Look around as long as you like; L carries on. 2) Read your orders first: tap ORDERS. 3) Pick where to go first: tap SYSTEM, tap a planet, TARGETER, ENTER, then B.

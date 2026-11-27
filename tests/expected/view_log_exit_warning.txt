@@ -3,5 +3,5 @@ hint: Tap YES or NO
 buttons: [PG UP] [] [PG DN] [] [SPACE] [] [] [YES] [NO] [STARS] [SYSTEM] [WAR] [COMBAT] [FLEET] [ORDERS] [LOG]
 explain cards: 16/16
 quick reference: QUICK REFERENCE: THIS VIEW
-start menu: [RESUME] [WHAT NOW?] [MANUAL] [COACH: ON] [SAVE (grey)] [GAME SETTINGS (grey)] [EXIT GAME (grey)]
-what now: Goal: Discover at least one mineral-rich planet in UGA or neutral space. The game asks: Do you still want to exit? Answer YES or NO below.
+start menu: [RESUME] [WHAT NOW?] [MANUAL] [COACH: ON] [SAVE (grey)] [LEAVE MISSION] [EXIT GAME (grey)]
+what now: The game asks: Do you still want to exit? Answer YES or NO below.

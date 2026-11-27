@@ -3,5 +3,5 @@ hint: Tap the display to steer the ship
 buttons: [PHASERS (grey)] [TORPS (grey)] [SHLD+] [SHLD-] [SPD+] [SPD-] [STOP] [STARFORT] [SHIP MENUS] [STARS] [SYSTEM] [WAR] [COMBAT] [FLEET] [ORDERS] [LOG]
 explain cards: 16/16
 quick reference: QUICK REFERENCE: BRIDGE
-start menu: [RESUME] [WHAT NOW?] [MANUAL] [COACH: ON] [SAVE] [GAME SETTINGS (grey)] [EXIT GAME (grey)]
-what now: Goal: Discover at least one mineral-rich planet in UGA or neutral space. Flying by hand. SYSTEM lets you pick a destination and the ship flies itself. [ring SYSTEM]
+start menu: [RESUME] [WHAT NOW?] [MANUAL] [COACH: ON] [SAVE] [LEAVE MISSION] [EXIT GAME (grey)]
+what now: Flying by hand. SYSTEM lets you pick a destination and the ship flies itself. [ring SYSTEM]

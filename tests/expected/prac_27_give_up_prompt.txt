@@ -1,5 +1,5 @@
 kind: plain
-hint: Tap YES or NO
+hint: NO keeps it for later; YES throws it away
 buttons: [PG UP] [] [PG DN] [] [SPACE] [] [] [YES] [NO] [STARS] [SYSTEM] [WAR] [COMBAT] [FLEET] [ORDERS] [LOG]
 explain cards: 16/16
 quick reference: QUICK REFERENCE

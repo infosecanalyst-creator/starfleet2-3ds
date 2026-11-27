@@ -1,7 +1,7 @@
 kind: bridge
-hint: Tap YES or NO
+hint: NO is fine (YES shows a picture of the planet)
 buttons: [PHASERS (grey)] [TORPS (grey)] [SHLD+] [SHLD-] [SPD+] [SPD-] [ENGINES] [STARFORT] [YES] [NO] [STARS] [SYSTEM] [WAR] [COMBAT] [FLEET] [ORDERS] [LOG]
 explain cards: 17/17
 quick reference: QUICK REFERENCE: BRIDGE
-start menu: [RESUME] [WHAT NOW?] [MANUAL] [COACH: ON] [SAVE] [GAME SETTINGS (grey)] [EXIT GAME (grey)]
+start menu: [RESUME] [WHAT NOW?] [MANUAL] [COACH: ON] [SAVE] [LEAVE MISSION] [EXIT GAME (grey)]
 what now: The scan report is in COMMS: class, life, minerals, surveyed or not. The game asks: Display planetary map? NO is fine (YES shows a picture of the planet; BACK leaves it). [ring NO]

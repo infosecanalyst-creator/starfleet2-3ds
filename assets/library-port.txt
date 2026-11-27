@@ -21,37 +21,36 @@ IF IT DOESN'T WORK: ORDERS and Save are switched off inside a tutorial: that is 
 @shelf START
 @see Training 2.0 Your Missions
 @see Ops 4.1 Conquering a Region
-@done MISSION 1-A FLOWN. You searched with probes, scanned planets from orbit and came home. Every early mission is this loop. To play for your career, switch Practice mode off at sign-on.
+@done MISSION 1-A FLOWN. You searched with probes, scanned planets from orbit and came home. YES to "conclude the mission" shows your score. For missions that count: Change default settings, Practice Mode off.
 BEFORE YOU START: 1) At sign-on tap Practice (demo) mission and answer YES. If the screen already says Practice Mode On, skip this. 2) Tap the SELECT button under the mission chart (mission 1-A is already highlighted). 3) Tap Start a new mission. 4) Tap CONTINUE through the orders and the three pages from your officers, answer YES to the starfort's test message, and tap EXIT to close the Commander's Log. 5) Now open this card (START > MANUAL) and tap FOLLOW THIS CHECKLIST.
 
 STEP LAUNCH | Tap LAUNCH to leave the starfort | We have undocked
-STEP STOP | Tap STOP: stay put while you plan | stop procedure
 STEP STARS | Tap STARS: the star map opens | ID/class
-STEP - | Tap a star close to the pink box | -
+STEP MAP | Tap a star close to the pink box | -
 STEP PROBES | Tap PROBES | Launch Control
 STEP LAUNCH CONTROL | Tap LAUNCH CONTROL | PROBES CONTROL
 STEP LAUNCH | Tap LAUNCH: a probe flies to that star | -
 STEP B | Press B. Probe 2 or 3 more stars this way | -
-STEP - | Wait for a probe report in COMMS | arrived at RegLoc
+STEP - | Keep flying: wait for the probe report | arrived at RegLoc
 STEP - | Read it: how many planets in the system? | -
-STEP - | Tap a star whose report showed planets | -
+STEP MAP | Tap a star whose report showed planets | -
 STEP TARGETER | Tap TARGETER: speed 8 is offered | Max. Vel :  8
 STEP ENTER | Tap ENTER to accept the speed | Select target
-STEP - | Its map opens: tap a spot near an edge | -
+STEP MAP | Its map opens: tap a spot near an edge | -
 STEP ENTER | Tap ENTER: that is where you arrive | s: 8.0
 STEP B | Press B for the bridge | -
 STEP ENGINES | Tap ENGINES | -
 STEP - | Wait: the ship runs to the edge and jumps | HYPRSPCE
 STEP - | Wait: it drops out at the new star | Target bearing
 STEP SYSTEM | When the ship has stopped, tap SYSTEM | MAP OF STAR SYSTEM
-STEP - | Tap a planet (a letter on the map) | -
+STEP MAP | Tap a planet (a letter on the map) | -
 STEP TARGETER | Tap TARGETER | Target #
 STEP ENTER | Tap ENTER to load the target | ENTERED
 STEP B | Press B for the bridge | -
 STEP ENGINES | Tap ENGINES: the ship flies there | -
 STEP YES | Establish orbit? Answer YES | Entered orbit
 STEP - | Read the scan: how rich are the minerals? | SHORT RANGE SCAN
-STEP NO | Planet map? Answer NO | -
+STEP NO | Display planetary map? Answer NO | -
 STEP NO | Landing parties? Answer NO | No landing parties
 STEP ORDERS | Tap ORDERS and read objective 2 | mineral-rich
 STEP CONTINUE | Tap CONTINUE to close the orders | -
@@ -88,7 +87,7 @@ IF IT DOESN'T WORK: Save does nothing inside a tutorial. Save while the bridge i
 @see Ops 1.1 Navigation Control
 HOW: 1) On the top screen find MsnElpTme (days used) and Time left (days remaining). 2) Before a trip, the Targeter box shows Time (days the trip takes) beside Time left: compare them. 3) Cross between stars at hyperspace speed 8. 4) When the LOW TME light turns red, less than 10% of your time remains: finish up and head for a starfort.
 
-WHY: Your orders must be completed in the time allotted. The clock runs while the ship moves or orbits. It stood still while docked and while stopped in open space, and it stops when you freeze the game. Whether it runs while the crew rests has not been checked yet.
+WHY: Your orders must be completed in the time allotted. The clock runs while the ship moves or orbits. It stood still while docked and while stopped in open space, and it stops when you freeze the game.
 
 # How a mission flows
 @shelf START
@@ -271,7 +270,7 @@ IF IT DOESN'T WORK: To see your stores during a fight, tap SHIP MENUS, then CONT
 @shelf PROCEDURES
 @see Tutorial 1: Basic Navigation
 @next Tutorial 1B: probe and jump to a star
-@done PART 1A DONE. You flew to a planet by autopilot and by hand, and now you are in orbit. Orbit is where scans and landing parties happen. Next: probe a star and jump to it.
+@done PART 1A DONE. You flew to a planet by autopilot and by hand, and now you are in orbit. Orbit is where scans and landing parties happen.
 STEP SYSTEM | Tap SYSTEM: the system map opens | MAP OF STAR SYSTEM
 STEP - | Tap planet A, right of the yellow star | 52x 40y
 STEP TARGETER | Tap TARGETER | Target #
@@ -280,12 +279,12 @@ STEP B | Press B for the bridge | -
 STEP LAUNCH | Tap LAUNCH: the ship undocks and goes | We have undocked
 STEP - | Wait: the helm reports Target reached | Target reached
 STEP NO | Establish orbit? Answer NO this time | -
-STEP SPD+ | Now fly by hand: tap SPD+ three times | -
+STEP SPD+ | Fly by hand: tap SPD+ (each tap is 0.1) | -
 STEP ENGINES | Tap ENGINES | Ship underway
-STEP - | Tap the tactical display to turn the ship | -
+STEP TACTICAL | Tap the tactical display to turn the ship | -
 STEP STOP | Tap STOP | stop procedure
 STEP SYSTEM | Tap SYSTEM again | MAP OF STAR SYSTEM
-STEP - | Tap planet A again | -
+STEP MAP | Tap planet A again | -
 STEP TARGETER | Tap TARGETER | Target #
 STEP ENTER | Tap ENTER | ENTERED
 STEP B | Press B for the bridge | -
@@ -304,7 +303,7 @@ IF IT DOESN'T WORK: Press SELECT at any time: it says what to do next. A step th
 @shelf PROCEDURES
 @see Tutorial 1: Basic Navigation
 @next Tutorial 1C: come home
-@done PART 1B DONE. You sent a probe, jumped through hyperspace and scanned an unknown planet. That is how you explore a region. Next: the way home.
+@done PART 1B DONE. You sent a probe, jumped through hyperspace and scanned an unknown planet. That is how you explore a region.
 STEP STARS | Tap STARS: the star map opens | ID/class
 STEP - | Tap the star just above the pink box | SS-45
 STEP PROBES | Tap PROBES | Launch Control
@@ -313,24 +312,24 @@ STEP LAUNCH | Tap LAUNCH (or A): the probe goes | -
 STEP B | Press B: the map buttons come back | -
 STEP - | Wait for the probe report to pop up | arrived at RegLoc
 STEP CONTINUE | Read it, then tap CONTINUE | -
-STEP - | Tap the star one left, one up: SS-33 | SS-33/G
+STEP - | Tap SS-33, just below-left of that star | SS-33/G
 STEP TARGETER | Tap TARGETER: speed 8 is offered | Max. Vel :  8
 STEP ENTER | Tap ENTER to accept speed 8 | Select target
-STEP - | Tap an empty spot on the bottom edge | -
+STEP MAP | Tap an empty spot on the bottom edge | -
 STEP ENTER | Tap ENTER: that is where you arrive | s: 8.0
 STEP B | Press B for the bridge | -
 STEP ENGINES | Tap ENGINES | -
 STEP - | Wait: the ship runs to the edge and jumps | HYPRSPCE
 STEP - | Wait: it drops out at SS-33 | Target bearing
 STEP SYSTEM | When the ship has stopped, tap SYSTEM | MAP OF STAR SYSTEM SS-33
-STEP - | Tap the planet (the letter A) | -
+STEP MAP | Tap the planet (the letter A) | -
 STEP TARGETER | Tap TARGETER | Target #
 STEP ENTER | Tap ENTER | ENTERED
 STEP B | Press B for the bridge | -
 STEP ENGINES | Tap ENGINES: the ship flies there | -
 STEP YES | Establish orbit? Answer YES | Entered orbit of planet SS-33
 STEP - | Read the scan report in COMMS | SHORT RANGE SCAN
-STEP NO | Planet map? Answer NO | -
+STEP NO | Display planetary map? Answer NO | -
 STEP NO | Landing parties? Answer NO | No landing parties
 
 WHY: Stars are too far apart to fly between at normal speed. A probe maps a star for you without the trip; hyperspace takes the ship there. A jump needs two targets: first the star, then a spot inside its system where you want to arrive.
@@ -342,7 +341,7 @@ IF IT DOESN'T WORK: Press SELECT at any time: it says what to do next. If the Ta
 # Tutorial 1C: come home
 @shelf PROCEDURES
 @see Tutorial 1: Basic Navigation
-@done TUTORIAL 1 DONE. You can fly, orbit, probe, jump and dock. Next: Practice mission 1-A (START > MANUAL > Your first mission). To leave: SHIP MENUS, COMPUTER, Special services, Quit, YES, then NO.
+@done TUTORIAL 1 DONE. You can fly, orbit, probe, jump and dock. To leave: press START, then tap LEAVE TUTORIAL. Next: Practice (demo) mission at sign-on; its checklist starts by itself.
 STEP STARFORT | Tap STARFORT | nearest starfort
 STEP YES | Go to nearest starfort? Answer YES | Setting new targets
 STEP - | Wait: the ship flies home by itself | Shall we dock?
@@ -390,14 +389,14 @@ IF IT DOESN'T WORK: If the target is far away and you are near the system edge, 
 STEP - | Fly to the planet with the Targeter | Establish Orbit?
 STEP YES | Answer YES: you enter a high orbit | Entered orbit
 STEP - | First visit: read the scan in COMMS | SHORT RANGE SCAN
-STEP NO | Planet map? Answer NO | -
+STEP NO | Display planetary map? Answer NO | -
 STEP NO | Landing parties? NO while learning | No landing parties
 STEP - | PG UP / PG DN raise and lower the orbit | -
 STEP ENGINES | To leave orbit, start the engines | -
 
 WHY: Almost everything you do to a planet needs an orbit first: scanning, landing parties, taking on supplies, bombardment and invasion.
 
-IF IT DOESN'T WORK: After the scan report the question "Display planetary map?" appears in the middle of the top screen, not on the bottom line. In our test run it was not clear which key answers it: if NO does nothing, press A. If you flew there by hand, stop within one point of the planet, then tap SHIP MENUS, then NAVIGATION, Helm, Orbit. Stars are never offered automatically: orbiting one slowly burns your hull.
+IF IT DOESN'T WORK: After the scan report the question "Display planetary map?" appears in the middle of the top screen, not on the bottom line. Only YES and NO answer it. If you flew there by hand, stop within one point of the planet, then tap SHIP MENUS, then NAVIGATION, Helm, Orbit. Stars are never offered automatically: orbiting one slowly burns your hull.
 
 # Jump to another star system
 @shelf PROCEDURES
@@ -407,7 +406,7 @@ STEP STARS | Open the navigation map of the region | ID/class
 STEP - | Tap the star system you want to reach | -
 STEP TARGETER | Tap TARGETER: speed 8 is offered | Max. Vel :  8
 STEP A | Press A to accept the speed | Select target
-STEP - | Its map opens: tap a spot near an edge | -
+STEP MAP | Its map opens: tap a spot near an edge | -
 STEP A | Press A to enter that second target | -
 STEP B | Go back to the bridge | -
 STEP ENGINES | Tap ENGINES: the ship runs to the edge | Engines engaged

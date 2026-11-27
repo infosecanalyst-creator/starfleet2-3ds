@@ -3,5 +3,5 @@ hint: Type on the keyboard, then tap ENTER
 buttons: [1] [2] [3] [4] [5] [6] [7] [8] [9] [0] [Q] [W] [E] [R] [T] [Y] [U] [I] [O] [P] [A] [S] [D] [F] [G] [H] [J] [K] [L] [-] [Z] [X] [C] [V] [B] [N] [M] [,] [.] [/] [ESC] [SPACE] [DEL] [ENTER] [NAV] [ENG] [CMB] [CMP] [SEC] [COM] [STG] [SCI] [CTL] [STARS] [SYSTEM] [WAR] [COMBAT] [FLEET] [ORDERS] [LOG]
 explain cards: 60/60
 quick reference: QUICK REFERENCE: THIS VIEW
-start menu: [RESUME] [WHAT NOW?] [MANUAL] [COACH: ON] [SAVE (grey)] [GAME SETTINGS (grey)] [EXIT GAME (grey)]
-what now: Goal: Discover at least one mineral-rich planet in UGA or neutral space. This is one of the ship's pages. The buttons below are its keys; B goes back to the bridge.
+start menu: [RESUME] [WHAT NOW?] [MANUAL] [COACH: ON] [SAVE (grey)] [LEAVE MISSION] [EXIT GAME (grey)]
+what now: This is one of the ship's pages. The buttons below are its keys; B goes back to the bridge.

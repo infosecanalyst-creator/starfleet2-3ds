@@ -3,5 +3,5 @@ hint: Docked: LAUNCH leaves the starfort
 buttons: [1] [2] [3] [4] [5] [6] [7] [8] [9] [0] [Q] [W] [E] [R] [T] [Y] [U] [I] [O] [P] [A] [S] [D] [F] [G] [H] [J] [K] [L] [-] [Z] [X] [C] [V] [B] [N] [M] [,] [.] [/] [ESC] [SPACE] [DEL] [ENTER] [ENTER] [BACK] [HIDE KEYS] [STARS] [SYSTEM] [WAR] [COMBAT] [FLEET] [ORDERS] [LOG]
 explain cards: 42/54
 quick reference: QUICK REFERENCE: BRIDGE
-start menu: [RESUME] [WHAT NOW?] [MANUAL] [COACH: ON] [SAVE] [GAME SETTINGS (grey)] [EXIT GAME (grey)]
+start menu: [RESUME] [WHAT NOW?] [MANUAL] [COACH: ON] [SAVE] [LEAVE MISSION] [EXIT GAME (grey)]
 what now: Type a name for this save (8 letters at most) and tap ENTER.

@@ -3,5 +3,5 @@ hint: Docked: LAUNCH leaves the starfort
 buttons: [PHASERS (grey)] [TORPS (grey)] [SHLD+] [SHLD-] [SPD+] [SPD-] [LAUNCH] [WHAT NOW?] [ENTER] [BACK] [KEYBOARD] [STARS] [SYSTEM] [WAR] [COMBAT] [FLEET] [ORDERS] [LOG]
 explain cards: 18/18
 quick reference: QUICK REFERENCE: BRIDGE
-start menu: [RESUME] [WHAT NOW?] [MANUAL] [COACH: ON] [SAVE] [GAME SETTINGS (grey)] [EXIT GAME (grey)]
-what now: 1) Pick where to go first: tap SYSTEM, tap a planet, TARGETER, ENTER, then B. 2) Then LAUNCH leaves the starfort and the ship flies there. (STARS shows other star systems.) [ring SYSTEM]
+start menu: [RESUME] [WHAT NOW?] [MANUAL] [COACH: ON] [SAVE] [LEAVE MISSION] [EXIT GAME (grey)]
+what now: 1) Read your orders first: tap ORDERS. 2) Pick where to go first: tap SYSTEM, tap a planet, TARGETER, ENTER, then B. 3) Then LAUNCH leaves the starfort and the ship flies there. (STARS shows other star systems.) [ring ORDERS]
