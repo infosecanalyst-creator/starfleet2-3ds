@@ -3289,9 +3289,12 @@ Redraw frame(const TextScreen& ts, uint16_t* top, uint16_t* bottom) {
       if (first >= 0) { chk_sec = first; chk_step = 0; chk_begin_step(ts); dirty(); }
     }
   }
-  if (tut_num == 1 && !tut_started && ts.text_mode && is_bridge(ts)) {      // Tutorial 1: its checklist follows by itself
+  if (tut_num >= 1 && !tut_started && ts.text_mode && is_bridge(ts)) {      // Tutorial 1: its checklist follows by itself
     tut_started = true;
-    int first = chk_find("Tutorial 1A: fly to a planet and orbit");
+    // (the card whose title begins "Tutorial <number>": 1 has three parts and starts at 1A)
+    int first = -1; std::string want = "Tutorial " + std::to_string(tut_num);
+    for (size_t i = 0; i < manual.size() && first < 0; i++)
+      if (!manual[i].steps.empty() && manual[i].title.compare(0, want.size(), want) == 0 && (manual[i].title[want.size()] == ':' || manual[i].title[want.size()] == 'A')) first = (int)i;
     if (first >= 0) { chk_sec = first; chk_step = 0; chk_begin_step(ts); dirty(); }
   }
   // The shield and speed buttons answer where the stylus is: the new value shows on the prompt
@@ -3723,6 +3726,7 @@ void buttons(uint32_t held, uint32_t pr, uint32_t rel) {
   if (pr & B_SELECT) fire(kind_act(in_flight(last) ? A_MISSION : A_KB));   // "What now?" in flight (re-save is in the START menu)
   if (pr & B_A) { press(K_ENTER); typed_enter(); chk_pressed = "A"; }
   if (pr & B_B) chk_pressed = "B";
+  if (pr & B_L) chk_pressed = "L";
   if (pr & B_B) press(K_ESC);
   if (pr & B_X) press(K_INSERT);           // fire phasers
   if (pr & B_Y) press(K_DELETE);           // fire torpedoes
