@@ -1884,6 +1884,7 @@ static int coach_step(const TextScreen& ts) {
   if (screen_has(ts, "SIGN-ON OPTIONS")) return CS_MENU;
   if (screen_has(ts, "FLEET HEADQUARTERS") && screen_has(ts, "Mission #")) return CS_ORDERS;
   if (is_bridge(ts)) {
+    if (chk_sec >= 0) return -1;     // a checklist is guiding: its card is the one to read (verify 4: COACH: ENEMY! hid it)
     Situation st = bridge_situation(ts);
     // (not while the officers report in or a question is up: the card would point at buttons that
     // do nothing yet; both reviews, Nov 21)
@@ -3072,7 +3073,10 @@ static void fire(const Act& a) {
     case A_STOPLIST: chk_sec = -1; chk_wait_end = false; pause_open = false; say("Checklist stopped (START > MANUAL has them all)", 3000); break;
     case A_STEPSKIP: if (chk_sec >= 0) { chk_step++; if (chk_step >= (int)manual[chk_sec].steps.size()) { pause_open = false; chk_finish(last); } else chk_begin_step(last); } break;
     case A_GRID: grid_open = !grid_open; break;
-    case A_LEAVE: pause_open = false; leave_until = now() + 20000; leave_next = now(); say(tut_num > 0 ? "Leaving the tutorial..." : "Leaving the mission...", 4000); break;
+    case A_LEAVE:
+      pause_open = false;
+      if (row_mode == R_YESNO) { say("Answer the question first (YES or NO), then LEAVE", 4000); break; }   // (verify 4: it did nothing, silently)
+      leave_until = now() + 20000; leave_next = now(); say(tut_num > 0 ? "Leaving the tutorial..." : "Leaving the mission...", 4000); break;
     case A_RDPAGE: rd_page(a.arg); break;
     case A_LISTPICK:        // a row of the commander list: move the game's highlight there, then Enter
       for (int i = 0; i < abs(a.arg); i++) press(a.arg > 0 ? K_DOWN : K_UP);
@@ -3422,6 +3426,11 @@ Redraw frame(const TextScreen& ts, uint16_t* top, uint16_t* bottom) {
       }
     }
   }
+  // The game left to DOS (LEAVE after a finished tutorial) and the start script runs it again:
+  // nothing of the old mission is left (verify 4: the title picture got the mission's keypad).
+  if (ts.text_mode && (screen_has(ts, "Please stand by") || screen_has(ts, "C:\\>"))) {
+    mission_on = false; tut_num = 0; tut_started = false; tut_finished = false; goal_met = false; chk_sec = -1; chk_wait_end = false; kb_open = false;
+  }
   if (ts.text_mode && screen_has(ts, "SIGN-ON OPTIONS")) { tut_num = 0; tut_started = false; tut_finished = false; goal_met = false; leave_until = 0; leave_xdos = false; chk_sec = -1; chk_wait_end = false; }
   else menu_fresh = true;
   {   // the first Practice mission: its checklist follows by itself, like Tutorial 1's (cold read: nobody found it)
@@ -3468,7 +3477,9 @@ Redraw frame(const TextScreen& ts, uint16_t* top, uint16_t* bottom) {
       else if (in_flight(ts)) press(K_X, M_CTRL);
       else { leave_xdos = false; leave_until = 0; }
     }
-    else if (!in_flight(ts) && !screen_has(ts, "give up on this mission")) leave_until = 0;
+    // (between "want to stop?" and "give up?" the screen is blank for a moment: wait, don't stop.
+    // Verify 4: Tutorial 2's give-up question was left unanswered 2 of 2 times.)
+    else if (!in_flight(ts) && !screen_has(ts, "give up on this mission")) { if (screen_has(ts, "SIGN-ON OPTIONS")) leave_until = 0; }
     else if (screen_has(ts, "give up on this mission")) { if (tut_num > 0) press(K_N); leave_until = 0; }
     else if (p24.find("want to stop") != std::string::npos) press(K_Y);
     else if (p24.find("claim victory") != std::string::npos) {
