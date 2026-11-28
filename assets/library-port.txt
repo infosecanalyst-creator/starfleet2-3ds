@@ -377,6 +377,23 @@ WHY: A landing party is how you survey a planet, set up a base, fetch supplies o
 
 IF IT DOESN'T WORK: "Already surveyed!" means this planet has been explored: pick another planet. A gas giant (Class G) cannot be landed on. If a red alert starts near a planet, Alliance freighters are in orbit there: they do not shoot. The first officer may ask about disabling them: either answer is fine here. If the scan shows no question about landing parties, tap the planet on the touch screen and tap LANDING PARTY.
 
+# Tutorial 3: transfers and resupply
+@shelf PROCEDURES
+@see Transfer supplies, energy or people
+@done TUTORIAL 3 DONE. A supply ship refilled your stores. To leave, press START and tap LEAVE TUTORIAL.
+This tutorial starts in orbit, low on stores, with the supply ship KS-9 beside you. In this copy of the game it opens with three error boxes ("PLANET INTEGRITY FAILURE"); the tutorial still works after them: tap CONTINUE twice, then CARRY ON, then NO to "Exit to DOS?".
+STEP SHIP MENUS | Tap SHIP MENUS | -
+STEP COMMS | Tap COMMS | -
+STEP - | Tap SEND MSG, then the supply ship | resupply from
+STEP YES | Request resupply from KS-9? Answer YES | Resupply complete
+STEP - | Read in COMMS what was teleported over | -
+
+WHY: A supply ship tops up energy, supplies, torpedoes and pods by teleporter. COMMS lists each item with the amount received and the new level in per cent.
+
+MORE TO TRY: Move people or stores yourself: SHIP MENUS, ENGINEERING, TELEPORTERS, then PERSONL XFER or MATERIAL XFR. The target box starts on "Our ship": the supply ship shares your orbit position, so ENTER there opens the table. Pick a row, + and - set the amount, ENTER sends.
+
+IF IT DOESN'T WORK: "Cannot transfer. There is no landing party on the planet" means the box was on the planet: transfers to a planet need a landing party there first.
+
 # Tutorial 4: weapons
 @shelf PROCEDURES
 @done TUTORIAL 4 DONE. You fired torpedoes and phasers and destroyed a ship. PHASERS and TORPS light up when they have a lock. To leave, press START.
