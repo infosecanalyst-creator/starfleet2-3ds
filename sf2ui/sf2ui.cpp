@@ -912,6 +912,7 @@ static const FullWord FULLWORDS[] = {
 static std::string full_word(const std::string& l) { for (auto& w : FULLWORDS) if (l == w.abbr) return w.full; return l; }
 static std::string abbr_word(const std::string& l) { for (auto& w : FULLWORDS) if (l == w.full) return w.abbr; return l; }
 static bool mission_on = false;          // a mission is being flown (set by the lights row, cleared at sign-on)
+static bool save_pending = false;
 static uint32_t btn_sig = 0, btn_sig_t = 0;          // the buttons on screen, and when they last changed
 static uint32_t leave_until = 0, leave_next = 0;     // START > LEAVE: the port is walking the game's Quit menu
 static bool tut_finished = false;                    // the tutorial's checklists are done: SELECT says how to leave
@@ -3021,7 +3022,7 @@ static void fire(const Act& a) {
       say(a.kind == A_LAUNCH ? "Launching: engines on at sublight 0.5" : "Engines on");
       break;
     }
-    case A_SAVE: press(K_Q, M_CTRL); say("Quick save (needs a named save first)", 2500); pause_open = false; break;
+    case A_SAVE: save_pending = true; say("Quick save (needs a named save first)", 2500); pause_open = false; break;   // (sent after the clock is running again)
     case A_PAUSE: pause_open = false; quit_confirm = false; break;
     case A_QUIT: quit_confirm = true; pause_focus = 1; break;
     case A_QUIT_YES: if (H && H->quit) H->quit(); break;
@@ -3406,6 +3407,7 @@ Redraw frame(const TextScreen& ts, uint16_t* top, uint16_t* bottom) {
     if (!open_now && was_open && we_froze) { if (ts.text_mode && is_bridge(ts) && frozen(ts) && !leave_until) press(K_F, M_CTRL); we_froze = false; }
     if (leave_until && we_froze && ts.text_mode && is_bridge(ts) && frozen(ts) && t - froze_t > 500) { press(K_F, M_CTRL); we_froze = false; }
     was_open = open_now;
+    if (save_pending && !open_now && queue.empty()) { save_pending = false; press(K_Q, M_CTRL); }
   }
   bool chk_moved = false;
   if (!manual_open && !pause_open) { int was = chk_step, ws = chk_sec; chk_update(ts); if (was != chk_step || ws != chk_sec) chk_moved = true; }
