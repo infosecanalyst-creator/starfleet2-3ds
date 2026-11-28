@@ -2530,7 +2530,8 @@ static void generic_bottom(Surf& s, const TextScreen& ts) {
         if (toupper((unsigned char)l.label[k]) == l.key) { hot = (int)k; break; }
       std::string lab = l.label;
       if (hot < 0) { lab = std::string(1, l.key) + " " + l.label; hot = 0; }
-      add_btn(x0, y0, x1, y1, lab, small && !scroll ? &F6x12 : &F8x16, key_act(key_for_char(l.key)), hot, l.sel);
+      // (a label that would touch both edges of its button drops to the smaller font)
+      add_btn(x0, y0, x1, y1, lab, (small && !scroll) || text_width(lab.c_str(), F8x16) > x1 - x0 - 12 ? &F6x12 : &F8x16, key_act(key_for_char(l.key)), hot, l.sel);
       if (l.label == "DOS shell") btns.back().off = true;   // nothing to do at a DOS prompt on a handheld, and no easy way back
     }
   } else if (glay.kind == G_MAP) {
