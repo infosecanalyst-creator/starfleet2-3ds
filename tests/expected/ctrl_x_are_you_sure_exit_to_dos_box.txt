@@ -1,5 +1,5 @@
 kind: bridge
-hint: NO. (YES closes Star Fleet II)
+hint: NO keeps playing. YES restarts at sign-on
 buttons: [PHASERS (grey)] [TORPS (grey)] [SHLD+] [SHLD-] [SPD+] [SPD-] [ENGINES] [STARFORT] [YES] [NO] [STARS] [SYSTEM] [WAR] [COMBAT] [FLEET] [ORDERS] [LOG]
 explain cards: 17/17
 quick reference: QUICK REFERENCE: BRIDGE

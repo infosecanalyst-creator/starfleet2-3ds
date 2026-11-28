@@ -818,7 +818,7 @@ static const char* context_hint(const TextScreen& ts) {
       {"claim victory", "YES: the game tells you how to end the mission"},
       {"Confirm firing", "YES drops the pod: it wrecks the planet below"},
       {"Detonate all probes", "YES clears used probes so stored ones load"},
-      {"Exit to DOS", "NO. (YES closes Star Fleet II)"},
+      {"Exit to DOS", "NO keeps playing. YES restarts at sign-on"},
       {"be resupplied", "YES tops up your supplies"},
       {"Establish orbit", "YES: orbit is where the planet is scanned"},
       {"Shall we dock", "YES: the starfort repairs and resupplies"},
@@ -1015,6 +1015,13 @@ static void bottom_rows(Surf& s, const TextScreen& ts) {
   }
   // (the bridge's menu row stays drawn under a PRESS KEY prompt, but only a key press is wanted)
   if (!yesno && is_bridge(ts) && row_str(ts, 24, 0, 24).find("PRESS KEY") != std::string::npos) items.clear();
+  // Tutorial 3 opens with "PLANET INTEGRITY FAILURE" boxes; the last says "IF YOU WANT TO CONTINUE,
+  // PRESS [N]" (capture, Nov 27): N carries on, then NO to "Exit to DOS?".
+  if (!yesno && screen_has(ts, "WANT TO CONTINUE, PRESS [N]")) {
+    items.clear();
+    items.push_back(MenuItem{"CARRY ON (N)", -1, false, 'N', 0});
+    prompt = "The game hit a data error. CARRY ON keeps playing";
+  }
   bool anykey = items.empty() && !yesno &&
                 (prompt.find("PRESS") != std::string::npos || screen_has(ts, "PRESS ANY KEY", 18, 24) || screen_has(ts, "PRESS KEY", 18, 24) ||
                  (pop_r0 >= 0 && pop_text.find("PRESS KEY") != std::string::npos));
