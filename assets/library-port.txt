@@ -412,6 +412,50 @@ MORE TO TRY: Aim a tube by hand: SHIP MENUS, COMBAT, WEAPONS, TORPEDO SETUP, MOD
 
 IF IT DOESN'T WORK: "not loaded" means the tubes are reloading: wait and tap once. "Phasers not energized" means they are recharging. The three boxes after the first kill say the mission is complete; in a tutorial that only means its goal is met. To leave afterwards press START and tap LEAVE TUTORIAL: the game starts again at the sign-on screen.
 
+# Tutorial 5: escorts
+@shelf PROCEDURES
+@see Tutorial 6: capturing ships
+@done TUTORIAL 5 DONE. Your escorts fly in formation and search the system. Try TARGETING and COMMAND too (below), or press START and tap LEAVE TUTORIAL.
+You start docked at starfort SS-1 with four escorts. The game gives no orders here: the lesson is to give your escorts a formation, take them to star SS-41, then spread them over the system.
+STEP B | Press B to leave the Nav menu | -
+STEP SHIP MENUS | Tap SHIP MENUS | -
+STEP STRATEGY | Tap STRATEGY | -
+STEP ESCORT | Tap ESCORT | -
+STEP FORMATION | Tap FORMATION | change formation
+STEP NEXT | Tap NEXT: formation 1, Box | -
+STEP ASSIGN | Tap ASSIGN: the escorts form a box | Escorts changed to Formation
+STEP NO | Read the battle pledge? Answer NO | message saved in the log
+STEP STARS | Tap STARS, then star SS-41 | -
+STEP TARGETER | Tap TARGETER, then ENTER | 1:SS-41
+STEP B | Press B for the bridge | -
+STEP LAUNCH | Tap LAUNCH: the ship jumps to SS-41 | Target reached
+STEP SYSTEM | Tap SYSTEM, then planet A | -
+STEP TARGETER | Tap TARGETER, then ENTER | SS-41A
+STEP B | Press B for the bridge | -
+STEP ENGINES | Tap ENGINES | -
+STEP YES | Establish orbit? Answer YES | Entered orbit
+STEP NO | Escorts to orbit, map, parties? NO each | No landing parties assigned
+STEP FORMATION | SHIP MENUS, STRATEGY, ESCORT, FORMATION | change formation
+STEP PREV | Tap PREV twice: 20, System Search | System Search
+STEP ASSIGN | Tap ASSIGN: the escorts spread out | Formation #20
+STEP - | Wait for the escorts' reports | Reached our designated position
+
+WHY: A formation says where each escort flies relative to you; System Search sends them across the star system to look for enemies, and they report what they find.
+
+MORE TO TRY: TARGETING (fire orders): SELECT the escorts (the cursor starts on All), pick an order with the arrows (Free fire, Disable only, Hold fire...), ASSIGN. COMMAND: pick an escort with the arrows, SELECT it, then Data shows its ship data, or give it an order such as Hold position.
+
+IF IT DOESN'T WORK: ASSIGN with no escort selected does nothing: SELECT first.
+
+# Tutorial 7: invasions
+@shelf PROCEDURES
+An invasion fleet is ready at planet SS-20A. The goal: bomb the planet down to 4 cities, assault its zones, land legions and make it surrender. Much of it happens on the planet's map, a picture on the top screen: the touch screen gives the arrows, YES, NO, SPACE, ENTER, BACK and a KEYBOARD for the letters named on the picture.
+
+HOW: 1) SHIP MENUS, STRATEGY, INVMGT shows the invasion status. 2) B, then PLANET, ORBIT CONTROL opens the map of SS-20A. 3) KEYBOARD: L, a city number, ENTER moves the box to that city. 4) B bombards it (YES the first time); destroy cities until CITIES reads 4. 5) Locate a city to take, S selects it (YES), I opens INVASION CONTROL. 6) A, then troops: shock troops assault a zone; repeat for each zone with the right arrow. 7) Battle, View shows a zone; set its strategy (Reduce) and build there. 8) Load warrior cohorts on a drop ship (D), launch it to a zone with a landing pad (L, YES).
+
+WHY: Each zone falls once its defenders are beaten; when enough of the planet is held it surrenders. This takes many game hours: FREEZE (L) stops the clock while you plan.
+
+IF IT DOESN'T WORK: BACK leaves each screen; leaving INVASION CONTROL asks "EXITING WILL TERMINATE THE INVASION": YES only if you want to stop.
+
 # Tutorial 6: capturing ships
 @shelf PROCEDURES
 @done TUTORIAL 6 DONE. You made a ship surrender and captured it. Tow it home with the tractor beam for the reward. To leave: press START, then tap LEAVE TUTORIAL.

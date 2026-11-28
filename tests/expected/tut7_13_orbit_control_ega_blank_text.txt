@@ -1,0 +1,2 @@
+kind: graphics
+buttons: [YES] [] [NO] [] [SPACE] [] [] [ENTER] [BACK] [KEYBOARD]

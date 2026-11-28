@@ -1,2 +1,2 @@
 kind: graphics
-buttons: [] [] [SPACE] [] [] [ENTER] [BACK] [KEYBOARD]
+buttons: [YES] [] [NO] [] [SPACE] [] [] [ENTER] [BACK] [KEYBOARD]

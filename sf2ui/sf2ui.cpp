@@ -760,6 +760,14 @@ static int lp_table(const TextScreen& ts) {
 static bool dc_table(const TextScreen& ts) {
   return row_str(ts, 24, 0, 24).find("Assign repair teams") != std::string::npos && screen_has(ts, "Avl.Repair Teams");
 }
+// The escort order windows (Strategy > Escort): FORMATION says "+/- or ..: change formation",
+// TARGETING and COMMAND say "[+]:select  [-]:deselect". On the 3DS X/Y (Insert/Delete) do the same
+// as + and - (capture 4: nothing on screen said how to change them).
+static int esc_win(const TextScreen& ts) {
+  if (screen_has(ts, "change formation")) return 1;
+  if (screen_has(ts, "[+]:select")) return 2;
+  return 0;
+}
 // Which weapons have a lock: the Wpn letters in TARGET DATA (bit 0 phasers, bit 1 torpedoes).
 static int weapon_locks(const TextScreen& ts) {
   if (row_str(ts, 9, 59, 79).find("TARGET DATA") == std::string::npos) return 0;
@@ -838,6 +846,18 @@ static const char* context_hint(const TextScreen& ts) {
     return "Tap where you want to arrive, then ENTER";
   if (screen_has(ts, "SIGN-ON OPTIONS")) return practice_on(ts) ? "Practice is on: tap Start a new mission" : tut1_done ? "Next: Practice (demo) mission. SELECT: what now?" : "New? Tap Tutorials, then 1. Help: START > MANUAL";
   if (screen_has(ts, "MISSIONS RECORD", 0, 3)) return has_btn("SELECT") ? "A mission is highlighted: tap the SELECT key below" : "Your career, one square per mission. B goes back";
+  if (dc_table(ts)) return "Arrows pick a system, + TEAM adds, ASSIGN";
+  if (esc_win(ts) == 1) {        // the formation's name is under the grid, off the window
+    static std::string fl; std::string nm = trim(row_str(ts, 15, 52, 79));
+    while (!nm.empty() && (nm[0] == '*' || nm[0] == ' ')) nm.erase(0, 1);
+    while (!nm.empty() && (nm.back() == '.' || nm.back() == ' ')) nm.pop_back();
+    { std::string o; for (char c : nm) { unsigned char u = (unsigned char)c; char k = (u < 32 || u > 126) ? ' ' : c;
+        if (!(k == ' ' && !o.empty() && o.back() == ' ')) o += k; } nm = o; }
+    fl = "Formation " + nm + ": NEXT, then ASSIGN";
+    if (fl.size() <= 52) return fl.c_str();
+    return "NEXT / PREVIOUS pick a formation, then ASSIGN";
+  }
+  if (esc_win(ts) == 2) return "SELECT escorts and an order, then ASSIGN";
   if (row_mode == R_WINDOW) return "Tap one of the keys below";
   if (glay_kind() == 1) return menu_scrolls ? "Tap an item; drag or tap the arrows for more" : "Tap an item to choose it";
   if (chk_sec >= 0 && chk_step < (int)manual[chk_sec].steps.size() && in_flight(ts)) {
@@ -849,7 +869,6 @@ static const char* context_hint(const TextScreen& ts) {
     return "Combat screen: ships near you. B: back to the bridge";
   if (lp_table(ts) == 1) return "+ TEAM adds 10 people to the lit row";
   if (lp_table(ts) == 2) return "- TEAM brings a team back; ALL BACK: everyone";
-  if (glay_kind() == 3 && dc_table(ts)) return "Arrows pick a system, + TEAM adds, ASSIGN";
   if (glay_kind() == 3) return "The game's window. Its keys are the buttons below";
   if (row_mode == R_ANYKEY) return lefty_on ? "Read the screen, then tap CONTINUE (or D-Rt)" : "Read the screen, then tap CONTINUE (or A)";
   { bool blank = true; for (int r = 0; r < 25 && blank; r++) for (int c = 0; c < 80; c++) if (ts.ch[r][c] > ' ' && ts.ch[r][c] != 0xFF) { blank = false; break; }
@@ -1000,6 +1019,9 @@ static void bottom_rows(Surf& s, const TextScreen& ts) {
       if (trim(u) == "SEND") { it.key = 13; it.mods = 0; it.hot = -1; }
       else if (trim(u) == "CANCEL") { it.key = 27; it.mods = 0; it.hot = -1; }
     }
+  if (!yesno && screen_has(ts, "SHIP DATA") && screen_has(ts, "PRESS KEY")) {   // (capture 4: no CONTINUE)
+    items.clear(); items.push_back(MenuItem{"CONTINUE", -1, false, 13, 0}); prompt = "Escort data: CONTINUE when read";
+  }
   if (dc_table(ts)) {
     items.clear(); yesno = false;
     items.push_back(MenuItem{"ASSIGN", -1, false, 13, 0});
@@ -2243,7 +2265,7 @@ static void analyse(const TextScreen& ts) {
   // The Targeter window opens over a corner of the star maps, which hides the frame the map is
   // found by: keep the map where it was while that window is up (emulator, Nov 21).
   static GLayout last_map; static bool have_map = false; static uint8_t map_edge[80];
-  if (dc_table(ts) && in_flight(ts) && find_window(ts, glay)) return;   // (the tactical grid behind it is not a star map)
+  if ((dc_table(ts) || esc_win(ts)) && in_flight(ts) && find_window(ts, glay)) return;   // (the tactical grid behind it is not a star map)
   glay.kind = G_PLAIN; glay.r1 = glay.c1 = -1;
   if (find_map(ts, glay)) { last_map = glay; have_map = true; memcpy(map_edge, ts.ch[glay.r1], 80); return; }
   if (have_map && in_flight(ts) && screen_has(ts, "enter target") && screen_has(ts, "TARGETER")) {
@@ -2635,7 +2657,17 @@ static void generic_bottom(Surf& s, const TextScreen& ts) {
       scroll_bar(s, 312, WIN_Y0, WIN_Y0 + WIN_ROWS * 12, win_top, maxtop, WIN_ROWS);
       sarea = ScrollArea{true, 0, 0, 310, WIN_Y0 + WIN_ROWS * 12, 12, &win_top, maxtop};
     }
-    if (dc_table(ts)) {
+    if (int ew = esc_win(ts)) {
+      if (ew == 1) {
+        static const char* ll[2] = {"PREV", "NEXT"};
+        const Act la[2] = {key_act(K_DELETE), key_act(K_INSERT)};
+        for (int i = 0; i < 2; i++) { int a, b; split_gap(2, BOT_W - 6, 6, i, a, b); add_btn(a, 140, b, 164, ll[i], &F8x16, la[i]); }
+      } else {
+        static const char* ll[6] = {"\x18", "\x19", "\x1b", "\x1a", "SELECT", "UNSELECT"};
+        const Act la[6] = {key_act(K_UP), key_act(K_DOWN), key_act(K_LEFT), key_act(K_RIGHT), key_act(K_INSERT), key_act(K_DELETE)};
+        for (int i = 0; i < 6; i++) { int a, b; split_gap(6, BOT_W - 6, 6, i, a, b); add_btn(a, 140, b, 164, ll[i], i < 4 ? &F8x16 : &F6x12, la[i]); }
+      }
+    } else if (dc_table(ts)) {
       static const char* ll[6] = {"\x18", "\x19", "\x1b", "\x1a", "- TEAM", "+ TEAM"};
       const Act la[6] = {key_act(K_UP), key_act(K_DOWN), key_act(K_LEFT), key_act(K_RIGHT), key_act(K_MINUS), key_act(K_EQUALS, M_SHIFT)};
       for (int i = 0; i < 6; i++) { int a, b; split_gap(6, BOT_W - 6, 6, i, a, b); add_btn(a, 140, b, 164, ll[i], i < 4 ? &F8x16 : &F6x12, la[i]); }
@@ -2892,8 +2924,9 @@ static void graphics_bottom(Surf& s) {
       const char* l2 = "Its keys are named there; KEYBOARD has the letters.";
       fit_text(s, (BOT_W - text_width(l1, F6x12)) / 2, 6, BOT_W - 6, l1, F6x12, BTN_TXT, "picture");
       fit_text(s, (BOT_W - text_width(l2, F6x12)) / 2, 20, BOT_W - 6, l2, F6x12, HINT, "picture");
-      static const char* labs[9] = {"", "\x18", "", "\x1b", "SPACE", "\x1a", "", "\x19", ""};
-      static const Key keys[9] = {K_NONE, K_UP, K_NONE, K_LEFT, K_SPACE, K_RIGHT, K_NONE, K_DOWN, K_NONE};
+      // (capture 4: the invasion screens ask Y/N in the picture; YES and NO sit in the pad's corners)
+      static const char* labs[9] = {"YES", "\x18", "NO", "\x1b", "SPACE", "\x1a", "", "\x19", ""};
+      static const Key keys[9] = {K_Y, K_UP, K_N, K_LEFT, K_SPACE, K_RIGHT, K_NONE, K_DOWN, K_NONE};
       for (int i = 0; i < 9; i++) {
         if (keys[i] == K_NONE) continue;
         int a, b, y0, y1; split_gap(60, 260, 3, i % 3, a, b); split_gap(40, 150, 3, i / 3, y0, y1);
@@ -3487,11 +3520,16 @@ Redraw frame(const TextScreen& ts, uint16_t* top, uint16_t* bottom) {
       if (tut_num > 0) { press(K_N); leave_xdos = true; leave_until = now() + 30000; say("Leaving the tutorial: the game starts again at sign-on...", 8000); }
       else { press(K_Y); leave_until = 0; explain("GOAL MET", "The mission's goal is met, so the game ends it at the starfort: tap STARFORT, answer YES, then YES to dock and YES to conclude the mission."); }
     }
+    // (capture 4: LEAVE taken with the clock frozen stopped in Special services; unfreeze first)
+    else if (is_bridge(ts) && frozen(ts)) press(K_F, M_CTRL);
     else if (is_bridge(ts) && m24.find("Quit") != std::string::npos) press(K_Q);
     else if (is_bridge(ts) && m24.find("Spcl srvcs") != std::string::npos) press(K_S);
     else if (is_bridge(ts) && m24.find(" Cmp ") != std::string::npos) press(K_C);
     else press(K_ESC);
     leave_next = t + 900; busy_since = t;
+    // every step keeps the walk alive a while longer: a slow game (tutorial busy after BEAM DOWN,
+    // a long frozen-clock detour) outran the fixed 20 s and left "give up?" unanswered (capture 4)
+    if (leave_until && (int32_t)(leave_until - (t + 12000)) < 0) leave_until = t + 12000;
   }
   {   // a "wait" step while the ship stands still in open space: the clock is not running (cold read 1 and 2)
     static uint32_t still_since = 0, warned = 0;

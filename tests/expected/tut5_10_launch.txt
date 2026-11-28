@@ -1,0 +1,7 @@
+kind: bridge
+hint: Docked: LAUNCH leaves the starfort
+buttons: [PHASERS (grey)] [TORPS (grey)] [SHLD+] [SHLD-] [SPD+] [SPD-] [LAUNCH] [WHAT NOW?] [SYSTEM MAP] [NAV MAP] [WAR MAP] [HELM] [STARS] [SYSTEM] [WAR] [COMBAT] [FLEET] [ORDERS] [LOG]
+explain cards: 19/19
+quick reference: QUICK REFERENCE: BRIDGE
+start menu: [RESUME] [WHAT NOW?] [MANUAL] [COACH: ON] [SAVE] [LEAVE MISSION] [EXIT GAME (grey)]
+what now: 1) Read your orders first: tap ORDERS. 2) A target is loaded: tap LAUNCH. The ship undocks and flies there by itself. [ring ORDERS]
