@@ -3428,7 +3428,7 @@ Redraw frame(const TextScreen& ts, uint16_t* top, uint16_t* bottom) {
   }
   // The game left to DOS (LEAVE after a finished tutorial) and the start script runs it again:
   // nothing of the old mission is left (verify 4: the title picture got the mission's keypad).
-  if (ts.text_mode && (screen_has(ts, "Please stand by") || screen_has(ts, "C:\\>"))) {
+  if (ts.text_mode && (screen_has(ts, "STAR FLEET II loading") || screen_has(ts, "C:\\>"))) {
     mission_on = false; tut_num = 0; tut_started = false; tut_finished = false; goal_met = false; chk_sec = -1; chk_wait_end = false; kb_open = false;
   }
   if (ts.text_mode && screen_has(ts, "SIGN-ON OPTIONS")) { tut_num = 0; tut_started = false; tut_finished = false; goal_met = false; leave_until = 0; leave_xdos = false; chk_sec = -1; chk_wait_end = false; }
