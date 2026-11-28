@@ -367,7 +367,6 @@ STEP YES | Landing parties to this planet? YES | By your command
 STEP + TEAM | Tap + TEAM: one team to explore | -
 STEP BEAM DOWN | Tap BEAM DOWN | Arrived safely
 STEP - | Wait about a day for their report | Survey complete ;; planet's name is
-STEP PLANET | Tap the planet on the touch screen | -
 STEP LANDING PARTY | Tap LANDING PARTY | are still alive on the planet
 STEP YES | Beam landing party up? Answer YES | teams to stay
 STEP ALL BACK | Tap ALL BACK: nobody stays | -
