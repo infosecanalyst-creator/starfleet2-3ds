@@ -1,0 +1,7 @@
+kind: bridge
+hint: Red alert! X phasers, Y torpedoes, L freeze
+buttons: [PHASERS] [TORPS] [SHLD+] [SHLD-] [SPD+] [SPD-] [ECM] [FREEZE] [STOP] [HOME] [SHIP MENUS] [STARS] [SYSTEM] [WAR] [COMBAT] [FLEET] [ORDERS] [LOG]
+explain cards: 18/18
+quick reference: QUICK REFERENCE: BRIDGE
+start menu: [RESUME] [WHAT NOW?] [MANUAL] [COACH: ON] [SAVE] [LEAVE MISSION] [EXIT GAME (grey)]
+what now: 1) No weapon has a lock yet: the enemy is too far (its bearing and distance are in COMMS and TARGET DATA). Phasers reach 5 points, torpedoes 10; a lit PHASERS or TORPS button means a lock. 2) Not ready to fight? HOME flies you to the starfort. FREEZE stops time while you think. 3) Energy is low: slow down (SPD-) or go back to a starfort.

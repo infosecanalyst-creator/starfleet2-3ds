@@ -4,4 +4,4 @@ buttons: [PHASERS (grey)] [TORPS (grey)] [SHLD+] [SHLD-] [SPD+] [SPD-] [LAUNCH] 
 explain cards: 19/19
 quick reference: QUICK REFERENCE: BRIDGE
 start menu: [RESUME] [WHAT NOW?] [MANUAL] [COACH: ON] [SAVE] [LEAVE MISSION] [EXIT GAME (grey)]
-what now: 1) Read your orders first: tap ORDERS. 2) Pick where to go first: tap SYSTEM, tap a planet, TARGETER, ENTER, then B. 3) Then LAUNCH leaves the starfort and the ship flies there. (STARS shows other star systems.) [ring ORDERS]
+what now: 1) Docked, but the mission's goal is not met yet, so the game will not end it. Go out again, or stop here: START, then LEAVE MISSION (NO keeps it for later). 2) Read your orders first: tap ORDERS. 3) Pick where to go first: tap SYSTEM, tap a planet, TARGETER, ENTER, then B.

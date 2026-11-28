@@ -34,7 +34,7 @@ static std::vector<Ev> queue;          // pending key events
 static uint32_t next_key_ms = 0;
 static const uint32_t KEY_GAP_MS = 35; // spacing between injected key events
 
-enum ActKind { A_NONE, A_GRID, A_STEPBACK, A_STEPSKIP, A_KEY, A_MODE, A_MANUAL, A_KB, A_SECTION, A_CLOSE, A_TYPE, A_SIGNON, A_SAVE, A_VIEW, A_PAUSE, A_QUIT, A_QUIT_YES, A_SETTINGS, A_LEFTY, A_SECLIST, A_ROWPAGE, A_RDLINE, A_MENUSCROLL, A_LAUNCH, A_ENGINES, A_MISSION, A_COACH, A_FOLLOW, A_LISTPICK, A_LEAVE, A_RDPAGE };
+enum ActKind { A_NONE, A_GRID, A_STEPBACK, A_STEPSKIP, A_KEY, A_MODE, A_MANUAL, A_KB, A_SECTION, A_CLOSE, A_TYPE, A_SIGNON, A_SAVE, A_VIEW, A_PAUSE, A_QUIT, A_QUIT_YES, A_SETTINGS, A_LEFTY, A_SECLIST, A_ROWPAGE, A_RDLINE, A_MENUSCROLL, A_LAUNCH, A_ENGINES, A_MISSION, A_COACH, A_FOLLOW, A_LISTPICK, A_LEAVE, A_RDPAGE, A_STOPLIST };
 struct Act { ActKind kind; Key key; uint8_t mods; int arg; };
 enum { M_SHIFT = 1, M_CTRL = 2, M_ALT = 4 };
 
@@ -106,6 +106,7 @@ struct Step { std::string btn, what, done; };   // a checklist step (PROCEDURES 
 struct Section { std::string title; std::vector<std::string> paras, lines; int wrap = 0; int shelf = 5; std::vector<Step> steps; std::string next, done; };
 // The checklist being followed (learning design step 3): shown on the top screen while playing;
 // steps tick themselves from what the game shows or which button was pressed.
+static bool tut1_done_loaded = false;
 static int tut_num = 0; static bool tut_started = false;   // a tutorial chosen on the game's Tutorials menu (0 = none)
 static int chk_sec = -1, chk_step = 0; static bool chk_had = false; static uint32_t chk_since = 0;
 static std::string chk_pressed;         // label of the last touch button / hardware button pressed
@@ -142,18 +143,21 @@ static void load_settings() {
     else if (!strncmp(line, "goal=", 5)) mis_goal = line + 5;
     else if (!strncmp(line, "days=", 5)) mis_days = atoi(line + 5);
     else if (!strncmp(line, "coach=", 6)) coach_on = atoi(line + 6) != 0;
+    else if (!strncmp(line, "tut1=", 5)) tut1_done_loaded = atoi(line + 5) != 0;
   }
   fclose(f);
 }
 static void manual_closed() {          // the section on screen when the manual closes is remembered
   if (man_sel >= 0 && man_sel < (int)manual.size()) set_manual = manual[man_sel].title;
 }
+#define tut1_done tut1_done_loaded       // Tutorial 1 was finished once: sign-on points at Practice next
 static void save_settings() {
   if (!H || !H->settings_path) return;
   std::string text = std::string("tapmode=") + TAP_LABEL[tap_mode] + "\n";
   if (!set_manual.empty()) text += "manual=" + set_manual + "\n";
   if (!mis_goal.empty()) text += "mission=" + mis_title + "\ngoal=" + mis_goal + "\ndays=" + std::to_string(mis_days) + "\n";
   if (!coach_on) text += "coach=0\n";
+  if (tut1_done) text += "tut1=1\n";
   if (text == set_written) return;     // nothing changed: no SD write
   set_written = text;
   if (H->save) H->save(H->settings_path, text.data(), (unsigned)text.size());   // (3DS: in the background)
@@ -665,7 +669,24 @@ static bool cursor_question(const TextScreen& ts);
 // A yes/no question shown anywhere on rows 1-23 ("Do you want to switch to Practice mode?"), whatever
 // its colours (hardware, Nov 20: the Practice question came up inside the menu screen with no YES/NO
 // buttons). A short line that ends in '?' (or '?' then a [Y]/[N] hint) and asks Do/Are you / want to.
+// A one-line question in its own small box (border above and below): "Select manual target?",
+// "Detonate all probes on station?". (Cold read 2: such a box had no YES/NO and locked the game.)
+static std::string boxed_question(const TextScreen& ts) {
+  for (int r = 2; r < 23; r++)
+    for (int c = 3; c < 78; c++) {
+      if (ts.ch[r][c] != '?') continue;
+      int cl = c; while (cl > 0 && !(ts.ch[r][cl] >= 0xB0 && ts.ch[r][cl] <= 0xDF)) cl--;
+      int cr = c + 1; while (cr < 79 && ts.ch[r][cr] == ' ') cr++;
+      if (cl <= 0 || c - cl < 8 || !(ts.ch[r][cr] >= 0xB0 && ts.ch[r][cr] <= 0xDF)) continue;
+      int up = 0, dn = 0;
+      for (int x = cl + 1; x < cr; x++) { uint8_t u = ts.ch[r - 1][x], d = ts.ch[r + 1][x]; if (u == 0xC4 || u == 0xCD) up++; if (d == 0xC4 || d == 0xCD) dn++; }
+      if (up * 10 < (cr - cl - 1) * 7 || dn * 10 < (cr - cl - 1) * 5) continue;
+      return trim(row_str(ts, r, cl + 1, cr));
+    }
+  return "";
+}
 static std::string dialog_question(const TextScreen& ts) {
+  { std::string bq = boxed_question(ts); if (!bq.empty()) return bq; }
   // On the bridge an answered question stays in COMMS; the game is only asking while its prompt
   // field says so (harness, Nov 21: YES/NO stayed up after "Do you wish to be resupplied?" was answered).
   // (a question in a message box, like the starfort autopilot's, is still a question)
@@ -795,9 +816,9 @@ static const char* context_hint(const TextScreen& ts) {
   if (in_flight(ts) == false && row_str(ts, 24, 24, 80).find("Personal") != std::string::npos && row_str(ts, 24, 24, 80).find("Krellan") != std::string::npos)
     return "Your mission score. BACK (or B) closes it";
   if (screen_has(ts, "COMMANDER'S LOG") && screen_has(ts, "PLEASE STANDBY")) return "The ship's log opens once at the start: tap EXIT";
-  if (glay_kind() == 2 && in_flight(ts) && row_str(ts, 24, 0, 30).find("Select target") != std::string::npos && !screen_has(ts, "TARGETER"))
+  if (glay_kind() == 2 && in_flight(ts) && !has_btn("TARGETER") && has_btn("ENTER"))
     return "Tap where you want to arrive, then ENTER";
-  if (screen_has(ts, "SIGN-ON OPTIONS")) return practice_on(ts) ? "Practice is on: tap Start a new mission" : "New? Tap Tutorials, then 1. Help: START > MANUAL";
+  if (screen_has(ts, "SIGN-ON OPTIONS")) return practice_on(ts) ? "Practice is on: tap Start a new mission" : tut1_done ? "Next: Practice (demo) mission. SELECT: what now?" : "New? Tap Tutorials, then 1. Help: START > MANUAL";
   if (screen_has(ts, "MISSIONS RECORD", 0, 3)) return has_btn("SELECT") ? "A mission is highlighted: tap the SELECT key below" : "Your career, one square per mission. B goes back";
   if (row_mode == R_WINDOW) return "Tap one of the keys below";
   if (glay_kind() == 1) return menu_scrolls ? "Tap an item; drag or tap the arrows for more" : "Tap an item to choose it";
@@ -806,6 +827,8 @@ static const char* context_hint(const TextScreen& ts) {
     if (stepline.size() <= 52) return stepline.c_str();
   }
   if (glay_kind() == 2) return screen_has(ts, "MAP OF STAR SYSTEM") ? "Tap a planet or starfort, then tap TARGETER" : "Tap a star: the box jumps to it. Then TARGETER";
+  if (row_str(ts, 1, 0, 80).find("COMBAT") != std::string::npos && row_str(ts, 1, 0, 80).find("INFORMATION") != std::string::npos)
+    return "Combat screen: ships near you. B: back to the bridge";
   if (lp_table(ts) == 1) return "+ TEAM adds 10 people to the lit row";
   if (lp_table(ts) == 2) return "- TEAM brings a team back; ALL BACK: everyone";
   if (glay_kind() == 3) return "The game's window. Its keys are the buttons below";
@@ -825,7 +848,8 @@ static void prompt_strip(Surf& s, const TextScreen& ts, const std::string& promp
   const int SY = UP_H;
   s.fill(0, SY, strip_x1, SY + 12, PROMPT_BG);
   s.fill(0, SY + 12, strip_x1, ROW1_Y0, BG);   // (on the bridge the action column runs down beside it)
-  if (!alert_text.empty() && (int32_t)(alert_until - now()) > 0) {
+  bool q_up = !dialog_question(ts).empty() || trim(row_str(ts, 24, 0, 24)).find('?') != std::string::npos;
+  if (!alert_text.empty() && (int32_t)(alert_until - now()) > 0 && !(q_up && !alert_red)) {     // (a question is not hidden by a passing message)
     uint16_t edge = alert_red ? rgb(255, 80, 64) : TITLE;
     s.fill(0, SY, strip_x1, ROW1_Y0, alert_red ? rgb(70, 12, 10) : rgb(60, 46, 8));
     s.rect(0, SY, strip_x1, ROW1_Y0, edge);
@@ -935,6 +959,9 @@ static void bottom_rows(Surf& s, const TextScreen& ts) {
   // a message box that says PRESS KEY wins over the menu row drawn behind it
   if (!yesno && pop_r0 >= 0 && pop_text.find("PRESS KEY") != std::string::npos) items.clear();
   if (screen_has(ts, "Enter file name")) { items.clear(); yesno = false; prompt = "Save as:"; }
+  if (!yesno && screen_has(ts, "PROBES CONTROL") && !items.empty()) {     // (cold read 2: only the unmentioned D-Pad reached a loaded probe)
+    items.push_back(MenuItem{"NEXT PROBE", -1, false, 5, 0});
+  }
   if (int lp = lp_table(ts)) {         // the landing-party table: Enter activates, Esc drops the plan, Shift+A recalls all
     items.clear(); yesno = false;
     items.push_back(MenuItem{lp == 2 ? "BEAM UP" : "BEAM DOWN", -1, false, 13, 0});
@@ -942,6 +969,8 @@ static void bottom_rows(Surf& s, const TextScreen& ts) {
     if (lp == 2) items.push_back(MenuItem{"ALL BACK", -1, false, 'A', M_SHIFT});
     prompt = lp == 2 ? "How many teams stay?" : "Teams to send down";
   }
+  // (the bridge's menu row stays drawn under a PRESS KEY prompt, but only a key press is wanted)
+  if (!yesno && is_bridge(ts) && row_str(ts, 24, 0, 24).find("PRESS KEY") != std::string::npos) items.clear();
   bool anykey = items.empty() && !yesno &&
                 (prompt.find("PRESS") != std::string::npos || screen_has(ts, "PRESS ANY KEY", 18, 24) || screen_has(ts, "PRESS KEY", 18, 24) ||
                  (pop_r0 >= 0 && pop_text.find("PRESS KEY") != std::string::npos));
@@ -1011,7 +1040,7 @@ static void bottom_rows(Surf& s, const TextScreen& ts) {
       if (even_ok) split_gap(6, rx1, n, i, a, b);
       else { int k = i - from; a = x; b = a + need[i] + extra / m + (k < extra % m ? 1 : 0); x = b + GAP; }
       Key k = items[i].key == 27 ? K_ESC : items[i].key == 13 ? K_ENTER :
-              items[i].key >= 1 && items[i].key <= 4 ? (Key)(K_F1 + (items[i].key == 1 ? 2 : items[i].key == 2 ? 3 : items[i].key == 3 ? 0 : 1)) : key_for_char(items[i].key);
+              items[i].key == 5 ? K_DOWN : items[i].key >= 1 && items[i].key <= 4 ? (Key)(K_F1 + (items[i].key == 1 ? 2 : items[i].key == 2 ? 3 : items[i].key == 3 ? 0 : 1)) : key_for_char(items[i].key);
       add_btn(a, ROW1_Y0, b, ROW1_Y1, items[i].label, &F8x16, key_act(k, items[i].mods), items[i].hot, items[i].sel);
     }
     if (more) add_btn(rx1 - 44, ROW1_Y0, rx1, ROW1_Y1, "MORE", &F8x16, kind_act(A_ROWPAGE));
@@ -1172,6 +1201,7 @@ static void bridge_top(Surf& s, const TextScreen& ts) {
                                                       : "X/Y fire  L freeze  R+tap: explain  SELECT: what now?")
                                           : "SELECT: what now?  R+tap: explain  L: freeze  START: menu";
   if (frozen(ts)) hint = "FROZEN: the clock is stopped. Press L to carry on";
+  else if (tut_finished) hint = "Tutorial done. To leave: START, then LEAVE TUTORIAL";
   // every other 8 s the strip shows the mission goal instead (plan item 4), when it fits
   std::string goal_line = mis_goal.empty() || tut_num > 0 ? "" : goal_met ? "Goal met: fly home (STARFORT) and dock" : "Goal: " + mis_goal;
   const Font* hf = &F6x12;
@@ -1316,6 +1346,8 @@ static const Gloss GLOSSARY[] = {
   {"ECM ON", "ECM (countermeasures)", "Electronic countermeasures jam weapon locks, theirs AND yours: switch it off before you fire. Uses energy."},
   {"ECM OFF", "ECM (countermeasures)", "ECM is on: weapon locks are jammed, theirs and yours. Tap to switch it off before you fire, and to save energy."},
   {"BACK TO THE BRIDGE", "BACK TO THE BRIDGE", "Closes the planet's map (B does the same)."},
+  {"NEXT PROBE", "NEXT PROBE", "Moves the lit row to the next probe. A probe marked Loaded can be launched; one that is out can be located or detonated."},
+  {"STOP LIST", "STOP THE CHECKLIST", "Puts the checklist away. START > MANUAL has every checklist if you want one back."},
   {"RESUME", "RESUME (L)", "The clock is frozen. This (or L) starts it again."},
   {"BEAM DOWN", "BEAM DOWN", "Sends the teams in the table down to the planet (the game's Activate). With no teams it just closes the table."},
   {"BEAM UP", "BEAM UP", "Brings back every team that is not marked to stay."},
@@ -1448,7 +1480,9 @@ static bool chk_step_done(const TextScreen& ts, const Step& st, bool current) {
   // (a step that names a text is ticked by the text: the game may refuse the button)
   // (A, ENTER and CONTINUE are one key to the game; so are B, BACK and EXIT)
   auto norm = [](const std::string& b) { return b == "ENTER" || b == "CONTINUE" ? std::string("A") : b == "BACK" || b == "EXIT" ? std::string("B") : b; };
-  if (!st.btn.empty() && norm(chk_pressed) == norm(st.btn) && (st.done.empty() || (current && chk_had))) return true;
+  // (only the current step: a tap on the map must not tick a "tap the map" step three steps on;
+  // cold read 2 saw lists run 3 to 8 steps ahead this way)
+  if (current && !st.btn.empty() && norm(chk_pressed) == norm(st.btn) && (st.done.empty() || chk_had)) return true;
   return false;
 }
 static int chk_find(const std::string& title) {
@@ -1463,7 +1497,7 @@ static void chk_finish(const TextScreen& ts) {
   int nx = sec.next.empty() ? -1 : chk_find(sec.next);
   if (nx >= 0) text += " Next: " + manual[nx].title + " (its steps follow on this screen).";
   explain("WELL DONE", text.c_str());
-  if (nx < 0 && tut_num > 0) tut_finished = true;
+  if (nx < 0 && tut_num > 0) { tut_finished = true; if (tut_num == 1 && !tut1_done) { tut1_done = true; save_settings(); } }
   chk_sec = nx; chk_step = 0; if (nx >= 0) chk_begin_step(ts);
   dirty();
 }
@@ -1475,23 +1509,11 @@ static void chk_update(const TextScreen& ts) {
     if (row_mode == R_YESNO || !dialog_question(ts).empty()) return;
     chk_wait_end = false; chk_step = (int)st.size(); chk_finish(ts); return;
   }
-  for (int look = 0; look < 4 && chk_step + look < (int)st.size(); look++) {
+  for (int look = 0; look < 3 && chk_step + look < (int)st.size(); look++) {
     const Step& x = st[chk_step + look];
     if (chk_step_done(ts, x, look == 0)) { chk_step += look + 1; chk_begin_step(ts); dirty(); break; }
   }
-  // Off the track but further on (the player did several steps their own way): a later step's
-  // proof that has newly appeared, and that belongs to that step alone, moves the list there.
-  // (cold read, Nov 27: the short proof "ENTERED" threw two lists 11 to 17 steps ahead. Only a
-  // proof of 12 letters or more may do this, and never while the game waits for YES or NO.)
   bool asking = row_mode == R_YESNO || !dialog_question(ts).empty();
-  for (int i = chk_step + 4; !asking && i < (int)st.size() && chk_far.size() == st.size(); i++) {
-    if (st[i].done.size() < 12 || chk_far[i] || !screen_has_ci(ts, st[i].done)) continue;
-    int same = 0; for (auto& x : st) if (x.done == st[i].done) same++;
-    // (not when a step on the way talks about the same text: "Establish orbit? Answer NO this time"
-    // comes before the step that proves itself with "Establish orbit?"; emulator, Nov 21)
-    for (int k = chk_step; k < i; k++) if (st[k].what.find(st[i].done) != std::string::npos) same++;
-    if (same == 1) { chk_step = i + 1; chk_begin_step(ts); dirty(); break; }
-  }
   chk_pressed.clear();
   if (chk_step >= (int)st.size()) {
     if (asking) chk_step = (int)st.size() - 1, chk_wait_end = true;    // (the success card waits for the answer)
@@ -1639,7 +1661,8 @@ static std::string where_am_i(const TextScreen& ts) {
   }
   if (screen_has(ts, "TARGETER") && screen_has(ts, "enter target")) return "The Targeter is open (ENTER loads, EXIT cancels).";
   if (screen_has(ts, "MAP OF STAR SYSTEM")) return "You are on a SYSTEM map (B: bridge).";
-  if (screen_has(ts, "WAR STAR MAP") || screen_has(ts, "WAR MAP")) return "You are on the WAR map (B: bridge).";
+  if (row_str(ts, 1, 0, 80).find("COMBAT") != std::string::npos && row_str(ts, 1, 0, 80).find("INFORMATION") != std::string::npos) return "You are on the COMBAT screen (B: bridge).";
+  if (screen_has(ts, "WAR STAR MAP") || screen_has(ts, "WAR MAP") || has_btn("STARFORTS")) return "You are on the WAR map (B: bridge).";
   if (in_flight(ts) && glay_kind() == 2) return "You are on the STARS map (B: bridge).";
   if (in_flight(ts)) return "One of the ship's pages is open (B: bridge).";
   return "You are outside the mission (sign-on pages).";
@@ -1659,7 +1682,10 @@ static std::string advise(const TextScreen& ts, const char** button) {
     const Step& stp = manual[chk_sec].steps[chk_step];
     static std::string keep; keep = stp.btn;
     if (!stp.btn.empty() && stp.btn != "A" && stp.btn != "B") *button = keep.c_str();
-    return manual[chk_sec].title + ", step " + std::to_string(chk_step + 1) + " of " + std::to_string(manual[chk_sec].steps.size()) + ": " + stp.what + ". " + where_am_i(ts) + " Off track? START has STEP BACK and SKIP STEP.";
+    std::string stopped;
+    if ((stp.what.compare(0, 4, "Wait") == 0 || stp.what.compare(0, 4, "Keep") == 0) && ts.text_mode && is_bridge(ts) && bridge_situation(ts) == SIT_CRUISE && bridge_speed(ts, 16) <= 0.0f)
+      stopped = " The ship is stopped, and the game's clock only runs while it moves or orbits: tap SPD+ and ENGINES.";
+    return manual[chk_sec].title + ", step " + std::to_string(chk_step + 1) + " of " + std::to_string(manual[chk_sec].steps.size()) + ": " + stp.what + ". " + where_am_i(ts) + stopped + " Off track? START has STEP BACK and SKIP STEP.";
   }
   if (tut_finished && in_flight(ts)) {
     add("This tutorial is done. To leave: press START, then tap LEAVE TUTORIAL. At sign-on, Practice (demo) mission is the next step.", 0);
@@ -1709,6 +1735,8 @@ static std::string advise(const TextScreen& ts, const char** button) {
     if (energy >= 0 && energy < 25) add("Energy is low: slow down (SPD-) or go back to a starfort.", "SPD-");
     if (has_left && left > 0 && left < 1.5f && st != SIT_DOCKED) add("Under 1.5 days left: STARFORT takes you home before time runs out.", "STARFORT");
     if (st == SIT_DOCKED) {
+      if (tut_num == 0 && !goal_met && (float)atof(row_str(ts, 11, 11, 17).c_str()) > 0.5f)
+        add("Docked, but the mission's goal is not met yet, so the game will not end it. Go out again, or stop here: START, then LEAVE MISSION (NO keeps it for later).", 0);
       if (mis_goal.empty() && tut_num == 0) add("Read your orders first: tap ORDERS.", "ORDERS");
       if (target.empty()) { add("Pick where to go first: tap SYSTEM, tap a planet, TARGETER, ENTER, then B.", "SYSTEM"); add("Then LAUNCH leaves the starfort and the ship flies there. (STARS shows other star systems.)", 0); }
       else add("A target is loaded: tap LAUNCH. The ship undocks and flies there by itself.", "LAUNCH");
@@ -1730,6 +1758,8 @@ static std::string advise(const TextScreen& ts, const char** button) {
   } else if (screen_has(ts, "SIGN-ON OPTIONS")) {
     if (!screen_has(ts, "T  Tutorials")) add("A message is over the menu: read it, then tap ENTER (or A).", "ENTER");
     else if (practice_on(ts)) { add("Practice is on. Tap Start a new mission.", "Start a new mission"); add("New to the game? Tutorials, then 1, comes first. For a mission that counts on your record: Change default settings, then Practice Mode off.", 0); }
+    else if (tut1_done) { add("You have flown Tutorial 1. Next: tap Practice (demo) mission, answer YES, then Start a new mission: a checklist flies your first mission with you. Nothing in Practice counts on your record.", "Practice (demo) mission");
+           add("Tutorials 2, 4 and 6 (landing parties, weapons, capturing ships) have checklists too.", 0); }
     else { add("New here? Tap Tutorials, then 1: a checklist walks you through your first flight.", "Tutorials");
            add("After that: Practice (demo) mission, YES, then Start a new mission. Nothing in Practice counts against your career.", 0); }
   } else if (screen_has(ts, "MISSIONS RECORD", 0, 3)) {
@@ -1921,6 +1951,9 @@ static void steer_to(const TextScreen& ts, int px, int py) {
     return;
   }
   if (row_str(ts, 1, 26, 50).find("ORBITAL") != std::string::npos) {     // in orbit a tap on the planet opens the teleporters
+    { int col = 28 + (px - TAC_X) / TAC_CW, row = 2 + (py - TAC_Y) / TAC_LH;       // (an enemy ship is not the planet)
+      for (int y = row - 1; y <= row + 1; y++) for (int x = col - 2; x <= col + 2; x++)
+        if (y >= 2 && y <= 13 && x >= 28 && x <= 49 && ts.ch[y][x] == 0x9A) { say("Enemy ship. PHASERS / TORPS fire when lit", 3000); return; } }
     chk_pressed = "PLANET";
     press(K_P, M_ALT); busy_since = now(); say("Teleporters: landing parties and transfers", 2500); return;
   }
@@ -2459,7 +2492,7 @@ static void generic_bottom(Surf& s, const TextScreen& ts) {
       // coach: the sign-on menu opens with Practice (and Start a new mission) in view. (Done once the
       // Practice line is there: a message box can hide it when the menu first comes back.)
       if (!practice_shown && (coach_on || want_practice_view))
-        for (int i = 0; i < n; i++) if (glay.items[i].label.compare(0, 9, practice_on(ts) ? "Start a n" : "Tutorials") == 0) {
+        for (int i = 0; i < n; i++) if (glay.items[i].label.compare(0, 9, practice_on(ts) ? "Start a n" : tut1_done ? "Practice " : "Tutorials") == 0) {
           menu_top = i - 2 < 0 ? 0 : i - 2; if (menu_top > n - VIS) menu_top = n - VIS;
           practice_shown = true; want_practice_view = false;
           if (signon) menu_fresh = false;
@@ -2837,6 +2870,11 @@ static void pause_bottom(Surf& s, const TextScreen& ts) {
     return;
   }
   header_bar(s, "MENU");
+  if (chk_sec >= 0 && chk_step < (int)manual[chk_sec].steps.size()) {     // the step the buttons below move
+    char n[24]; snprintf(n, sizeof n, "Step %d/%d: ", chk_step + 1, (int)manual[chk_sec].steps.size());
+    std::string l = std::string(n) + manual[chk_sec].steps[chk_step].what;
+    fit_text(s, 50, 6, BOT_W - 4, l.c_str(), text_width(l.c_str(), F6x12) <= BOT_W - 54 ? F6x12 : F5x9, BTN_TXT, "pause step");
+  } else
   {   // port version (git describe of starfleet2-3ds), right of the title
     const char* v = "Build " PORT_VERSION;
     fit_text(s, BOT_W - 8 - text_width(v, F6x12), 6, BOT_W, v, F6x12, HINT, "version");
@@ -2861,9 +2899,11 @@ static void pause_bottom(Surf& s, const TextScreen& ts) {
   const char* note = bridge ? "SAVE re-saves a mission you saved by name." :
                      menu ? "Saving works on the bridge." : "Saving: on the bridge. Settings: main menu.";
   if (chk_sec >= 0) {       // a checklist is running: the manual tick (learning review 7)
-    add_btn(50, 196, 156, 220, "STEP BACK", &F6x12, kind_act(A_STEPBACK));
+    int a, b;
+    split_gap(6, BOT_W - 6, 3, 0, a, b); add_btn(a, 196, b, 220, "STEP BACK", &F6x12, kind_act(A_STEPBACK));
     if (chk_step == 0) btns.back().off = true;
-    add_btn(164, 196, 270, 220, "SKIP STEP", &F6x12, kind_act(A_STEPSKIP));
+    split_gap(6, BOT_W - 6, 3, 1, a, b); add_btn(a, 196, b, 220, "SKIP STEP", &F6x12, kind_act(A_STEPSKIP));
+    split_gap(6, BOT_W - 6, 3, 2, a, b); add_btn(a, 196, b, 220, "STOP LIST", &F6x12, kind_act(A_STOPLIST));
   } else
   fit_text(s, (BOT_W - text_width(note, F6x12)) / 2, 200, BOT_W, note, F6x12, HINT, "pause");
   hint_strip(s, lefty_on ? "D-Right Select  D-Down Back  ZL Swap" : "A Select  B Back  ZL Swap");
@@ -2950,8 +2990,9 @@ static void fire(const Act& a) {
       manual_open = false; man_focus = 0; manual_closed(); save_settings();
       say("Checklist on the top screen", 2500);
       break;
-    case A_STEPBACK: if (chk_sec >= 0 && chk_step > 0) { chk_step--; chk_begin_step(last); chk_had = true; pause_open = false; say("Checklist: back one step", 2500); } break;
-    case A_STEPSKIP: if (chk_sec >= 0) { chk_step++; pause_open = false; if (chk_step >= (int)manual[chk_sec].steps.size()) chk_finish(last); else { chk_begin_step(last); say("Checklist: step skipped", 2500); } } break;
+    case A_STEPBACK: if (chk_sec >= 0 && chk_step > 0) { chk_step--; chk_begin_step(last); chk_had = true; chk_wait_end = false; } break;      // (the menu stays open: several steps in a row)
+    case A_STOPLIST: chk_sec = -1; chk_wait_end = false; pause_open = false; say("Checklist stopped (START > MANUAL has them all)", 3000); break;
+    case A_STEPSKIP: if (chk_sec >= 0) { chk_step++; if (chk_step >= (int)manual[chk_sec].steps.size()) { pause_open = false; chk_finish(last); } else chk_begin_step(last); } break;
     case A_GRID: grid_open = !grid_open; break;
     case A_LEAVE: pause_open = false; leave_until = now() + 20000; leave_next = now(); say(tut_num > 0 ? "Leaving the tutorial..." : "Leaving the mission...", 4000); break;
     case A_RDPAGE: rd_page(a.arg); break;
@@ -3294,7 +3335,7 @@ Redraw frame(const TextScreen& ts, uint16_t* top, uint16_t* bottom) {
       }
     }
   }
-  if (ts.text_mode && screen_has(ts, "SIGN-ON OPTIONS")) { tut_num = 0; tut_started = false; tut_finished = false; goal_met = false; leave_until = 0; }
+  if (ts.text_mode && screen_has(ts, "SIGN-ON OPTIONS")) { tut_num = 0; tut_started = false; tut_finished = false; goal_met = false; leave_until = 0; chk_sec = -1; chk_wait_end = false; }
   else menu_fresh = true;
   {   // the first Practice mission: its checklist follows by itself, like Tutorial 1's (cold read: nobody found it)
     static std::string started_for;
@@ -3346,6 +3387,26 @@ Redraw frame(const TextScreen& ts, uint16_t* top, uint16_t* bottom) {
     else press(K_ESC);
     leave_next = t + 900; busy_since = t;
   }
+  {   // a "wait" step while the ship stands still in open space: the clock is not running (cold read 1 and 2)
+    static uint32_t still_since = 0, warned = 0;
+    bool waiting = chk_sec >= 0 && chk_step < (int)manual[chk_sec].steps.size() &&
+                   (manual[chk_sec].steps[chk_step].what.compare(0, 4, "Wait") == 0 || manual[chk_sec].steps[chk_step].what.compare(0, 4, "Keep") == 0);
+    if (waiting && ts.text_mode && is_bridge(ts) && bridge_situation(ts) == SIT_CRUISE && bridge_speed(ts, 16) <= 0.0f && !frozen(ts) &&
+        trim(row_str(ts, 24, 0, 24)).compare(0, 13, "Select option") == 0) {
+      if (!still_since) still_since = t;
+      if (t - still_since > 10000 && t - warned > 20000) { warned = t; say("Clock stopped: tap SPD+, then ENGINES", 6000); }
+    } else still_since = 0;
+  }
+  // The manual and the START menu stop the game's clock while they are open (cold read 2: a day
+  // and a third of the supplies went by in orbit while the manual was being read).
+  {
+    static bool was_open = false, we_froze = false; static uint32_t froze_t = 0;
+    bool open_now = manual_open || pause_open;
+    if (open_now && !was_open && ts.text_mode && is_bridge(ts) && !frozen(ts) && !leave_until) { press(K_F, M_CTRL); we_froze = true; froze_t = t; }
+    if (!open_now && was_open && we_froze) { if (ts.text_mode && is_bridge(ts) && frozen(ts) && !leave_until) press(K_F, M_CTRL); we_froze = false; }
+    if (leave_until && we_froze && ts.text_mode && is_bridge(ts) && frozen(ts) && t - froze_t > 500) { press(K_F, M_CTRL); we_froze = false; }
+    was_open = open_now;
+  }
   bool chk_moved = false;
   if (!manual_open && !pause_open) { int was = chk_step, ws = chk_sec; chk_update(ts); if (was != chk_step || ws != chk_sec) chk_moved = true; }
   if (refusal_button && (int32_t)(t - refusal_until) >= 0) { refusal_button = 0; dirty(); }
@@ -3359,9 +3420,10 @@ Redraw frame(const TextScreen& ts, uint16_t* top, uint16_t* bottom) {
     int cs = coach_step(ts);
     if (cs >= 0) {
       // (one card at a time: the mission card, a refusal or "what now" is read first)
-      if (!(coach_seen & (1 << cs)) && !mis_show_pending && (chk_sec < 0 || cs == CS_ALERT) && !explain_until) {
+      if (!(coach_seen & (1 << cs)) && !mis_show_pending && (chk_sec < 0 || cs == CS_ALERT) && !explain_until && (tut_num == 0 || cs == CS_ALERT || cs == CS_MENU)) {
         coach_seen |= 1 << cs;
-        explain(COACH_TITLE[cs], cs == CS_MENU && practice_on(ts) ? "Practice is on. Tap Start a new mission. Stuck anywhere: press SELECT." : COACH_TEXT[cs]);
+        explain(COACH_TITLE[cs], cs == CS_MENU && practice_on(ts) ? "Practice is on. Tap Start a new mission. Stuck anywhere: press SELECT." :
+                cs == CS_MENU && tut1_done ? "Next: tap Practice (demo) mission, answer YES, then Start a new mission. Stuck anywhere: press SELECT." : COACH_TEXT[cs]);
         coach_card = cs;
         if (!draw_top) dirty();     // the next frame redraws the top with the card
       }
@@ -3369,8 +3431,9 @@ Redraw frame(const TextScreen& ts, uint16_t* top, uint16_t* bottom) {
       // (emulator, Nov 21: LAUNCH was ringed while "Comply with the request?" swallowed every key).
       const char* want = COACH_BUTTON[cs];
       if (cs == CS_MENU && practice_on(ts)) want = "Start a new mission";
+      else if (cs == CS_MENU && tut1_done) want = "Practice (demo) mission";
       if (cs == CS_DOCKED && !trim(row_str(ts, 9, 20, 26)).empty()) want = "LAUNCH";   // a target is loaded
-      if (chk_sec >= 0) want = 0;                                                        // (the checklist rings its own step)
+      if (chk_sec >= 0 || tut_num > 0) want = 0;                                         // (the checklist rings its own step)
       if (is_bridge(ts)) {
         std::string pr = row_str(ts, 24, 0, 24);
         if (pr.find('?') != std::string::npos) want = 0;
@@ -3599,6 +3662,7 @@ void touch(int x, int y, bool down) {
       if (i >= 0 && x >= p.x0 - 8 && x < p.x1 + 8 && y >= p.y0 - 8 && y < p.y1 + 8) {
         flash_id = p; flash_until = now() + 110; flash_on = true;
         chk_pressed = btns[i].label;
+        if (btns[i].label == "ALL BACK") say("Everyone is marked to return: now tap BEAM UP", 4000);
         fire(btns[i].act);
       }
       dirty();
@@ -3740,11 +3804,12 @@ void buttons(uint32_t held, uint32_t pr, uint32_t rel) {
     if (pr & B_B) { focus_mode = false; dirty(); }
     held &= ~PAD; pr &= ~PAD;
   }
-  if (pr & B_SELECT) fire(kind_act(in_flight(last) ? A_MISSION : A_KB));   // "What now?" in flight (re-save is in the START menu)
+  if (pr & B_SELECT) fire(kind_act(last.text_mode && !in_flight(last) && (kb_open || wants_text(last)) ? A_KB : A_MISSION));   // "What now?" in flight (re-save is in the START menu)
   if (pr & B_A) { press(K_ENTER); typed_enter(); chk_pressed = "A"; }
   if (pr & B_B) chk_pressed = "B";
   if (pr & B_L) chk_pressed = "L";
-  if (pr & B_B) press(K_ESC);
+  if ((pr & B_B) && row_mode == R_YESNO && last.text_mode && !kb_open) press(K_N);     // (B is NO: Esc does nothing at the game's questions)
+  else if (pr & B_B) press(K_ESC);
   if (pr & B_X) press(K_INSERT);           // fire phasers
   if (pr & B_Y) press(K_DELETE);           // fire torpedoes
   if (pr & B_L) press(K_F, M_CTRL);        // freeze / unfreeze

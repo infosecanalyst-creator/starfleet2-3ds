@@ -1,0 +1,7 @@
+kind: bridge
+hint: Tap YES or NO
+buttons: [PHASERS] [TORPS] [SHLD+] [SHLD-] [SPD+] [SPD-] [ECM] [FREEZE] [GO] [HOME] [YES] [NO] [STARS] [SYSTEM] [WAR] [COMBAT] [FLEET] [ORDERS] [LOG]
+explain cards: 19/19
+quick reference: QUICK REFERENCE: BRIDGE
+start menu: [RESUME] [WHAT NOW?] [MANUAL] [COACH: ON] [SAVE] [LEAVE MISSION] [EXIT GAME (grey)]
+what now: The game asks: Escorts to orbit? YES circles the planet (needed to scan it or send landing parties); NO stays beside it. [ring YES]

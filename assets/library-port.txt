@@ -26,13 +26,13 @@ BEFORE YOU START: 1) At sign-on tap Practice (demo) mission and answer YES. If t
 
 STEP LAUNCH | Tap LAUNCH to leave the starfort | We have undocked
 STEP STARS | Tap STARS: the star map opens | ID/class
-STEP MAP | Tap a star close to the pink box | -
+STEP MAP | Tap a star within 5 squares of the box | -
 STEP PROBES | Tap PROBES | Launch Control
 STEP LAUNCH CONTROL | Tap LAUNCH CONTROL | PROBES CONTROL
 STEP LAUNCH | Tap LAUNCH: a probe flies to that star | -
-STEP B | Press B. Probe 2 or 3 more stars this way | -
+STEP B | Press B. For more probes: NEXT PROBE first | -
 STEP - | Keep flying: wait for the probe report | arrived at RegLoc
-STEP - | Read it: how many planets in the system? | -
+STEP - | 0 planets? Probe another star. Else go on | -
 STEP MAP | Tap a star whose report showed planets | -
 STEP TARGETER | Tap TARGETER: speed 8 is offered | Max. Vel :  8
 STEP ENTER | Tap ENTER to accept the speed | Select target
@@ -716,7 +716,7 @@ HOW: 1) Tap SHIP MENUS, SCIENCE, then Medical, to read rest, morale, casualties 
 
 WHY: Rest falls slowly in ORANGE and fast in RED; under 25% the MEDICAL light comes on. Morale drops with no supplies, extra passengers, heavy losses or disease, and at zero the crew mutinies.
 
-IF IT DOESN'T WORK: Rest mode needs the ship standing still and ends when you start the engines. The game's manual says mission time keeps running while you rest; this has not been checked in play. A disease brought up by a landing party is cured by docking.
+IF IT DOESN'T WORK: Rest mode needs the ship standing still and ends when you start the engines. A disease brought up by a landing party is cured by docking.
 
 # Lost: which system am I in?
 @shelf PROBLEMS

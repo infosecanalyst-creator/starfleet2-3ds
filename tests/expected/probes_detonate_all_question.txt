@@ -1,7 +1,7 @@
 kind: plain
-hint: Tap one of the keys below
-buttons: [PG UP] [] [] [] [] [PG DN] [SPACE] [EXIT] [DETONATE] [STARS] [SYSTEM] [WAR] [COMBAT] [FLEET] [ORDERS] [LOG]
+hint: YES clears used probes so stored ones load
+buttons: [PG UP] [] [PG DN] [] [SPACE] [] [] [YES] [NO] [STARS] [SYSTEM] [WAR] [COMBAT] [FLEET] [ORDERS] [LOG]
 explain cards: 16/16
 quick reference: QUICK REFERENCE: THIS VIEW
 start menu: [RESUME] [WHAT NOW?] [MANUAL] [COACH: ON] [SAVE (grey)] [LEAVE MISSION] [EXIT GAME (grey)]
-what now: This is one of the ship's pages. The buttons below are its keys; B goes back to the bridge.
+what now: The game asks: Detonate all probes on station? Answer YES or NO below.
