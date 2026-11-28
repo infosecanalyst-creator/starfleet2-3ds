@@ -1578,7 +1578,15 @@ static bool ct_on = false; static int ct_x0, ct_y0, ct_x1, ct_y1;   // the empty
 static void card_area(const TextScreen& ts, int& x0, int& x1, int& ybot, int& ytop) {
   x0 = 4; x1 = TOP_W - 4; ybot = 222; ytop = 2;
   if (!ts.text_mode) return;
-  if (is_bridge(ts)) { if (top_w != BOT_W) { x1 = 350; ybot = 192; ytop = 12; } return; }
+  if (is_bridge(ts)) {
+    if (top_w != BOT_W) {
+      x1 = 350; ybot = 192; ytop = 12;
+      // a ship in TARGET DATA: keep that panel (right) in view, the card stays over COMMS and
+      // ENERGY (capture 3: the card hid the locks a checklist step talks about)
+      if (row_str(ts, 9, 59, 79).find("TARGET DATA") != std::string::npos && row_str(ts, 11, 59, 79).find_first_of("0123456789") != std::string::npos) x1 = 236;
+    }
+    return;
+  }
   if (ct_on) { x0 = ct_x0; x1 = ct_x1; ybot = ct_y1; ytop = ct_y0; }
 }
 static std::vector<std::string> wrap_words(const std::string& text, int maxc) {
@@ -3563,6 +3571,12 @@ Redraw frame(const TextScreen& ts, uint16_t* top, uint16_t* bottom) {
     else if (explain_until && ctx != card_ctx && !quickref_up && !manual_open && !pause_open) { explain_until = 0; coach_card = -1; dirty(); }
     if (explain_until && explain_title == "THE GAME SAYS" && pop_text.empty()) { explain_until = 0; dirty(); }
     if (explain_until && explain_title == "SAVE THE MISSION" && !(ts.text_mode && screen_has(ts, "Enter file name"))) { explain_until = 0; dirty(); }
+  }
+  {   // the keyboard opened on a picture (boarding: the letter A) closes when the picture does (capture 3)
+    static bool kb_pic = false;
+    if (!ts.text_mode && kb_open) kb_pic = true;
+    if (!kb_open) kb_pic = false;
+    if (ts.text_mode && !last_text_mode && kb_pic) { kb_open = false; kb_pic = false; dirty(); }
   }
   memcpy(&last, &ts, sizeof ts);
   last_text_mode = ts.text_mode;
