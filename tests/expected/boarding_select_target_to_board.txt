@@ -1,7 +1,7 @@
 kind: bridge
-hint: Tap a target, tap it again to lock on
-buttons: [PHASERS] [TORPS] [SHLD+] [SHLD-] [SPD+] [SPD-] [ECM] [FREEZE] [GO] [HOME] [LANDING PARTY (grey)] [BOARDING PARTY] [PERSONL XFER] [MATERIAL XFR] [BACK] [STARS] [SYSTEM] [WAR] [COMBAT] [FLEET] [ORDERS] [LOG]
-explain cards: 22/22
+hint: Tap a ship: the box jumps there. ENTER picks it
+buttons: [PHASERS] [TORPS] [SHLD+] [SHLD-] [SPD+] [SPD-] [ECM] [FREEZE] [GO] [HOME] [ENTER] [BACK] [STARS] [SYSTEM] [WAR] [COMBAT] [FLEET] [ORDERS] [LOG]
+explain cards: 19/19
 quick reference: QUICK REFERENCE: BRIDGE
 start menu: [RESUME] [WHAT NOW?] [MANUAL] [COACH: ON] [SAVE] [LEAVE MISSION] [EXIT GAME (grey)]
 what now: 1) Torpedoes are locked on (T in TARGET DATA): tap TORPS. Both tubes fire, then reload for a few seconds. 2) Phasers are locked on (P in TARGET DATA): tap PHASERS. 3) Not ready to fight? HOME flies you to the starfort. FREEZE stops time while you think. [ring TORPS]

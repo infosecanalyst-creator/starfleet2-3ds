@@ -653,6 +653,18 @@ static std::vector<MenuItem> parse_menu(const TextScreen& ts, std::string& promp
     MenuItem b = a; b.label = "SPD+"; b.key = hyper ? 4 : 2;
     items.insert(items.begin(), b); items.insert(items.begin(), a);
   }
+  // "Select target" on the bridge display (weapons, tractor beam, scanners, COMMS > Enemy,
+  // pursuit): the menu row left behind it is dead; ENTER picks what the box is on, BACK gives up.
+  // (capture 3: no ENTER, and the old menu buttons stayed)
+  { std::string d = row_str(ts, 1, 26, 50);
+    if ((prompt.compare(0, 13, "Select target") == 0 || prompt.compare(0, 21, "Select pursuit target") == 0) &&
+        (d.find("TACTICAL") != std::string::npos || d.find("ORBITAL") != std::string::npos) &&
+        [&] { int c, r; return find_tdb(ts, c, r, 28, 2, 49, 13); }()) {     // (a stale prompt after the lock has no box)
+      items.clear();
+      MenuItem e; e.hot = -1; e.sel = false; e.mods = 0; e.label = "ENTER"; e.key = 13;
+      MenuItem x = e; x.label = "BACK"; x.key = 27;
+      items.push_back(e); items.push_back(x);
+    } }
   return items;
 }
 static bool window_hints(const TextScreen& ts) {     // a window with its own keys is open
@@ -725,6 +737,7 @@ static int row_page = 0;   // page of the game's menu row shown (MORE moves on; 
 // fits the touch screen's prompt strip without scrolling; the top screen's hint strip shows it too).
 enum Situation { SIT_UNKNOWN, SIT_DOCKED, SIT_CRUISE, SIT_ALERT, SIT_ORBIT };
 static Situation bridge_situation(const TextScreen& ts);
+static bool in_orbit(const TextScreen& ts);
 // 0 none, 1 ORANGE (in enemy or neutral space, nobody near: shields stay down), 2 RED (a fight)
 static int alert_level(const TextScreen& ts) {
   std::string a0 = row_str(ts, 15, 40, 52), a1 = row_str(ts, 16, 40, 52);
@@ -763,7 +776,7 @@ static const char* context_hint(const TextScreen& ts) {
     int c, r;
     bool box = find_tdb(ts, c, r, 29, 2, 49, 13);
     bool target = tap_mode == TM_TARGET || (tap_mode == TM_AUTO && box);
-    if (target) return box ? "Tap a target, tap it again to lock on" : "No target box (Weapons: Manual)";
+    if (target) return box ? "Tap a ship: the box jumps there. ENTER picks it" : "No target box (Weapons: Manual)";
     switch (bridge_situation(ts)) {   // the next step for this situation (plan item 4)
       case SIT_DOCKED: return "Docked: LAUNCH leaves the starfort";
       case SIT_ALERT:
@@ -914,7 +927,8 @@ static std::string abbr_word(const std::string& l) { for (auto& w : FULLWORDS) i
 static bool mission_on = false;          // a mission is being flown (set by the lights row, cleared at sign-on)
 static bool save_pending = false;
 static uint32_t btn_sig = 0, btn_sig_t = 0;          // the buttons on screen, and when they last changed
-static uint32_t leave_until = 0, leave_next = 0;     // START > LEAVE: the port is walking the game's Quit menu
+static uint32_t leave_until = 0, leave_next = 0;
+static bool leave_xdos = false;   // a finished tutorial: leave by the game's Exit to DOS; the start script runs the game again     // START > LEAVE: the port is walking the game's Quit menu
 static bool tut_finished = false;                    // the tutorial's checklists are done: SELECT says how to leave
 static bool goal_met = false;                        // the game said the mission's minimum is met
 static void rd_page(int dir);
@@ -963,6 +977,12 @@ static void bottom_rows(Surf& s, const TextScreen& ts) {
   if (!yesno && screen_has(ts, "PROBES CONTROL") && !items.empty()) {     // (cold read 2: only the unmentioned D-Pad reached a loaded probe)
     items.push_back(MenuItem{"NEXT PROBE", -1, false, 5, 0});
   }
+  if (!yesno && screen_has(ts, "MESSAGE TRANSMISSION CONTROL"))   // Send is Enter, Cancel is Esc (capture 3: S and C did nothing)
+    for (auto& it : items) {
+      std::string u = it.label; for (auto& c : u) c = (char)toupper((unsigned char)c);
+      if (trim(u) == "SEND") { it.key = 13; it.mods = 0; it.hot = -1; }
+      else if (trim(u) == "CANCEL") { it.key = 27; it.mods = 0; it.hot = -1; }
+    }
   if (int lp = lp_table(ts)) {         // the landing-party table: Enter activates, Esc drops the plan, Shift+A recalls all
     items.clear(); yesno = false;
     items.push_back(MenuItem{lp == 2 ? "BEAM UP" : "BEAM DOWN", -1, false, 13, 0});
@@ -1012,7 +1032,7 @@ static void bottom_rows(Surf& s, const TextScreen& ts) {
           std::string lab = full_word(items[i].label);
           const Font* lf = text_width(lab.c_str(), F8x16) <= b - a - 6 ? &F8x16 : &F6x12;
           add_btn(a, y0, b, y1, lab, lf, key_act(k, items[i].mods), -1, items[i].sel);
-          if (items[i].label == "LANDING PRTY" && bridge_situation(ts) != SIT_ORBIT) btns.back().off = true;   // (the game refuses it away from a planet)
+          if (items[i].label == "LANDING PRTY" && !in_orbit(ts)) btns.back().off = true;   // (the game refuses it away from a planet)
         }
         if (main_menu) add_btn(6, ROW1_Y0, rx1, ROW1_Y1, "CLOSE MENUS", &F8x16, kind_act(A_GRID));
         else add_btn(6, ROW1_Y0, rx1, ROW1_Y1, "BACK", &F8x16, key_act(K_ESC));
@@ -1087,6 +1107,9 @@ static void bottom_rows(Surf& s, const TextScreen& ts) {
     int a, b; split_gap(6, BOT_W - 6, 7, i, a, b, TAB_GAP);
     add_btn(a, ROW2_Y0, b, ROW2_Y1, views[i], &F6x12, kind_act(A_VIEW, i));
     if (!in_mission) btns.back().off = true;
+    // Tutorials refuse ORDERS and LOG ("NOT AVAILABLE IN TUTORIALS"), and in orbit that box stayed
+    // up for good with all input dead (capture 3). Grey them there.
+    if (tut_num > 0 && (i == 5 || i == 6)) btns.back().off = true;
   }
 }
 
@@ -1457,6 +1480,10 @@ static void explain_spot(const TextScreen& ts, int x, int y) {
 // ------------------------------------------------------------------ checklists (learning design step 3)
 static bool screen_has_ci(const TextScreen& ts, const std::string& needle) {
   if (needle.empty()) return false;
+  // "A ;; B": either text proves the step (capture 3: a planet under attack never says "Survey
+  // complete", only "This planet's name is ...")
+  size_t alt = needle.find(" ;; ");
+  if (alt != std::string::npos) return screen_has_ci(ts, needle.substr(0, alt)) || screen_has_ci(ts, needle.substr(alt + 4));
   // a proof written all in capitals is matched as written ("ENTERED" must not match "Entered orbit")
   bool lower = false; for (char c : needle) if (c >= 'a' && c <= 'z') lower = true;
   if (!lower) { for (int r = 0; r < 25; r++) if (row_str(ts, r, 0, 80).find(needle) != std::string::npos) return true; return false; }
@@ -1854,6 +1881,11 @@ static float bridge_speed(const TextScreen& ts, int row) {   // row 15: set ("s:
   std::string r = row_str(ts, row, 52, 60);
   size_t p = r.find(':');
   return p == std::string::npos ? -1.0f : (float)atof(r.c_str() + p + 1);
+}
+// In orbit at any alert level: the display title reads ORBITAL, or Mode reads IN ORBIT (capture 3:
+// bridge_situation() says ALERT first, so LANDING PRTY was greyed in orbit at orange/red alert).
+static bool in_orbit(const TextScreen& ts) {
+  return row_str(ts, 1, 26, 50).find("ORBITAL") != std::string::npos || row_str(ts, 13, 18, 26).find("IN ORBIT") != std::string::npos;
 }
 static bool ecm_on(const TextScreen& ts) { return row_str(ts, 18, 40, 44).find("ECM") != std::string::npos && (ts.at[18][41] >> 4) != 0; }
 
@@ -3337,7 +3369,7 @@ Redraw frame(const TextScreen& ts, uint16_t* top, uint16_t* bottom) {
       }
     }
   }
-  if (ts.text_mode && screen_has(ts, "SIGN-ON OPTIONS")) { tut_num = 0; tut_started = false; tut_finished = false; goal_met = false; leave_until = 0; chk_sec = -1; chk_wait_end = false; }
+  if (ts.text_mode && screen_has(ts, "SIGN-ON OPTIONS")) { tut_num = 0; tut_started = false; tut_finished = false; goal_met = false; leave_until = 0; leave_xdos = false; chk_sec = -1; chk_wait_end = false; }
   else menu_fresh = true;
   {   // the first Practice mission: its checklist follows by itself, like Tutorial 1's (cold read: nobody found it)
     static std::string started_for;
@@ -3374,14 +3406,22 @@ Redraw frame(const TextScreen& ts, uint16_t* top, uint16_t* bottom) {
   if (leave_until && (int32_t)(leave_until - t) <= 0) leave_until = 0;
   if (leave_until && ts.text_mode && queue.empty() && (int32_t)(t - leave_next) >= 0) {
     std::string p24 = row_str(ts, 24, 0, 24), m24 = row_str(ts, 24, 24, 80);
-    if (!in_flight(ts) && !screen_has(ts, "give up on this mission")) leave_until = 0;
+    if (leave_xdos) {
+      // (capture 3: after a kill, Tutorial 4's Quit only answers "return to starfort". Answering NO
+      // says "TO EXIT, USE EXIT COMMAND [Ctrl][X]"; its two questions lead out to DOS, and the start
+      // script runs Star Fleet II again, so the player lands on the sign-on screen.)
+      if (screen_has(ts, "Exit to DOS?") || screen_has(ts, "EXIT TO DOS?")) press(K_Y);
+      else if (screen_has(ts, "USE EXIT COMMAND")) press(K_ENTER);
+      else if (in_flight(ts)) press(K_X, M_CTRL);
+      else { leave_xdos = false; leave_until = 0; }
+    }
+    else if (!in_flight(ts) && !screen_has(ts, "give up on this mission")) leave_until = 0;
     else if (screen_has(ts, "give up on this mission")) { if (tut_num > 0) press(K_N); leave_until = 0; }
     else if (p24.find("want to stop") != std::string::npos) press(K_Y);
     else if (p24.find("claim victory") != std::string::npos) {
       // (harness, Nov 27: once the goal is met the game's Quit only says "return to starfort")
-      press(K_Y); leave_until = 0;
-      if (tut_num > 0) explain("TUTORIAL COMPLETE", "The game does not let you quit a finished tutorial from its menu. Press START and tap EXIT GAME, then start Star Fleet II again. Or fly on: nothing here counts.");
-      else explain("GOAL MET", "The mission's goal is met, so the game ends it at the starfort: tap STARFORT, answer YES, then YES to dock and YES to conclude the mission.");
+      if (tut_num > 0) { press(K_N); leave_xdos = true; leave_until = now() + 30000; say("Leaving the tutorial: the game starts again at sign-on...", 8000); }
+      else { press(K_Y); leave_until = 0; explain("GOAL MET", "The mission's goal is met, so the game ends it at the starfort: tap STARFORT, answer YES, then YES to dock and YES to conclude the mission."); }
     }
     else if (is_bridge(ts) && m24.find("Quit") != std::string::npos) press(K_Q);
     else if (is_bridge(ts) && m24.find("Spcl srvcs") != std::string::npos) press(K_S);

@@ -1,0 +1,7 @@
+kind: plain
+hint: NO keeps it for later; YES throws it away
+buttons: [PG UP] [] [PG DN] [] [SPACE] [] [] [YES] [NO] [STARS] [SYSTEM] [WAR] [COMBAT] [FLEET] [ORDERS] [LOG]
+explain cards: 16/16
+quick reference: QUICK REFERENCE
+start menu: [RESUME] [WHAT NOW?] [MANUAL] [COACH: ON] [SAVE (grey)] [GAME SETTINGS (grey)] [EXIT GAME (grey)]
+what now: NO keeps this mission for later (Resume a saved game). YES throws it away. [ring NO]

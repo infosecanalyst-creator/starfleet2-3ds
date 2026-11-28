@@ -366,7 +366,7 @@ STEP NO | Display planetary map? Answer NO | -
 STEP YES | Landing parties to this planet? YES | By your command
 STEP + TEAM | Tap + TEAM: one team to explore | -
 STEP BEAM DOWN | Tap BEAM DOWN | Arrived safely
-STEP - | Wait about a day for their report | Survey complete
+STEP - | Wait about a day for their report | Survey complete ;; planet's name is
 STEP PLANET | Tap the planet on the touch screen | -
 STEP LANDING PARTY | Tap LANDING PARTY | are still alive on the planet
 STEP YES | Beam landing party up? Answer YES | teams to stay
@@ -394,15 +394,15 @@ WHY: TARGET DATA on the top screen lists each enemy; the letters P and T at the 
 
 MORE TO TRY: Aim a tube by hand: SHIP MENUS, COMBAT, WEAPONS, TORPEDOES, MODE, MANUAL, then tap a ship on the touch screen and tap ENTER. STANDBY in the same menu holds a tube back. OBLITERATOR PODS in the WEAPONS menu wreck the planet below: the game asks you to confirm first.
 
-IF IT DOESN'T WORK: "not loaded" means the tubes are reloading: wait and tap once. "Phasers not energized" means they are recharging. The three boxes after the first kill say the mission is complete; in a tutorial that only means its goal is met. To leave afterwards press START and tap EXIT GAME, then start the game again.
+IF IT DOESN'T WORK: "not loaded" means the tubes are reloading: wait and tap once. "Phasers not energized" means they are recharging. The three boxes after the first kill say the mission is complete; in a tutorial that only means its goal is met. To leave afterwards press START and tap LEAVE TUTORIAL: the game starts again at the sign-on screen.
 
 # Tutorial 6: capturing ships
 @shelf PROCEDURES
 @done TUTORIAL 6 DONE. You made a ship surrender and captured it. Tow it home with the tractor beam for the reward. To leave: press START, then tap LEAVE TUTORIAL.
 From Centurion rank this is how you earn the most. The tutorial starts in orbit at red alert, with one Alliance freighter beside you.
-STEP SHIP MENUS | Tap SHIP MENUS | -
+STEP SHIP MENUS | Press B if needed, then tap SHIP MENUS | -
 STEP COMMS | Tap COMMS | -
-STEP - | Tap SEND, then ENEMY | MESSAGE TRANSMISSION CONTROL
+STEP - | Tap SEND MSG, then ENEMY | MESSAGE TRANSMISSION CONTROL
 STEP SEND | Demand surrender is lit: tap SEND | We surrender
 STEP YES | Prepare a boarding party? Answer YES | Hit&Run
 STEP CAPTURE | Tap CAPTURE | -

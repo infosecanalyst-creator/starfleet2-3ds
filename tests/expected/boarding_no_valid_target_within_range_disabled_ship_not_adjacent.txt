@@ -1,6 +1,6 @@
 kind: bridge
 hint: Red alert! X phasers, Y torpedoes, L freeze
-buttons: [PHASERS] [TORPS] [SHLD+] [SHLD-] [SPD+] [SPD-] [ECM] [FREEZE] [GO] [HOME] [LANDING PARTY (grey)] [BOARDING PARTY] [PERSONL XFER] [MATERIAL XFR] [BACK] [STARS] [SYSTEM] [WAR] [COMBAT] [FLEET] [ORDERS] [LOG]
+buttons: [PHASERS] [TORPS] [SHLD+] [SHLD-] [SPD+] [SPD-] [ECM] [FREEZE] [GO] [HOME] [LANDING PARTY] [BOARDING PARTY] [PERSONL XFER] [MATERIAL XFR] [BACK] [STARS] [SYSTEM] [WAR] [COMBAT] [FLEET] [ORDERS] [LOG]
 explain cards: 22/22
 quick reference: QUICK REFERENCE: BRIDGE
 start menu: [RESUME] [WHAT NOW?] [MANUAL] [COACH: ON] [SAVE] [LEAVE MISSION] [EXIT GAME (grey)]

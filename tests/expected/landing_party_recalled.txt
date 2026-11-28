@@ -1,6 +1,6 @@
 kind: bridge
 hint: Orange: Alliance space. Tap the display to steer
-buttons: [PHASERS (grey)] [TORPS (grey)] [SHLD+] [SHLD-] [SPD+] [SPD-] [ENGINES] [STARFORT] [LANDING PARTY (grey)] [BOARDING PARTY] [PERSONL XFER] [MATERIAL XFR] [BACK] [STARS] [SYSTEM] [WAR] [COMBAT] [FLEET] [ORDERS] [LOG]
+buttons: [PHASERS (grey)] [TORPS (grey)] [SHLD+] [SHLD-] [SPD+] [SPD-] [ENGINES] [STARFORT] [LANDING PARTY] [BOARDING PARTY] [PERSONL XFER] [MATERIAL XFR] [BACK] [STARS] [SYSTEM] [WAR] [COMBAT] [FLEET] [ORDERS] [LOG]
 explain cards: 20/20
 quick reference: QUICK REFERENCE: BRIDGE
 start menu: [RESUME] [WHAT NOW?] [MANUAL] [COACH: ON] [SAVE] [LEAVE MISSION] [EXIT GAME (grey)]
