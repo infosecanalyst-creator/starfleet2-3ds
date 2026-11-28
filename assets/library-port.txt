@@ -351,6 +351,32 @@ WHY: STARFORT is the autopilot home: it finds the nearest starfort, sets both ta
 
 IF IT DOESN'T WORK: Nothing happens? The long way is the WAR map: tap your starfort, TARGETER, ENTER, B, ENGINES. Press SELECT at any time: it says what to do next.
 
+# Tutorial 2: landing parties
+@shelf PROCEDURES
+@done TUTORIAL 2 DONE. You sent a landing party down, read its report and brought it home. To leave: press START, then tap LEAVE TUTORIAL.
+This tutorial starts in open space near several planets. You will orbit one, send a team down to explore it, and bring the team back.
+STEP SYSTEM | Tap SYSTEM: the system map opens | MAP OF STAR SYSTEM
+STEP MAP | Tap a planet (a letter on the map) | -
+STEP TARGETER | Tap TARGETER | Target #
+STEP ENTER | Tap ENTER to load the target | ENTERED
+STEP B | Press B for the bridge | -
+STEP ENGINES | Tap ENGINES: the ship flies there | -
+STEP YES | Establish orbit? Answer YES | Entered orbit
+STEP NO | Display planetary map? Answer NO | -
+STEP YES | Landing parties to this planet? YES | By your command
+STEP + TEAM | Tap + TEAM: one team to explore | -
+STEP BEAM DOWN | Tap BEAM DOWN | Arrived safely
+STEP - | Wait about a day for their report | Survey complete
+STEP PLANET | Tap the planet on the touch screen | -
+STEP LANDING PARTY | Tap LANDING PARTY | are still alive on the planet
+STEP YES | Beam landing party up? Answer YES | teams to stay
+STEP ALL BACK | Tap ALL BACK: nobody stays | -
+STEP BEAM UP | Tap BEAM UP | landing party on board
+
+WHY: A landing party is how you survey a planet, set up a base, fetch supplies or negotiate. Each team is 10 people; the game picks the mix of crew and shock troops for the mission in the lit row. An explore team reports about one day after it lands: the planet's name, who holds it and how it is governed. Teams can be attacked by natives, so bring them back when the job is done.
+
+IF IT DOESN'T WORK: "Already surveyed!" means this planet has been explored: pick another planet. A gas giant (Class G) cannot be landed on. If a red alert starts near a planet, Alliance freighters are in orbit there: they do not shoot. The first officer may ask about disabling them: either answer is fine here. If the scan shows no question about landing parties, tap the planet on the touch screen and tap LANDING PARTY.
+
 # Tutorial 4: weapons
 @shelf PROCEDURES
 @done TUTORIAL 4 DONE. You fired torpedoes and phasers and destroyed a ship. PHASERS and TORPS light up when they have a lock. To leave, press START.
@@ -369,6 +395,27 @@ WHY: TARGET DATA on the top screen lists each enemy; the letters P and T at the 
 MORE TO TRY: Aim a tube by hand: SHIP MENUS, COMBAT, WEAPONS, TORPEDOES, MODE, MANUAL, then tap a ship on the touch screen and tap ENTER. STANDBY in the same menu holds a tube back. OBLITERATOR PODS in the WEAPONS menu wreck the planet below: the game asks you to confirm first.
 
 IF IT DOESN'T WORK: "not loaded" means the tubes are reloading: wait and tap once. "Phasers not energized" means they are recharging. The three boxes after the first kill say the mission is complete; in a tutorial that only means its goal is met. To leave afterwards press START and tap EXIT GAME, then start the game again.
+
+# Tutorial 6: capturing ships
+@shelf PROCEDURES
+@done TUTORIAL 6 DONE. You made a ship surrender and captured it. Tow it home with the tractor beam for the reward. To leave: press START, then tap LEAVE TUTORIAL.
+From Centurion rank this is how you earn the most. The tutorial starts in orbit at red alert, with one Alliance freighter beside you.
+STEP SHIP MENUS | Tap SHIP MENUS | -
+STEP COMMS | Tap COMMS | -
+STEP - | Tap SEND, then ENEMY | MESSAGE TRANSMISSION CONTROL
+STEP SEND | Demand surrender is lit: tap SEND | We surrender
+STEP YES | Prepare a boarding party? Answer YES | Hit&Run
+STEP CAPTURE | Tap CAPTURE | -
+STEP CONTINUE | Read the advice, then CONTINUE | -
+STEP - | Picture: SPACE places a team. Twice | -
+STEP - | Then KEYBOARD and the letter A | has been captured
+STEP NO | Leave team of guards? Answer NO | Troops returned
+
+WHY: A captured ship delivered to a starfort is worth far more than a wreck. A ship gives up when it is outgunned or disabled. The boarding picture on the top screen shows the enemy ship's decks: the arrows move the cursor to a deck, SPACE puts a team there, and A (on the KEYBOARD) starts the assault. BACK leaves the picture when it says the ship has been captured.
+
+MORE TO TRY: Tow it home. SHIP MENUS, ENGINEERING, TRACTOR BEAM, then tap the ship. "Target out of range" means it is not beside you in the orbit: PG DN lowers your orbit, PG UP raises it. With "Tractor beam on", tap STARFORT (or HOME), YES. Docking with the prize brings the thanks of the starfort and your share.
+
+IF IT DOESN'T WORK: "No valid target within range" when boarding means the ship is elsewhere in the orbit: change orbit level first. If the ship does not surrender, set weapons to disable (answer YES when the first officer asks) and fire until COMMS says "Enemy ship disabled!".
 
 # Launch from a starfort
 @shelf PROCEDURES

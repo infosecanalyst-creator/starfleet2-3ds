@@ -1,2 +1,2 @@
 kind: graphics
-buttons: [BACK TO THE BRIDGE]
+buttons: [] [] [SPACE] [] [] [ENTER] [BACK] [KEYBOARD]

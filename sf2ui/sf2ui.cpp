@@ -1304,6 +1304,7 @@ static const Gloss GLOSSARY[] = {
   {"SPD-", "SUBLIGHT SPEED DOWN", "Sublight speed -0.1 c. To stop at once use STOP (emergency stop)."},
   {"LAUNCH", "LAUNCH", "Leave the starfort: sets sublight 0.5 if no speed is set and starts the engines."},
   {"ENGINES", "ENGINES ON", "Starts the engines (F9). If no speed is set it sets sublight 0.5 first."},
+  {"ECM", "ECM (lit = on)", "Electronic countermeasures jam weapon locks, theirs AND yours: with it on, PHASERS and TORPS cannot lock. Tap to switch. Uses energy."},
   {"HOME", "HOME TO THE STARFORT", "The same as STARFORT: the ship flies to the nearest starfort by itself. The way out of a fight you are not ready for."},
   {"GO", "ENGINES ON", "Starts the engines (F9). If no speed is set it sets sublight 0.5 first."},
   {"STOP", "EMERGENCY STOP", "All engines stop (F10). The ship stops at once."},
@@ -1647,7 +1648,7 @@ static std::string advise(const TextScreen& ts, const char** button) {
   *button = 0;
   std::vector<std::string> say_list;
   auto add = [&](const std::string& t, const char* b) { if (say_list.empty() && b) *button = b; say_list.push_back(t); };
-  if (!ts.text_mode) return mission_on ? "This is the planet's map. BACK (or B) returns to the bridge." : "Wait for the picture to finish, or press A.";
+  if (!ts.text_mode) return mission_on ? "A picture is on the top screen (a planet's map, a boarding plan). Its keys are named on it: the arrows and SPACE are on the touch screen, KEYBOARD has the letters. BACK (or B) leaves it." : "Wait for the picture to finish, or press A.";
   if (int lp = lp_table(ts)) {
     *button = lp == 1 ? "+ TEAM" : "ALL BACK";
     return lp == 1 ? "Landing parties. The lit row is a mission: the arrows change the row, + TEAM puts a team of 10 on it. For a first look: one team on eXplore/survey, then BEAM DOWN; their report comes about a day later. CANCEL sends nobody."
@@ -1879,7 +1880,7 @@ static void bridge_bottom(Surf& s, const TextScreen& ts) {
         if (cur > 0.0f) row(4, "STOP", key_act(K_F10)); else row(4, "ENGINES", kind_act(A_ENGINES));
         row(5, "STARFORT", key_act(K_J, M_ALT));
       } else {
-        add_btn(AX0, ry(4), AXM, ry(4) + 24, ecm_on(ts) ? "ECM OFF" : "ECM ON", &F5x9, key_act(K_E, M_ALT));
+        add_btn(AX0, ry(4), AXM, ry(4) + 24, "ECM", &F6x12, key_act(K_E, M_ALT), -1, ecm_on(ts));       // (lit while it is on)
         add_btn(AXM + GAP, ry(4), AX1, ry(4) + 24, frozen(ts) ? "RESUME" : "FREEZE", &F5x9, key_act(K_F, M_CTRL));
         if (cur > 0.0f) add_btn(AX0, ry(5), AXM, ry(5) + 24, "STOP", &F6x12, key_act(K_F10));
         else add_btn(AX0, ry(5), AXM, ry(5) + 24, "GO", &F6x12, kind_act(A_ENGINES));
@@ -1920,6 +1921,7 @@ static void steer_to(const TextScreen& ts, int px, int py) {
     return;
   }
   if (row_str(ts, 1, 26, 50).find("ORBITAL") != std::string::npos) {     // in orbit a tap on the planet opens the teleporters
+    chk_pressed = "PLANET";
     press(K_P, M_ALT); busy_since = now(); say("Teleporters: landing parties and transfers", 2500); return;
   }
   chk_pressed = "TACTICAL";
@@ -2768,13 +2770,28 @@ static void manual_bottom(Surf& s) {
 // ------------------------------------------------------------------ graphics (title art) screens
 static void graphics_bottom(Surf& s) {
   s.fill(0, 0, BOT_W, BOT_H, BG);
-  if (mission_on) {       // a picture inside a mission is the planet's map: only Esc leaves it (harness, Nov 26)
-    fit_text(s, (BOT_W - text_width("PLANET MAP", F8x16)) / 2, 30, BOT_W, "PLANET MAP", F8x16, TITLE, "planet map");
-    const char* l1 = "The map and the planet's data are on the";
-    const char* l2 = "top screen: minerals, life, cities, defenses.";
-    fit_text(s, (BOT_W - text_width(l1, F6x12)) / 2, 60, BOT_W - 6, l1, F6x12, BTN_TXT, "planet map");
-    fit_text(s, (BOT_W - text_width(l2, F6x12)) / 2, 74, BOT_W - 6, l2, F6x12, BTN_TXT, "planet map");
-    add_btn(40, 110, 280, 160, "BACK TO THE BRIDGE", &F8x16, key_act(K_ESC));
+  if (mission_on) {
+    // A picture inside a mission: the planet's map (only Esc leaves it), the boarding plan (arrows,
+    // SPACE per team, letters), the invasion screens (letters). The keys are named on the picture,
+    // so the touch screen offers all of them: arrows, SPACE, ENTER, the keyboard, and the way back.
+    if (kb_open) { keyboard(s); }
+    else {
+      const char* l1 = "The picture is on the top screen.";
+      const char* l2 = "Its keys are named there; KEYBOARD has the letters.";
+      fit_text(s, (BOT_W - text_width(l1, F6x12)) / 2, 6, BOT_W - 6, l1, F6x12, BTN_TXT, "picture");
+      fit_text(s, (BOT_W - text_width(l2, F6x12)) / 2, 20, BOT_W - 6, l2, F6x12, HINT, "picture");
+      static const char* labs[9] = {"", "\x18", "", "\x1b", "SPACE", "\x1a", "", "\x19", ""};
+      static const Key keys[9] = {K_NONE, K_UP, K_NONE, K_LEFT, K_SPACE, K_RIGHT, K_NONE, K_DOWN, K_NONE};
+      for (int i = 0; i < 9; i++) {
+        if (keys[i] == K_NONE) continue;
+        int a, b, y0, y1; split_gap(60, 260, 3, i % 3, a, b); split_gap(40, 150, 3, i / 3, y0, y1);
+        add_btn(a, y0, b, y1, labs[i], &F8x16, key_act(keys[i]));
+      }
+    }
+    int a, b;
+    split_gap(6, BOT_W - 6, 3, 0, a, b); add_btn(a, 202, b, 234, "ENTER", &F8x16, key_act(K_ENTER));
+    split_gap(6, BOT_W - 6, 3, 1, a, b); add_btn(a, 202, b, 234, "BACK", &F8x16, key_act(K_ESC));
+    split_gap(6, BOT_W - 6, 3, 2, a, b); add_btn(a, 202, b, 234, kb_open ? "HIDE KEYS" : "KEYBOARD", &F8x16, kind_act(A_KB));
     return;
   }
   fit_text(s, (BOT_W - text_width("STAR FLEET II", F8x16)) / 2, 40, BOT_W, "STAR FLEET II", F8x16, TITLE, "title");
