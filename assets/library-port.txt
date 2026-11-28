@@ -417,6 +417,37 @@ MORE TO TRY: Tow it home. SHIP MENUS, ENGINEERING, TRACTOR BEAM, then tap the sh
 
 IF IT DOESN'T WORK: "No valid target within range" when boarding means the ship is elsewhere in the orbit: change orbit level first. If the ship does not surrender, set weapons to disable (answer YES when the first officer asks) and fire until COMMS says "Enemy ship disabled!".
 
+# Tutorial 8: a real fight
+@shelf PROCEDURES
+@see Red alert: fight a ship
+@see Under fire: damage and repairs
+@done TUTORIAL 8 DONE. You beat a warship that shoots back. To leave, press START and tap LEAVE TUTORIAL.
+This tutorial's enemy fires back. "Enemy ship just left system" is not the one to fight: an Alliance heavy cruiser waits at the second planet, SS-5B. Time and the enemy only move while you fly or orbit, so nothing happens while you sit still.
+STEP SYSTEM | Open the system map | MAP OF STAR SYSTEM
+STEP - | Tap planet SS-5B: the box jumps to it | -
+STEP TARGETER | Tap TARGETER | Target #
+STEP A | Press A to enter the target | ENTERED
+STEP ENGINES | Start the engines | Engines engaged
+STEP - | Red alert comes as the cruiser nears | RED
+STEP SHLD+ | Shields under 100%? Tap SHLD+ | -
+STEP TORPS | When TORPS lights up, tap it | Torpedo #1 away
+STEP PHASERS | Closer in, PHASERS lights: tap it | Our phaser hit
+STEP - | Keep firing until it is destroyed | Enemy ship destroyed
+
+WHY: TARGET DATA on the top screen lists the cruiser with its distance (x,y points), bearing and speed; T and P at the end show your locks. After each of your hits COMMS shows the cruiser's power left; at below 0 it is destroyed. "Heavy cruiser ECM is now off" means it is about to fire. Each hit on you costs energy (ENERGY Quantity) and can knock out a system: see the card "Under fire: damage and repairs".
+
+IF IT DOESN'T WORK: With your ECM on your weapons cannot lock: switch it off to shoot. "Torp lost lock due to planet" means the planet was in the way: wait for a clear line. Losing? Tap STARFORT to run for home; if the helm asks about a black hole on the route, NO keeps the course. If the ship is destroyed the tutorial ends and the game asks whether to give up: either answer takes you to sign-on.
+
+# Under fire: damage and repairs
+@shelf PROBLEMS
+@see Red alert: fight a ship
+@see Systems status (DAMAGE)
+HOW: 1) Each hit reads "... hit Our ship" in COMMS, with its size and the crew lost (Dead). 2) Watch ENERGY Quantity: every hit on the shields drains it, and LOW PWR lights when the reserves run low. 3) In DAMAGE on the top screen a system lit red and blinking is out of action; a darker red one is damaged but still works. 4) Repair teams go to a broken system by themselves. To choose: tap SHIP MENUS, ENGINEERING, Damage control. The arrows pick a system, + TEAM and - TEAM change its teams, ASSIGN confirms. 5) Too hot? STARFORT breaks off and flies home; FREEZE stops the clock while you decide.
+
+WHY: The op.c column is how well each system works (100 = fully), r.t. the repair teams on it. A knocked-out system comes back in stages: COMMS says "working", then "fully working", then the teams return. Without sublight engines the ship cannot move or reach the 0.6c it needs to jump.
+
+IF IT DOESN'T WORK: With shields gone, hits kill crew and wreck systems fast: "ALL SHIELDS PENETRATED - SHIP DESTROYED!" ends the mission. Run before the shields fail. A destroyed system cannot be repaired in space: only a starfort fixes it.
+
 # Launch from a starfort
 @shelf PROCEDURES
 @see Tutorial 1: Basic Navigation

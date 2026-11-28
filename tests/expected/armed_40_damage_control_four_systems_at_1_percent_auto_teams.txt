@@ -1,7 +1,7 @@
-kind: map
-hint: Tap a star: the box jumps to it. Then TARGETER
-buttons: [DAM CON] [TELEPRT] [PROBES] [TRAC BM] [MORE] [STARS] [SYSTEM] [WAR] [COMBAT] [FLEET] [ORDERS] [LOG]
-explain cards: 12/12
+kind: plain
+hint: Arrows pick a system, + TEAM adds, ASSIGN
+buttons: [] [] [] [] [- TEAM] [+ TEAM] [ASSIGN] [BACK] [STARS] [SYSTEM] [WAR] [COMBAT] [FLEET] [ORDERS] [LOG]
+explain cards: 15/15
 quick reference: QUICK REFERENCE: THIS VIEW
 start menu: [RESUME] [WHAT NOW?] [MANUAL] [COACH: ON] [SAVE (grey)] [LEAVE MISSION] [EXIT GAME (grey)]
-what now: A window or submenu is open on this map: use the buttons below, or B to close it.
+what now: This is one of the ship's pages. The buttons below are its keys; B goes back to the bridge.

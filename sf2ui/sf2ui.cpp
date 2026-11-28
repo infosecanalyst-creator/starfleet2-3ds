@@ -755,6 +755,11 @@ static int lp_table(const TextScreen& ts) {
   std::string p = row_str(ts, 24, 0, 30);
   return p.find("teams to stay") != std::string::npos ? 2 : p.find("Assign mission") != std::string::npos ? 1 : 0;
 }
+// The damage control table (Engineering > Damage control): the arrows pick a system, + and - its
+// repair teams, Enter assigns them (capture 3, armed_11..14).
+static bool dc_table(const TextScreen& ts) {
+  return row_str(ts, 24, 0, 24).find("Assign repair teams") != std::string::npos && screen_has(ts, "Avl.Repair Teams");
+}
 // Which weapons have a lock: the Wpn letters in TARGET DATA (bit 0 phasers, bit 1 torpedoes).
 static int weapon_locks(const TextScreen& ts) {
   if (row_str(ts, 9, 59, 79).find("TARGET DATA") == std::string::npos) return 0;
@@ -844,6 +849,7 @@ static const char* context_hint(const TextScreen& ts) {
     return "Combat screen: ships near you. B: back to the bridge";
   if (lp_table(ts) == 1) return "+ TEAM adds 10 people to the lit row";
   if (lp_table(ts) == 2) return "- TEAM brings a team back; ALL BACK: everyone";
+  if (glay_kind() == 3 && dc_table(ts)) return "Arrows pick a system, + TEAM adds, ASSIGN";
   if (glay_kind() == 3) return "The game's window. Its keys are the buttons below";
   if (row_mode == R_ANYKEY) return lefty_on ? "Read the screen, then tap CONTINUE (or D-Rt)" : "Read the screen, then tap CONTINUE (or A)";
   { bool blank = true; for (int r = 0; r < 25 && blank; r++) for (int c = 0; c < 80; c++) if (ts.ch[r][c] > ' ' && ts.ch[r][c] != 0xFF) { blank = false; break; }
@@ -983,6 +989,12 @@ static void bottom_rows(Surf& s, const TextScreen& ts) {
       if (trim(u) == "SEND") { it.key = 13; it.mods = 0; it.hot = -1; }
       else if (trim(u) == "CANCEL") { it.key = 27; it.mods = 0; it.hot = -1; }
     }
+  if (dc_table(ts)) {
+    items.clear(); yesno = false;
+    items.push_back(MenuItem{"ASSIGN", -1, false, 13, 0});
+    items.push_back(MenuItem{"BACK", -1, false, 27, 0});
+    prompt = "Repair teams: pick a system, + / - TEAM";
+  }
   if (int lp = lp_table(ts)) {         // the landing-party table: Enter activates, Esc drops the plan, Shift+A recalls all
     items.clear(); yesno = false;
     items.push_back(MenuItem{lp == 2 ? "BEAM UP" : "BEAM DOWN", -1, false, 13, 0});
@@ -2204,6 +2216,8 @@ static void analyse(const TextScreen& ts) {
   // The Targeter window opens over a corner of the star maps, which hides the frame the map is
   // found by: keep the map where it was while that window is up (emulator, Nov 21).
   static GLayout last_map; static bool have_map = false; static uint8_t map_edge[80];
+  if (dc_table(ts) && in_flight(ts) && find_window(ts, glay)) return;   // (the tactical grid behind it is not a star map)
+  glay.kind = G_PLAIN; glay.r1 = glay.c1 = -1;
   if (find_map(ts, glay)) { last_map = glay; have_map = true; memcpy(map_edge, ts.ch[glay.r1], 80); return; }
   if (have_map && in_flight(ts) && screen_has(ts, "enter target") && screen_has(ts, "TARGETER")) {
     // (the same map: its bottom edge is where it was, cell for cell)
@@ -2594,7 +2608,11 @@ static void generic_bottom(Surf& s, const TextScreen& ts) {
       scroll_bar(s, 312, WIN_Y0, WIN_Y0 + WIN_ROWS * 12, win_top, maxtop, WIN_ROWS);
       sarea = ScrollArea{true, 0, 0, 310, WIN_Y0 + WIN_ROWS * 12, 12, &win_top, maxtop};
     }
-    if (lp_table(ts)) {      // (harness, Nov 26: Up/Down pick the row, + and - change its teams; digits do nothing)
+    if (dc_table(ts)) {
+      static const char* ll[6] = {"\x18", "\x19", "\x1b", "\x1a", "- TEAM", "+ TEAM"};
+      const Act la[6] = {key_act(K_UP), key_act(K_DOWN), key_act(K_LEFT), key_act(K_RIGHT), key_act(K_MINUS), key_act(K_EQUALS, M_SHIFT)};
+      for (int i = 0; i < 6; i++) { int a, b; split_gap(6, BOT_W - 6, 6, i, a, b); add_btn(a, 140, b, 164, ll[i], i < 4 ? &F8x16 : &F6x12, la[i]); }
+    } else if (lp_table(ts)) {      // (harness, Nov 26: Up/Down pick the row, + and - change its teams; digits do nothing)
       static const char* ll[4] = {"\x18", "\x19", "- TEAM", "+ TEAM"};
       const Act la[4] = {key_act(K_UP), key_act(K_DOWN), key_act(K_MINUS), key_act(K_EQUALS, M_SHIFT)};
       for (int i = 0; i < 4; i++) { int a, b; split_gap(6, BOT_W - 6, 4, i, a, b); add_btn(a, 140, b, 164, ll[i], &F8x16, la[i]); }
