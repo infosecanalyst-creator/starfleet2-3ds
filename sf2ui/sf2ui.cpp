@@ -867,7 +867,9 @@ static void prompt_strip(Surf& s, const TextScreen& ts, const std::string& promp
   const int SY = UP_H;
   s.fill(0, SY, strip_x1, SY + 12, PROMPT_BG);
   s.fill(0, SY + 12, strip_x1, ROW1_Y0, BG);   // (on the bridge the action column runs down beside it)
-  bool q_up = !dialog_question(ts).empty() || trim(row_str(ts, 24, 0, 24)).find('?') != std::string::npos;
+  std::string p24 = trim(row_str(ts, 24, 0, 24));
+  bool q_up = !dialog_question(ts).empty() || p24.find('?') != std::string::npos ||
+              (p24.compare(0, 7, "Select ") == 0 && p24 != "Select option");   // ("Select torp #2 setting" was hidden by MSG:)
   if (!alert_text.empty() && (int32_t)(alert_until - now()) > 0 && !(q_up && !alert_red)) {     // (a question is not hidden by a passing message)
     uint16_t edge = alert_red ? rgb(255, 80, 64) : TITLE;
     s.fill(0, SY, strip_x1, ROW1_Y0, alert_red ? rgb(70, 12, 10) : rgb(60, 46, 8));
@@ -891,7 +893,14 @@ static void prompt_strip(Surf& s, const TextScreen& ts, const std::string& promp
   if (!showing_toast && kb_open && ts.cursor_y >= 0 && ts.cursor_y < 25) line = trim(row_str(ts, ts.cursor_y, 0, 80));
   // (saving by name: the game's box lies under the bridge panels, so the cursor's row is a mix of them)
   if (!showing_toast && kb_open && screen_has(ts, "Enter file name")) line = "Save as: " + typed + "_";
-  if (!showing_toast && !kb_open && row_str(ts, 14, 30, 50).find("TARGET ID") != std::string::npos) line = "Box is on: " + trim(row_str(ts, 15, 16, 62));
+  if (!showing_toast && !kb_open && row_str(ts, 14, 30, 50).find("TARGET ID") != std::string::npos) {
+    // (capture 3: "Box is on: UGA freighter CORNHUSKER O:M P: 4" was cut at both ends; the orbit
+    // and power fields are in TARGET DATA already)
+    std::string id = trim(row_str(ts, 15, 16, 62)); size_t o = id.find(" O:");
+    if (o != std::string::npos) id = trim(id.substr(0, o));
+    if (id.compare(0, 4, "UGA ") == 0) id = id.substr(4);
+    line = id.empty() ? "The box is on nothing yet" : "Box on: " + id + " (ENTER)";
+  }
   if (!showing_toast && row_mode == R_YESNO) {    // the question itself, readable beside YES/NO
     std::string q = dialog_question(ts);           // (on the bridge its window is cut by the tiles)
     if (!q.empty()) line = q;
@@ -927,6 +936,8 @@ static const FullWord FULLWORDS[] = {
   {"INFORMATN", "INFORMATION"}, {"LANDING PRTY", "LANDING PARTY"}, {"BOARDNG PRTY", "BOARDING PARTY"},
   {"SPCL SRVCS", "SPECIAL SERVICES"}, {"FLT HQ", "FLEET HQ"}, {"CMB LOG", "COMBAT LOG"}, {"WEAPONSCTL", "WEAPONS CONTROL"},
   {"RNDVZING", "RENDEZVOUS"}, {"STRG CMD", "STRATEGIC CMD"}, {"PWR SCHM", "POWER SCHEMATIC"}, {"PWR SYS", "POWER SYSTEMS"}, {"ENGDATA", "ENGINE DATA"}, {"EMHYPMV", "EMERG. HYPERSPACE"}, {"INTRNL DEF", "INTERNAL DEFENCE"},
+  // (the Weapons menu's "Phasers" sat beside the fire button PHASERS: capture 3)
+  {"PHASERS", "PHASER SETUP"}, {"TORPEDOES", "TORPEDO SETUP"},
 };
 static std::string full_word(const std::string& l) { for (auto& w : FULLWORDS) if (l == w.abbr) return w.full; return l; }
 static std::string abbr_word(const std::string& l) { for (auto& w : FULLWORDS) if (l == w.full) return w.abbr; return l; }
@@ -3336,8 +3347,17 @@ Redraw frame(const TextScreen& ts, uint16_t* top, uint16_t* bottom) {
   } else if (!ts.text_mode) {
     graphics_bottom(ts_bot); rd.bottom = true;
   } else if (is_bridge(ts)) {
-    if (draw_top) { ct_on = false; if (top_w == BOT_W) bridge_top_narrow(ts_top, ts); else bridge_top(ts_top, ts); top_native = true; }
-    memcpy(&bridge_keep, &ts, sizeof ts); bridge_kept = true;
+    // The TARGET ID box (manual targeting) lies over COMMS and the panels: the top screen keeps
+    // what was under it; its text is in the strip (capture 3: garbage on the dashboard).
+    bool tid = row_str(ts, 14, 30, 50).find("TARGET ID") != std::string::npos && bridge_kept;
+    static TextScreen tmix;
+    if (tid) {
+      memcpy(&tmix, &ts, sizeof ts);
+      for (int r = 14; r <= 16; r++) for (int c = 15; c <= 63; c++) { tmix.ch[r][c] = bridge_keep.ch[r][c]; tmix.at[r][c] = bridge_keep.at[r][c]; }
+    }
+    const TextScreen& tv = tid ? tmix : ts;
+    if (draw_top) { ct_on = false; if (top_w == BOT_W) bridge_top_narrow(ts_top, tv); else bridge_top(ts_top, tv); top_native = true; }
+    memcpy(&bridge_keep, &tv, sizeof ts); bridge_kept = true;
     reader_on = false;
     if (kb_open) keyboard(ts_bot); else bridge_bottom(ts_bot, ts);
     bottom_rows(ts_bot, ts);

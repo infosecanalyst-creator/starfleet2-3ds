@@ -1,6 +1,6 @@
 kind: bridge
 hint: Docked: LAUNCH leaves the starfort
-buttons: [PHASERS (grey)] [TORPS (grey)] [SHLD+] [SHLD-] [SPD+] [SPD-] [LAUNCH] [WHAT NOW?] [PHASERS] [TORPEDOES] [OBLITERATOR PODS] [BACK] [STARS] [SYSTEM] [WAR] [COMBAT] [FLEET] [ORDERS] [LOG]
+buttons: [PHASERS (grey)] [TORPS (grey)] [SHLD+] [SHLD-] [SPD+] [SPD-] [LAUNCH] [WHAT NOW?] [PHASER SETUP] [TORPEDO SETUP] [OBLITERATOR PODS] [BACK] [STARS] [SYSTEM] [WAR] [COMBAT] [FLEET] [ORDERS] [LOG]
 explain cards: 19/19
 quick reference: QUICK REFERENCE: BRIDGE
 start menu: [RESUME] [WHAT NOW?] [MANUAL] [COACH: ON] [SAVE] [LEAVE MISSION] [EXIT GAME (grey)]

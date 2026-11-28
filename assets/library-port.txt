@@ -392,7 +392,7 @@ STEP CONTINUE | Three boxes follow: CONTINUE each time | CAN CONTINUE UNTIL TIME
 
 WHY: TARGET DATA on the top screen lists each enemy; the letters P and T at the end of a line show which weapon is locked on it. A lit PHASERS or TORPS button means that weapon has a lock. After each hit COMMS shows the target's remaining power; at 0 it is destroyed, or disabled if you told the first officer to disable. Torpedoes reload for a few seconds after each pair; phasers recharge.
 
-MORE TO TRY: Aim a tube by hand: SHIP MENUS, COMBAT, WEAPONS, TORPEDOES, MODE, MANUAL, then tap a ship on the touch screen and tap ENTER. STANDBY in the same menu holds a tube back. OBLITERATOR PODS in the WEAPONS menu wreck the planet below: the game asks you to confirm first.
+MORE TO TRY: Aim a tube by hand: SHIP MENUS, COMBAT, WEAPONS, TORPEDO SETUP, MODE, MANUAL, then tap a ship on the touch screen and tap ENTER. STANDBY in the same menu holds a tube back. OBLITERATOR PODS in the WEAPONS menu wreck the planet below: the game asks you to confirm first.
 
 IF IT DOESN'T WORK: "not loaded" means the tubes are reloading: wait and tap once. "Phasers not energized" means they are recharging. The three boxes after the first kill say the mission is complete; in a tutorial that only means its goal is met. To leave afterwards press START and tap LEAVE TUTORIAL: the game starts again at the sign-on screen.
 
